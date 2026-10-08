@@ -57,8 +57,9 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     closeStale: db.prepare('UPDATE play_events SET ended_at = ? WHERE ended_at IS NULL AND started_at < ?'),
     playsByAccount: db.prepare('SELECT id, game_id, started_at, ended_at, outcome, score FROM play_events WHERE account_id = ? AND (? IS NULL OR game_id = ?) ORDER BY started_at DESC, id DESC LIMIT ?'),
     playsByKey: db.prepare('SELECT id, game_id, started_at, ended_at, outcome, score FROM play_events WHERE player_key = ? AND (? IS NULL OR game_id = ?) ORDER BY started_at DESC, id DESC LIMIT ?'),
-    statsByAccount: db.prepare('SELECT COUNT(*) AS plays, COUNT(outcome) AS completed, MAX(CASE WHEN outcome IS NOT NULL THEN score END) AS best FROM play_events WHERE account_id = ? AND (? IS NULL OR game_id = ?)'),
-    statsByKey: db.prepare('SELECT COUNT(*) AS plays, COUNT(outcome) AS completed, MAX(CASE WHEN outcome IS NOT NULL THEN score END) AS best FROM play_events WHERE player_key = ? AND (? IS NULL OR game_id = ?)'),
+    // best: MAX or MIN score per the game's scoreOrder, optionally only over one outcome (e.g. 'win').
+    ...Object.fromEntries(['account_id', 'player_key'].flatMap(col => ['MAX', 'MIN'].map(fn => [`stats_${col}_${fn}`,
+      db.prepare(`SELECT COUNT(*) AS plays, COUNT(outcome) AS completed, ${fn}(CASE WHEN outcome IS NOT NULL AND (? IS NULL OR outcome = ?) THEN score END) AS best FROM play_events WHERE ${col} = ? AND (? IS NULL OR game_id = ?)`)]))),
   };
 
   // ------------------------------------------------------------ helpers
@@ -233,10 +234,11 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     return { ok: true };
   });
 
+  // 401 when signed out, per spec. With ?optional=1 a signed-out answer is a
+  // 200 {signedIn:false} instead, so games checking quietly don't log errors.
   app.get('/auth/me', async (req, reply) => {
-    if (!req.session) return fail(reply, 401, 'login_required', 'Not signed in.');
-    const m = await me(req.session.accountId);
-    if (!m) return fail(reply, 401, 'login_required', 'Not signed in.');
+    const m = req.session ? await me(req.session.accountId) : null;
+    if (!m) return req.query.optional ? { signedIn: false } : fail(reply, 401, 'login_required', 'Not signed in.');
     return m;
   });
 
@@ -382,7 +384,9 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     const byAcct = player.accountId !== null;
     const k = byAcct ? player.accountId : player.key;
     const plays = (byAcct ? q.playsByAccount : q.playsByKey).all(k, gameId, gameId, limit).map(pickPlay);
-    const s = (byAcct ? q.statsByAccount : q.statsByKey).get(k, gameId, gameId);
+    const game = gameId ? games.get(gameId) : null;
+    const fn = game && game.scoreOrder === 'asc' ? 'MIN' : 'MAX', only = game ? game.bestOutcome : null;
+    const s = q[`stats_${byAcct ? 'account_id' : 'player_key'}_${fn}`].get(only, only, k, gameId, gameId);
     return { player: byAcct ? 'account' : 'anon', stats: { plays: s.plays, completed: s.completed, best: s.best }, plays };
   });
 

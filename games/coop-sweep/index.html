@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Coop Sweep</title>
+<meta name="description" content="Clear the paper pasture without startling a single hidden hen. How fast can you sweep it?">
+<link rel="icon" href="data:,">
+
+<!-- X (Twitter) player card: the post embeds this page as a playable 480x480 iframe. -->
+<meta name="twitter:card" content="player">
+<meta name="twitter:site" content="@sevrin420">
+<meta name="twitter:creator" content="@sevrin420">
+<meta name="twitter:title" content="Coop Sweep">
+<meta name="twitter:description" content="Clear the paper pasture without startling a single hidden hen. Tap to play.">
+<meta name="twitter:url" content="https://membersonly.cc/coop-sweep/">
+<meta name="twitter:image" content="https://membersonly.cc/coop-sweep/previ.png">
+<meta name="twitter:image:width" content="1200">
+<meta name="twitter:image:height" content="630">
+<meta name="twitter:image:alt" content="Coop Sweep: a paper-craft pasture of grass tiles with numbered clues, little red flags and hens popping up">
+<meta name="twitter:player" content="https://membersonly.cc/coop-sweep/">
+<meta name="twitter:player:width" content="480">
+<meta name="twitter:player:height" content="480">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Coop Sweep">
+<meta property="og:description" content="Clear the paper pasture without startling a single hidden hen. How fast can you sweep it?">
+<meta property="og:url" content="https://membersonly.cc/coop-sweep/">
+<meta property="og:image" content="https://membersonly.cc/coop-sweep/previ.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff; }
+  body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+</style>
+<!-- Hen art lives in ./hens/ (one swappable folder). If it's missing, the game draws its own hens. -->
+<script src="hens/manifest.js"></script>
+<!-- Optional shared accounts (sign-in chip + play recording). Async and fail-safe:
+     if it doesn't load, or the API isn't there, the game plays exactly as a guest. -->
+<script src="../shared/auth.js" async data-game="coop-sweep" data-corner="br" data-score="mmss"></script>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="Coop Sweep game. Arrow keys move, Space digs, F flags, R restarts."></canvas>
+<script>
+'use strict';
+(() => {
+// ============================================================================
+// COOP SWEEP
+// A paper pasture hides ten hens. Dig a patch: a number tells you how many
+// hens are nesting in the eight patches around it. Flag every hen and dig
+// everything else. Dig up a hen and she bolts (BAWK!), ending the run.
+//
+// Logical space is 128x152: HUD on top, an 8x8 board, the DIG/FLAG toggle at
+// the bottom. Everything is drawn as paper cut-outs: flat fills, a thick white
+// cut margin, a thin inked edge and a soft drop shadow.
+// ============================================================================
+
+const LW = 128, LH = 152, COLS = 8, ROWS = 8, HENS = 10;
+const CELL = 13, BX = 12, BY = 26;
+const INK = '#3b2a26';
+const FONT = '"Arial Rounded MT Bold","Varela Round","Nunito","Trebuchet MS",Verdana,Arial,sans-serif';
+const FLIP = 0.2, LONG_PRESS = 380;
+const NUM_COL = [null, '#3870c0', '#2f9a3a', '#e02810', '#6a3fb0', '#b0522d', '#16928f', INK, '#7a7a7a'];
+const QS = new URLSearchParams(location.search);
+const SHOT = QS.has('shot');   // card-image capture: a staged mid-game board, no overlays
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const mmss = t => { t = Math.floor(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const idx = (c, r) => r * COLS + c;
+const inB = (c, r) => c >= 0 && r >= 0 && c < COLS && r < ROWS;
+function around(i) {
+  const c = i % COLS, r = (i / COLS) | 0, out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if ((dc || dr) && inB(c + dc, r + dr)) out.push(idx(c + dc, r + dr));
+  return out;
+}
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage blocked */ } },
+};
+
+// ---------------------------------------------------------------- canvas
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let CW = 1, CH = 1, SC = 1, OX = 0, OY = 0, SPK = 4;
+const bg = document.createElement('canvas');
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
+
+function resize() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+  CW = cv.width = Math.round(w * dpr); CH = cv.height = Math.round(h * dpr);
+  SC = Math.min(CW / (LW + 8), CH / (LH + 8));
+  OX = (CW - LW * SC) / 2; OY = (CH - LH * SC) / 2;
+  const k = clamp(Math.ceil(SC), 2, 10);
+  if (k !== SPK) { SPK = k; CACHE.clear(); }
+  drawBG();
+}
+
+// ---------------------------------------------------------------- drawing helpers
+function rp(g, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath(); g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function stroke(g, w = 0.55, col = INK) { g.lineWidth = w; g.strokeStyle = col; g.stroke(); }
+function E(g, x, y, rx, ry, f, rot = 0, ns) { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fillStyle = f; g.fill(); if (!ns) stroke(g); }
+function PL(g, pts, f, ns) {
+  g.beginPath(); g.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+  g.closePath(); g.fillStyle = f; g.fill(); if (!ns) stroke(g);
+}
+function txt(s, x, y, size, fill = '#fff', align = 'center', strokeCol = INK, sw, g = ctx) {
+  g.font = `900 ${size}px ${FONT}`; g.textAlign = align; g.textBaseline = 'middle';
+  if (strokeCol) { g.lineJoin = 'round'; g.lineWidth = sw || size * 0.3; g.strokeStyle = strokeCol; g.strokeText(s, x, y); }
+  g.fillStyle = fill; g.fillText(s, x, y);
+}
+// A sheet of paper: soft drop shadow, cream fill, inked edge.
+function paper(x, y, w, h, r = 3, fill = '#fffdf4', edge = INK, g = ctx) {
+  g.fillStyle = 'rgba(70,35,20,0.28)'; rp(g, x + 0.9, y + 1.2, w, h, r); g.fill();
+  rp(g, x, y, w, h, r); g.fillStyle = fill; g.fill(); stroke(g, 0.7, edge);
+}
+function seeded(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+// ---------------------------------------------------------------- paper cut-out cache
+// Vector art is drawn once at device resolution, then given a white cut margin,
+// a thin inked edge and a drop shadow: the paper-craft sticker look.
+const CACHE = new Map();
+function tint(src, col) {
+  const c = mk(src.width, src.height), x = c.getContext('2d');
+  x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+// Turn a canvas of art (with transparent surroundings) into a sticker.
+function cutout(base, margin, K, shadow = true) {
+  const pad = Math.ceil((margin + 1.6) * K);
+  const out = mk(base.width + pad * 2, base.height + pad * 2), o = out.getContext('2d');
+  const white = tint(base, '#ffffff'), dark = tint(base, 'rgba(59,42,38,0.95)'), sh = tint(base, 'rgba(60,30,15,0.30)');
+  const ring = (img, r, dx = 0, dy = 0) => { for (let i = 0; i < 20; i++) { const a = i / 20 * Math.PI * 2; o.drawImage(img, pad + dx + Math.cos(a) * r, pad + dy + Math.sin(a) * r); } };
+  if (shadow) ring(sh, margin * K, 0.8 * K, 1.1 * K);
+  ring(dark, (margin + 0.45) * K); ring(white, margin * K); o.drawImage(base, pad, pad);
+  return { cv: out, pad: pad / K };
+}
+// art(g) draws into a box of w x h logical units (origin top-left).
+function sticker(key, w, h, art, margin = 0.8) {
+  const k = key + '@' + SPK;
+  let s = CACHE.get(k);
+  if (s) return s;
+  const base = mk(w * SPK, h * SPK), b = base.getContext('2d');
+  b.scale(SPK, SPK); b.lineJoin = 'round'; b.lineCap = 'round';
+  art(b);
+  const c = cutout(base, margin, SPK);
+  s = { cv: c.cv, w: w + c.pad * 2, h: h + c.pad * 2, pad: c.pad };
+  CACHE.set(k, s);
+  return s;
+}
+// Draw a sticker centred on (x, y) with optional scale / x-squash (for flips) / rotation.
+function put(s, x, y, sc = 1, sx = 1, rot = 0) {
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.scale(sc * sx, sc);
+  ctx.drawImage(s.cv, -s.w / 2, -s.h / 2, s.w, s.h);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- hen art (./hens/)
+const HENIMG = [];
+(window.COOP_HENS || []).forEach((h, i) => {
+  const im = new Image();
+  im.onload = () => { HENIMG[i] = im; CACHE.clear(); drawBG(); };
+  im.src = 'hens/' + h.file;
+});
+const henCount = () => Math.max(1, HENIMG.filter(Boolean).length);
+// Fallback hen, drawn here (original art) when no hen files are available.
+function drawPaperHen(g, w, h, hue) {
+  const cx = w * 0.48, cy = h * 0.56, s = Math.min(w, h) / 20;
+  const body = ['#fff7ea', '#f6c26b', '#c97b4a', '#f2f2f2', '#e8a0a0', '#9ccf7a'][hue % 6];
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.lineWidth = 0.7; g.strokeStyle = INK;
+  PL(g, [-6, -1, -9.5, -5, -8.5, 0.5, -10, 2, -6.5, 3], body);                        // tail
+  g.beginPath(); g.ellipse(-0.5, 2, 7, 5.5, 0, 0, Math.PI * 2); g.fillStyle = body; g.fill(); g.stroke();
+  g.beginPath(); g.ellipse(3.2, -3.6, 3.4, 3.6, 0, 0, Math.PI * 2); g.fill(); g.stroke(); // head
+  PL(g, [6.2, -4.2, 9, -3.2, 6.3, -2.4], '#f8b020');                                 // beak
+  PL(g, [1.6, -6.6, 2.4, -8.8, 3.4, -7.2, 4.6, -9, 5, -6.6], '#e02810');             // comb
+  E(g, 6.1, -1.6, 0.8, 1.1, '#e02810', 0, true);
+  E(g, 4.4, -4.2, 0.65, 0.75, INK, 0, true);
+  g.beginPath(); g.ellipse(-1.5, 2.4, 3.6, 2.2, -0.3, 0, Math.PI); g.stroke();           // wing
+  g.lineWidth = 0.8; g.strokeStyle = '#d88a10';
+  g.beginPath(); g.moveTo(-2, 7.2); g.lineTo(-2.2, 9.2); g.moveTo(1.5, 7.2); g.lineTo(1.7, 9.2); g.stroke();
+  g.restore();
+}
+// A hen sticker roughly w logical units tall/wide.
+function henSticker(i, size) {
+  const n = henCount(), k = ((i % n) + n) % n, im = HENIMG[k];
+  return sticker(`hen${k}:${size}:${im ? 1 : 0}`, size, size, g => {
+    if (im) {
+      const f = Math.min(size / im.width, size / im.height);
+      g.drawImage(im, (size - im.width * f) / 2, (size - im.height * f) / 2, im.width * f, im.height * f);
+    } else drawPaperHen(g, size, size, k);
+  }, size > 30 ? 1.4 : 0.9);
+}
+
+// ---------------------------------------------------------------- tiles and props
+// A grass patch: two checker shades, a lighter fold along the top, a few blades.
+function grassTile(shade) {
+  return sticker('grass' + shade, CELL - 1.6, CELL - 1.6, g => {
+    const w = CELL - 1.6, top = shade ? '#8edb63' : '#7fcf55', low = shade ? '#6fbf47' : '#62b23e';
+    const gr = g.createLinearGradient(0, 0, 0, w); gr.addColorStop(0, top); gr.addColorStop(1, low);
+    rp(g, 0, 0, w, w, 2); g.fillStyle = gr; g.fill();
+    rp(g, 0.6, 0.6, w - 1.2, 2.2, 1.2); g.fillStyle = 'rgba(255,255,255,0.28)'; g.fill();
+    g.strokeStyle = 'rgba(40,110,30,0.55)'; g.lineWidth = 0.45;
+    const r = seeded(shade ? 11 : 5);
+    for (let k = 0; k < 4; k++) {
+      const x = 2 + r() * (w - 4), y = 4 + r() * (w - 6);
+      g.beginPath(); g.moveTo(x - 0.8, y + 1.4); g.lineTo(x, y); g.lineTo(x + 0.7, y + 1.4); g.stroke();
+    }
+  }, 0.55);
+}
+// Dug ground: flat cream paper, slightly sunken (no cut margin, inner shade).
+function dugTile(shade) {
+  const k = 'dug' + shade + '@' + SPK;
+  let s = CACHE.get(k);
+  if (s) return s;
+  const w = CELL - 0.8, c = mk(w * SPK, w * SPK), g = c.getContext('2d');
+  g.scale(SPK, SPK);
+  rp(g, 0, 0, w, w, 1.6); g.fillStyle = shade ? '#f7ead0' : '#f1e1c1'; g.fill();
+  g.save(); rp(g, 0, 0, w, w, 1.6); g.clip();
+  g.fillStyle = 'rgba(120,80,40,0.16)'; g.fillRect(0, 0, w, 0.9); g.fillRect(0, 0, 0.9, w);
+  g.restore();
+  rp(g, 0, 0, w, w, 1.6); g.lineWidth = 0.35; g.strokeStyle = 'rgba(59,42,38,0.35)'; g.stroke();
+  s = { cv: c, w, h: w, pad: 0 };
+  CACHE.set(k, s);
+  return s;
+}
+function flagSticker() {
+  return sticker('flag', 8, 10, g => {
+    g.fillStyle = '#8a5a34'; g.fillRect(2.1, 0.8, 0.9, 8.6);                     // stick
+    PL(g, [3, 0.9, 7.6, 2.6, 3, 4.6], '#e8301a', true);                           // pennant
+    PL(g, [3, 2.6, 7.6, 2.6, 3, 4.6], 'rgba(120,10,0,0.25)', true);               // fold shade
+    g.lineWidth = 0.4; g.strokeStyle = INK; g.beginPath(); g.moveTo(3, 0.9); g.lineTo(7.6, 2.6); g.lineTo(3, 4.6); g.stroke();
+    E(g, 2.55, 9.2, 2, 0.7, '#5a8a3a', 0, true);                                   // tuft
+  }, 0.7);
+}
+function numberSticker(n) {
+  return sticker('n' + n, 9, 9, g => txt(String(n), 4.5, 4.9, 8.6, NUM_COL[n], 'center', null, 0, g), 0.75);
+}
+
+// ---------------------------------------------------------------- background
+function drawBG() {
+  bg.width = CW; bg.height = CH;
+  const g = bg.getContext('2d');
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const sky = g.createLinearGradient(0, 0, 0, CH);
+  sky.addColorStop(0, '#79c8f8'); sky.addColorStop(1, '#dff4ff');
+  g.fillStyle = sky; g.fillRect(0, 0, CW, CH);
+  g.save(); g.translate(OX, OY); g.scale(SC, SC);
+  const vx0 = -OX / SC, vx1 = (CW - OX) / SC, vy1 = (CH - OY) / SC;
+  const rand = seeded(3);
+  // paper clouds
+  for (let x = vx0 - 10; x < vx1 + 10; x += 34 + rand() * 20) {
+    const y = 6 + rand() * 30, s = 0.7 + rand() * 0.6;
+    g.fillStyle = 'rgba(60,40,30,0.12)';
+    for (const [dx, dy, r] of [[0, 0, 5], [6, -2, 6], [12, 0, 5], [6, 2, 4.5]]) { g.beginPath(); g.arc(x + dx * s + 0.8, y + dy * s + 1, r * s, 0, 7); g.fill(); }
+    g.fillStyle = '#ffffff';
+    for (const [dx, dy, r] of [[0, 0, 5], [6, -2, 6], [12, 0, 5], [6, 2, 4.5]]) { g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, 7); g.fill(); }
+  }
+  // two rows of scalloped paper hills
+  const hill = (base, amp, col, seed) => {
+    const r = seeded(seed);
+    g.beginPath(); g.moveTo(vx0 - 5, vy1 + 5);
+    for (let x = vx0 - 5; x <= vx1 + 14; x += 14) g.quadraticCurveTo(x + 7, base - amp - r() * amp, x + 14, base);
+    g.lineTo(vx1 + 14, vy1 + 5); g.closePath();
+    g.save(); g.translate(0.9, 1.2); g.fillStyle = 'rgba(40,60,20,0.2)'; g.fill(); g.restore();
+    g.fillStyle = col; g.fill(); g.lineWidth = 0.7; g.strokeStyle = INK; g.stroke();
+  };
+  hill(70, 8, '#a6dd78', 21);
+  hill(98, 7, '#86c95a', 9);
+  // wooden fence along the far hill
+  for (let x = vx0; x < vx1; x += 9) { g.fillStyle = '#fff3dc'; rp(g, x, 72, 2.4, 9, 0.8); g.fill(); g.lineWidth = 0.4; g.strokeStyle = INK; g.stroke(); }
+  g.fillStyle = '#fff3dc'; rp(g, vx0, 74.5, vx1 - vx0, 1.6, 0.6); g.fill(); g.stroke();
+  // flowers in the near grass
+  for (let k = 0; k < 40; k++) {
+    const x = vx0 + rand() * (vx1 - vx0), y = 100 + rand() * (vy1 - 100);
+    if (x > BX - 6 && x < BX + COLS * CELL + 6 && y < BY + ROWS * CELL + 8) continue;
+    const col = ['#ffffff', '#f8d030', '#f088c0', '#e02810'][k % 4];
+    for (let p = 0; p < 5; p++) { const a = p / 5 * 6.283; E(g, x + Math.cos(a) * 1.1, y + Math.sin(a) * 1.1, 0.9, 0.9, col, 0, true); }
+    E(g, x, y, 0.6, 0.6, '#f8a020', 0, true);
+  }
+  // the board's paper mat
+  g.fillStyle = 'rgba(70,35,20,0.3)'; rp(g, BX - 4 + 1.2, BY - 4 + 1.6, COLS * CELL + 8, ROWS * CELL + 8, 4); g.fill();
+  rp(g, BX - 4, BY - 4, COLS * CELL + 8, ROWS * CELL + 8, 4); g.fillStyle = '#c99a62'; g.fill(); g.lineWidth = 0.8; g.strokeStyle = INK; g.stroke();
+  rp(g, BX - 2, BY - 2, COLS * CELL + 4, ROWS * CELL + 4, 3); g.fillStyle = '#e6c793'; g.fill(); g.lineWidth = 0.4; g.stroke();
+  g.restore();
+}
+
+// ---------------------------------------------------------------- game state
+let G = null, clock = 0, uiT = 0, mode = 'dig', sound = store.get('coop-sweep-sound') === 'on';
+let best = Number(store.get('coop-sweep-best')) || 0;
+
+function newGame() {
+  const cells = [];
+  for (let i = 0; i < COLS * ROWS; i++) cells.push({ hen: false, n: 0, open: false, flag: false, flipAt: 0, flagAt: -9, popAt: -1, henIdx: 0, wrong: false });
+  return { cells, state: 'ready', t: 0, flags: 0, opened: 0, boom: -1, endAt: 0, paused: false, parts: [], floats: [], shake: 0, playP: null, cur: { c: 3, r: 3 }, kb: false };
+}
+function placeHens(g, safe, rand = Math.random) {
+  const banned = new Set([safe, ...around(safe)]);
+  const pool = [];
+  for (let i = 0; i < g.cells.length; i++) if (!banned.has(i)) pool.push(i);
+  for (let k = 0; k < HENS; k++) {
+    const j = k + Math.floor(rand() * (pool.length - k));
+    [pool[k], pool[j]] = [pool[j], pool[k]];
+    const c = g.cells[pool[k]]; c.hen = true; c.henIdx = Math.floor(rand() * 64);
+  }
+  g.cells.forEach((c, i) => { c.n = around(i).filter(j => g.cells[j].hen).length; });
+}
+
+function reveal(i) {
+  const g = G;
+  if (g.state === 'won' || g.state === 'lost' || g.paused) return;
+  const c = g.cells[i];
+  if (c.flag) return;
+  if (g.state === 'ready') { placeHens(g, i); g.state = 'play'; trackStart(g); }
+  if (c.open) { chord(i); return; }
+  if (c.hen) { lose(i); return; }
+  // breadth-first dig: empty patches open their neighbours, in a rippling flip
+  const seen = new Set([i]), q = [[i, 0]];
+  while (q.length) {
+    const [j, d] = q.shift(), cj = g.cells[j];
+    if (cj.open || cj.flag) continue;
+    cj.open = true; cj.flipAt = clock + d * 0.035; g.opened++;
+    if (cj.n === 0) for (const k of around(j)) if (!seen.has(k) && !g.cells[k].hen) { seen.add(k); q.push([k, d + 1]); }
+  }
+  sfx(seen.size > 3 ? 'ripple' : 'dig');
+  if (g.opened === COLS * ROWS - HENS) win();
+}
+// Tap a number whose hens are all flagged: dig the rest of its neighbours.
+function chord(i) {
+  const g = G, c = g.cells[i];
+  if (!c.n) return;
+  const ns = around(i), flags = ns.filter(j => g.cells[j].flag).length;
+  if (flags !== c.n) { c.flipAt = clock - FLIP * 0.6; return; } // little wobble, nothing else
+  for (const j of ns) if (!g.cells[j].open && !g.cells[j].flag) { reveal(j); if (g.state !== 'play') return; }
+}
+function toggleFlag(i) {
+  const g = G;
+  if (g.state === 'won' || g.state === 'lost' || g.paused) return;
+  const c = g.cells[i];
+  if (c.open) { if (g.state === 'play') chord(i); return; }
+  c.flag = !c.flag; c.flagAt = clock;
+  g.flags += c.flag ? 1 : -1;
+  sfx(c.flag ? 'flag' : 'unflag');
+}
+
+function lose(i) {
+  const g = G;
+  g.state = 'lost'; g.boom = i; g.endAt = clock; g.shake = 0.5;
+  const ci = i % COLS, ri = (i / COLS) | 0;
+  const hens = g.cells.map((c, j) => [c, j]).filter(([c]) => c.hen);
+  hens.sort((a, b) => Math.hypot(a[1] % COLS - ci, (a[1] / COLS | 0) - ri) - Math.hypot(b[1] % COLS - ci, (b[1] / COLS | 0) - ri));
+  hens.forEach(([c], k) => { c.popAt = clock + (k ? 0.35 + k * 0.08 : 0); });
+  g.cells.forEach(c => { if (c.flag && !c.hen) c.wrong = true; });
+  const [x, y] = cellCenter(i);
+  floatText(g, 'BAWK!', x, y - 9, '#e02810', 8);
+  burst(g, x, y, 14, ['#ffffff', '#f8d030', '#fff1c9']);
+  sfx('bawk');
+  trackEnd(g, 'loss');
+}
+function win() {
+  const g = G;
+  g.state = 'won'; g.endAt = clock;
+  g.cells.forEach((c, j) => { if (c.hen) { if (!c.flag) { c.flag = true; c.flagAt = clock; g.flags++; } c.popAt = clock + 0.3 + (j % 7) * 0.06; } });
+  for (let k = 0; k < 4; k++) burst(g, BX + rnd(10, COLS * CELL - 10), BY + rnd(10, ROWS * CELL - 10), 16, ['#e02810', '#f8d030', '#58c848', '#3870c0', '#f088c0']);
+  const s = Math.floor(g.t);
+  if (!best || s < best) { best = s; store.set('coop-sweep-best', String(s)); g.newBest = true; }
+  sfx('win');
+  trackEnd(g, 'win');
+}
+function restart() {
+  if (G && G.state === 'play') trackEnd(G, 'abandoned');
+  G = newGame();
+  sfx('dig');
+}
+
+// ---------------------------------------------------------------- play recording
+// Uses the optional shared accounts client (../shared/auth.js). Every call is
+// guarded and asynchronous, so a missing script or server never affects play.
+// Score = whole seconds taken, recorded on a win ('win') and a loss ('loss').
+// Lower is better; only wins count as a best (scoreOrder/bestOutcome in
+// server/games.json). Scores come from the browser, so they're unverified.
+function trackStart(g) {
+  const A = window.MembersAuth;
+  g.playP = A ? A.startPlay('coop-sweep').catch(() => null) : null;
+}
+function trackEnd(g, outcome) {
+  const A = window.MembersAuth;
+  if (!A || !g.playP) return;
+  const score = outcome === 'abandoned' ? null : Math.floor(g.t);
+  const meta = { ms: Math.round(g.t * 1000), dug: g.opened, flags: g.flags, board: `${COLS}x${ROWS}/${HENS}` };
+  const p = g.playP; g.playP = null;
+  p.then(id => id && A.endPlay(id, { outcome, score, meta })).catch(() => {});
+}
+
+// ---------------------------------------------------------------- effects
+function burst(g, x, y, n, cols) {
+  for (let k = 0; k < n && g.parts.length < 260; k++) {
+    const a = rnd(0, 6.283), v = rnd(18, 55);
+    g.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 25, rot: rnd(0, 6), vr: rnd(-8, 8), life: rnd(0.6, 1.1), t: 0, col: cols[k % cols.length], s: rnd(1, 1.8) });
+  }
+}
+function floatText(g, text, x, y, col, size) { g.floats.push({ text, x, y, col, size, t: 0, life: 1.2 }); }
+
+// Tiny synth, OFF by default; only created after a tap turns it on.
+let AC = null;
+function sfx(kind) {
+  if (!sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const t0 = AC.currentTime;
+    const tone = (f0, f1, dur, type = 'sine', vol = 0.12, at = 0) => {
+      const o = AC.createOscillator(), gn = AC.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t0 + at); o.frequency.exponentialRampToValueAtTime(f1, t0 + at + dur);
+      gn.gain.setValueAtTime(vol, t0 + at); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+      o.connect(gn).connect(AC.destination); o.start(t0 + at); o.stop(t0 + at + dur + 0.02);
+    };
+    if (kind === 'dig') tone(520, 380, 0.07, 'triangle', 0.1);
+    else if (kind === 'ripple') { for (let k = 0; k < 4; k++) tone(420 + k * 90, 300 + k * 60, 0.06, 'triangle', 0.07, k * 0.035); }
+    else if (kind === 'flag') tone(700, 980, 0.08, 'square', 0.05);
+    else if (kind === 'unflag') tone(800, 520, 0.08, 'square', 0.04);
+    else if (kind === 'bawk') { tone(900, 500, 0.12, 'sawtooth', 0.09); tone(1000, 420, 0.22, 'sawtooth', 0.08, 0.13); }
+    else if (kind === 'win') { [523, 659, 784, 1047].forEach((f, k) => tone(f, f * 1.01, 0.16, 'triangle', 0.1, k * 0.1)); }
+  } catch (e) { /* no audio, no problem */ }
+}
+
+// ---------------------------------------------------------------- update
+function update(dt) {
+  uiT += dt; clock += dt;
+  const g = G;
+  if (g.state === 'play' && !g.paused) g.t = Math.min(5999, g.t + dt);
+  if (g.shake > 0) g.shake = Math.max(0, g.shake - dt);
+  for (const p of g.parts) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; p.vx *= 0.985; p.rot += p.vr * dt; }
+  g.parts = g.parts.filter(p => p.t < p.life);
+  for (const f of g.floats) { f.t += dt; f.y -= 9 * dt; }
+  g.floats = g.floats.filter(f => f.t < f.life);
+}
+
+// ---------------------------------------------------------------- layout helpers
+const cellCenter = i => [BX + (i % COLS) * CELL + CELL / 2, BY + ((i / COLS) | 0) * CELL + CELL / 2];
+function cellAt(lx, ly) {
+  const c = Math.floor((lx - BX) / CELL), r = Math.floor((ly - BY) / CELL);
+  return inB(c, r) ? idx(c, r) : -1;
+}
+const BTN = {
+  restart: { x: 64, y: 11, r: 9 },
+  sound: { x: 8, y: 143, r: 5.5 },
+  dig: { x: 36, y: 136, w: 28, h: 14 },
+  flag: { x: 64, y: 136, w: 28, h: 14 },
+};
+const inCircle = (b, x, y) => Math.hypot(x - b.x, y - b.y) <= b.r + 1.5;
+const inRect = (b, x, y) => x >= b.x - 1 && x <= b.x + b.w + 1 && y >= b.y - 1.5 && y <= b.y + b.h + 1.5;
+
+// ---------------------------------------------------------------- render
+function render() {
+  const g = G;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(bg, 0, 0);
+  ctx.setTransform(SC, 0, 0, SC, OX, OY);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if (SHOT && CW / CH > 1.4) drawCardExtras();
+  const sh = g.shake > 0 ? g.shake * 2.2 : 0;
+  ctx.save(); ctx.translate(rnd(-sh, sh), rnd(-sh, sh));
+  drawBoard(g);
+  ctx.restore();
+  drawHUD(g);
+  // particles and floating words over everything on the stage
+  for (const p of g.parts) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = Math.min(1, (1 - p.t / p.life) * 2);
+    ctx.fillStyle = p.col; ctx.fillRect(-p.s / 2, -p.s * 0.35, p.s, p.s * 0.7);
+    ctx.lineWidth = 0.2; ctx.strokeStyle = INK; ctx.strokeRect(-p.s / 2, -p.s * 0.35, p.s, p.s * 0.7);
+    ctx.restore();
+  }
+  for (const f of g.floats) {
+    ctx.globalAlpha = Math.min(1, (1 - f.t / f.life) * 2.5);
+    const k = 1 + Math.max(0, 0.15 - f.t) * 4;
+    ctx.save(); ctx.translate(f.x, f.y); ctx.scale(k, k); ctx.rotate(-0.08);
+    txt(f.text, 0, 0, f.size, f.col, 'center', '#ffffff', f.size * 0.5); txt(f.text, 0, 0, f.size, f.col, 'center', INK, f.size * 0.18);
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  if (!SHOT) {
+    if (g.state === 'ready') drawIntro();
+    if (g.paused) drawPaused();
+    if ((g.state === 'won' || g.state === 'lost') && clock - g.endAt > 0.9) drawEnd(g);
+  }
+}
+
+function drawBoard(g) {
+  const grass = [grassTile(0), grassTile(1)], dug = [dugTile(0), dugTile(1)];
+  // ground layer
+  for (let i = 0; i < g.cells.length; i++) {
+    const c = g.cells[i], [x, y] = cellCenter(i), shade = ((i % COLS) + ((i / COLS) | 0)) % 2;
+    const p = c.open ? clamp((clock - c.flipAt) / FLIP, 0, 1) : 0;
+    if (c.open && p >= 0.5) {
+      const sx = (p - 0.5) * 2;
+      ctx.drawImage(dug[shade].cv, x - dug[shade].w / 2 * sx, y - dug[shade].h / 2, dug[shade].w * sx, dug[shade].h);
+      if (i === g.boom) { ctx.fillStyle = 'rgba(240,60,30,0.55)'; rp(ctx, x - 6, y - 6, 12, 12, 1.6); ctx.fill(); }
+      if (c.n && !c.hen) put(numberSticker(c.n), x, y, 1, sx);
+    } else if (!(g.state === 'lost' && c.hen && c.popAt >= 0 && clock >= c.popAt && !c.flag)) {
+      // grass (flipping away, or still covered); a lifted fold while flipping
+      const sx = c.open ? 1 - p * 2 : 1, lift = c.open ? Math.sin(p * Math.PI) * 1.2 : 0;
+      put(grass[shade], x, y - lift, 1 + lift * 0.04, sx);
+    } else {
+      ctx.drawImage(dug[shade].cv, x - dug[shade].w / 2, y - dug[shade].h / 2, dug[shade].w, dug[shade].h);
+      if (i === g.boom) { ctx.fillStyle = 'rgba(240,60,30,0.55)'; rp(ctx, x - 6, y - 6, 12, 12, 1.6); ctx.fill(); }
+    }
+  }
+  // keyboard cursor
+  if (g.kb && g.state !== 'won' && g.state !== 'lost') {
+    const x = BX + g.cur.c * CELL, y = BY + g.cur.r * CELL, a = 0.6 + 0.4 * Math.sin(uiT * 6);
+    rp(ctx, x + 0.3, y + 0.3, CELL - 0.6, CELL - 0.6, 2.2); ctx.lineWidth = 1.1; ctx.strokeStyle = `rgba(248,208,48,${a})`; ctx.stroke();
+    rp(ctx, x - 0.3, y - 0.3, CELL + 0.6, CELL + 0.6, 2.6); ctx.lineWidth = 0.35; ctx.strokeStyle = INK; ctx.stroke();
+  }
+  // standing layer: flags and hens, back to front
+  for (let i = 0; i < g.cells.length; i++) {
+    const c = g.cells[i], [x, y] = cellCenter(i);
+    const showHen = c.hen && c.popAt >= 0 && clock >= c.popAt;
+    if (c.flag && !(showHen && g.state === 'won')) {
+      const a = clamp((clock - c.flagAt) / 0.22, 0, 1), pop = a < 1 ? Math.sin(a * Math.PI) * 0.35 + a : 1;
+      put(flagSticker(), x + 0.4, y - 0.6, pop * 1.05, 1, Math.sin(uiT * 3 + i) * 0.04);
+      if (c.wrong && g.state === 'lost') {
+        ctx.lineWidth = 1.4; ctx.strokeStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y + 4); ctx.moveTo(x + 4, y - 4); ctx.lineTo(x - 4, y + 4); ctx.stroke();
+        ctx.lineWidth = 0.8; ctx.strokeStyle = '#e02810'; ctx.stroke();
+      }
+    }
+    if (showHen) {
+      const a = clamp((clock - c.popAt) / 0.3, 0, 1), k = a < 1 ? 0.3 + Math.sin(a * Math.PI * 0.5) * 0.95 : 1 + Math.sin((clock - c.popAt) * 5) * 0.03;
+      const happy = g.state === 'won';
+      put(henSticker(c.henIdx, 15), x, y - 2 - (happy ? Math.abs(Math.sin(uiT * 6 + i)) * 1.2 : 0), k * (i === g.boom ? 1.18 : 1), 1, happy ? 0 : (i === g.boom ? Math.sin(uiT * 30) * 0.05 : 0));
+    }
+  }
+}
+
+function hudHen(x, y, size) { put(henSticker(0, size), x, y); }
+function clockIcon(x, y, r) {
+  E(ctx, x, y, r, r, '#ffffff'); ctx.lineWidth = 0.6; ctx.strokeStyle = INK;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - r * 0.62); ctx.moveTo(x, y); ctx.lineTo(x + r * 0.5, y + 0.2); ctx.stroke();
+}
+function drawHUD(g) {
+  // hens left to flag
+  paper(3, 3, 36, 16, 5);
+  hudHen(11, 11, 11);
+  txt(String(HENS - g.flags).padStart(2, '0'), 35, 11.6, 9, g.flags > HENS ? '#e02810' : '#3870c0', 'right', null);
+  // restart button: a hen in a paper medallion
+  const b = BTN.restart, bob = g.state === 'won' ? Math.abs(Math.sin(uiT * 6)) * 1.2 : 0;
+  ctx.fillStyle = 'rgba(70,35,20,0.28)'; ctx.beginPath(); ctx.arc(b.x + 0.8, b.y + 1.1, b.r, 0, 7); ctx.fill();
+  E(ctx, b.x, b.y, b.r, b.r, g.state === 'lost' ? '#ffd6cc' : '#fff1c9'); ctx.lineWidth = 0.7; ctx.stroke();
+  put(henSticker(g.state === 'lost' ? 1 : 0, 12), b.x, b.y - bob, 1, 1, g.state === 'lost' ? Math.sin(uiT * 20) * 0.08 : 0);
+  // timer
+  paper(89, 3, 36, 16, 5);
+  clockIcon(96.5, 11, 3.6);
+  txt(mmss(g.t), 121, 11.6, 8, INK, 'right', null);
+  // DIG / FLAG toggle
+  paper(BTN.dig.x - 1, BTN.dig.y - 1, 58, 16, 8);
+  for (const k of ['dig', 'flag']) {
+    const r = BTN[k], on = mode === k;
+    rp(ctx, r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1, 6.5); ctx.fillStyle = on ? '#f8d030' : '#fffdf4'; ctx.fill();
+    if (on) stroke(ctx, 0.5);
+    if (k === 'dig') { // little trowel
+      ctx.save(); ctx.translate(r.x + 7, r.y + 7.2); ctx.rotate(0.6);
+      PL(ctx, [-1.6, -4.2, 1.6, -4.2, 1.2, -0.6, 0, 0.4, -1.2, -0.6], '#c9d3dc'); ctx.fillStyle = '#8a5a34'; ctx.fillRect(-0.5, 0.4, 1, 3.6); ctx.restore();
+    } else put(flagSticker(), r.x + 7, r.y + 7, 0.75);
+    txt(k.toUpperCase(), r.x + 18.5, r.y + 7.4, 5.2, on ? INK : '#8a7a6a', 'center', null);
+  }
+  // sound toggle (off by default)
+  const s = BTN.sound;
+  E(ctx, s.x, s.y, s.r, s.r, '#fffdf4'); ctx.lineWidth = 0.6; ctx.stroke();
+  PL(ctx, [s.x - 2.6, s.y - 1, s.x - 1.2, s.y - 1, s.x + 0.6, s.y - 2.6, s.x + 0.6, s.y + 2.6, s.x - 1.2, s.y + 1, s.x - 2.6, s.y + 1], INK, true);
+  ctx.lineWidth = 0.6; ctx.strokeStyle = sound ? INK : '#e02810'; ctx.beginPath();
+  if (sound) { ctx.arc(s.x + 1, s.y, 1.6, -0.9, 0.9); ctx.moveTo(s.x + 2.3, s.y - 2.2); ctx.arc(s.x + 1, s.y, 2.7, -0.9, 0.9); }
+  else { ctx.moveTo(s.x + 1.6, s.y - 1.4); ctx.lineTo(s.x + 3.6, s.y + 1.4); ctx.moveTo(s.x + 3.6, s.y - 1.4); ctx.lineTo(s.x + 1.6, s.y + 1.4); }
+  ctx.stroke();
+}
+
+// Word of paper letter tiles (shared look with Lunch Rush's title).
+function word(s, cx, y, cols, sz) {
+  const w = sz * 1.08, x0 = cx - (s.length - 1) * w / 2;
+  for (let i = 0; i < s.length; i++) {
+    const x = x0 + i * w, b = SHOT ? 0 : Math.sin(uiT * 3 + i * 0.7) * 1, rot = (i % 2 ? 0.08 : -0.07);
+    ctx.save(); ctx.translate(x, y + b); ctx.rotate(rot);
+    ctx.fillStyle = 'rgba(60,30,20,0.3)'; rp(ctx, -sz / 2 + 0.9, -sz / 2 + 1.2, sz, sz, 2); ctx.fill();
+    rp(ctx, -sz / 2, -sz / 2, sz, sz, 2); ctx.fillStyle = '#ffffff'; ctx.fill(); stroke(ctx);
+    rp(ctx, -sz / 2 + 1, -sz / 2 + 1, sz - 2, sz - 2, 1.5); ctx.fillStyle = cols[i % cols.length]; ctx.fill();
+    txt(s[i], 0, 0.6, sz * 0.78, '#fff', 'center', INK, sz * 0.16);
+    ctx.restore();
+  }
+}
+function drawIntro() {
+  const a = 0.86;
+  ctx.globalAlpha = a;
+  paper(18, 54, 92, 50, 5);
+  ctx.globalAlpha = 1;
+  word('COOP', 64, 66, ['#e02810', '#f8a020', '#58c848', '#3870c0'], 11);
+  word('SWEEP', 64, 80, ['#3870c0', '#f8d030', '#e02810', '#58c848', '#f088c0'], 11);
+  txt('Tap a patch to start digging.', 64, 92.5, 4.6, INK, 'center', null);
+  txt('Numbers count the hens hiding nearby.', 64, 98.5, 4.2, '#e02810', 'center', null);
+}
+function drawPaused() {
+  ctx.fillStyle = 'rgba(255,250,236,0.92)'; rp(ctx, BX - 2, BY - 2, COLS * CELL + 4, ROWS * CELL + 4, 3); ctx.fill();
+  paper(30, 66, 68, 24, 5);
+  txt('PAUSED', 64, 74, 8, '#3870c0', 'center', INK, 2);
+  if (Math.sin(uiT * 5) > -0.3) txt('tap to keep sweeping', 64, 84, 4.6, INK, 'center', null);
+}
+function drawEnd(g) {
+  const won = g.state === 'won', a = clamp((clock - g.endAt - 0.9) / 0.3, 0, 1);
+  ctx.save(); ctx.translate(64, 116 + (1 - a) * 20); ctx.globalAlpha = a;
+  paper(-44, -13, 88, 27, 5, won ? '#fffdf4' : '#fff6f2');
+  txt(won ? 'PASTURE CLEAR!' : 'BAWK! A HEN BOLTED', 0, -7, won ? 7.6 : 6.4, won ? '#58c848' : '#e02810', 'center', INK, 2);
+  txt(won ? `Time ${mmss(g.t)}` + (g.newBest ? '  NEW BEST!' : best ? `  Best ${mmss(best)}` : '') : (best ? `Best ${mmss(best)}` : 'Flag the hens, dig the rest'), 0, 1.5, 4.8, INK, 'center', null);
+  if (Math.sin(uiT * 5) > -0.3) txt('TAP TO PLAY AGAIN', 0, 8.5, 5, '#3870c0', 'center', null);
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+// Extra art for the wide 1200x630 card image only.
+function drawCardExtras() {
+  const left = -OX / SC, right = (CW - OX) / SC;
+  const lx = left + (0 - left) / 2, rx = LW + (right - LW) / 2;
+  word('COOP', lx, 50, ['#e02810', '#f8a020', '#58c848', '#3870c0'], 15);
+  word('SWEEP', lx, 70, ['#3870c0', '#f8d030', '#e02810', '#58c848', '#f088c0'], 15);
+  ctx.save(); ctx.translate(lx, 92); paper(-34, -7, 68, 14, 7, '#f8d030'); txt('TAP TO PLAY', 0, 0.4, 7, '#fff', 'center', INK, 2); ctx.restore();
+  put(henSticker(4, 44), rx - 8, 64, 1, -1);
+  put(henSticker(2, 34), rx + 18, 98, 1, -1);
+  put(flagSticker(), rx - 26, 104, 2.2, 1, -0.1);
+}
+
+// ---------------------------------------------------------------- input
+function act(i, how) {
+  if (i < 0) return;
+  G.cur = { c: i % COLS, r: (i / COLS) | 0 };
+  if (how === 'flag') toggleFlag(i); else reveal(i);
+}
+function onTap(lx, ly) {
+  const g = G;
+  if (g.paused) { g.paused = false; return; }
+  if (inCircle(BTN.sound, lx, ly)) { sound = !sound; store.set('coop-sweep-sound', sound ? 'on' : 'off'); sfx('flag'); return; }
+  if (inCircle(BTN.restart, lx, ly)) { restart(); return; }
+  if (inRect(BTN.dig, lx, ly)) { mode = 'dig'; return; }
+  if (inRect(BTN.flag, lx, ly)) { mode = 'flag'; return; }
+  if (g.state === 'won' || g.state === 'lost') { if (clock - g.endAt > 0.8) restart(); return; }
+  act(cellAt(lx, ly), mode);
+}
+const toLogical = e => {
+  const r = cv.getBoundingClientRect();
+  const px = (e.clientX - r.left) * (cv.width / r.width), py = (e.clientY - r.top) * (cv.height / r.height);
+  return [(px - OX) / SC, (py - OY) / SC];
+};
+let press = null;
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  try { cv.focus({ preventScroll: true }); } catch (err) { /* old browsers */ }
+  G.kb = false;
+  const [lx, ly] = toLogical(e);
+  if (e.button === 2) { const i = cellAt(lx, ly); if (i >= 0 && !G.paused) act(i, 'flag'); press = null; return; }
+  const i = cellAt(lx, ly);
+  press = { id: e.pointerId, x: e.clientX, y: e.clientY, lx, ly, fired: false, timer: null };
+  // long-press on a patch flags it (when digging) or digs it (when flagging)
+  if (i >= 0 && !G.paused && G.state !== 'won' && G.state !== 'lost') {
+    const p = press;
+    p.timer = setTimeout(() => {
+      if (press !== p) return;
+      p.fired = true;
+      act(i, mode === 'dig' ? 'flag' : 'dig');
+      try { if (navigator.vibrate) navigator.vibrate(15); } catch (err) { /* not allowed */ }
+    }, LONG_PRESS);
+  }
+});
+cv.addEventListener('pointermove', e => {
+  if (press && press.id === e.pointerId && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 12) { clearTimeout(press.timer); press.moved = true; }
+});
+const endPress = (e, cancel) => {
+  if (!press || press.id !== e.pointerId) return;
+  clearTimeout(press.timer);
+  const p = press; press = null;
+  if (!cancel && !p.fired && !p.moved) onTap(p.lx, p.ly);
+};
+cv.addEventListener('pointerup', e => endPress(e, false));
+cv.addEventListener('pointercancel', e => endPress(e, true));
+cv.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('keydown', e => {
+  if (e.target && /^(INPUT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return; // e.g. the sign-in panel
+  const g = G, k = e.key;
+  const move = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] }[k];
+  if (move) { g.kb = true; g.cur = { c: clamp(g.cur.c + move[0], 0, COLS - 1), r: clamp(g.cur.r + move[1], 0, ROWS - 1) }; e.preventDefault(); return; }
+  if (g.paused && (k === ' ' || k === 'Enter')) { g.paused = false; e.preventDefault(); return; }
+  if (k === ' ' || k === 'Enter') {
+    e.preventDefault();
+    if (g.state === 'won' || g.state === 'lost') { if (clock - g.endAt > 0.8) restart(); return; }
+    g.kb = true; act(idx(g.cur.c, g.cur.r), 'dig');
+  } else if (k === 'f' || k === 'F' || k === 'x' || k === 'X') { g.kb = true; act(idx(g.cur.c, g.cur.r), 'flag'); }
+  else if (k === 'r' || k === 'R') restart();
+  else if (k === 'm' || k === 'M') { sound = !sound; store.set('coop-sweep-sound', sound ? 'on' : 'off'); }
+});
+window.addEventListener('resize', resize);
+// Pause on tab hide: the clock stops, the board is covered, a tap resumes.
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') G.paused = true; });
+window.addEventListener('blur', () => { if (G.state === 'play' && document.hidden) G.paused = true; });
+
+// ---------------------------------------------------------------- boot
+G = newGame();
+if (SHOT) {
+  // staged board for the card image: a dug-out middle, two flags, one hen up
+  const r = seeded(42);
+  placeHens(G, idx(3, 4), r);
+  G.state = 'play'; G.t = 37;
+  reveal(idx(3, 4));
+  G.cells.forEach(c => { c.flipAt = -9; });
+  let flagged = 0;
+  G.cells.forEach((c, i) => { if (c.hen && flagged < 2 && around(i).some(j => G.cells[j].open)) { c.flag = true; c.flagAt = -9; G.flags++; flagged++; } });
+  const h = G.cells.findIndex(c => c.hen && !c.flag);
+  if (h >= 0) { G.cells[h].popAt = 0; G.cells[h].henIdx = 3; }
+  G.paused = true; // freeze the clock at 0:37 (the paused overlay is never drawn in shot mode)
+}
+resize();
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+  last = now;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Test hooks: lets an automated check drive the real game without a screen.
+window.__CS = {
+  get G() { return G; }, get mode() { return mode; }, get sound() { return sound; }, get best() { return best; },
+  COLS, ROWS, HENS, idx, tap: onTap, reveal: i => act(i, 'dig'), flag: i => act(i, 'flag'), restart,
+  cellCenter, step(sec, dt = 1 / 60) { for (let t = 0; t < sec; t += dt) update(dt); render(); },
+  screen(lx, ly) { const r = cv.getBoundingClientRect(); return [(OX + lx * SC) * r.width / cv.width + r.left, (OY + ly * SC) * r.height / cv.height + r.top]; },
+  henImagesLoaded: () => HENIMG.filter(Boolean).length,
+};
+})();
+</script>
+</body>
+</html>

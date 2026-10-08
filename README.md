@@ -14,6 +14,10 @@ games/                  everything here is served statically from /opt/games
   lunch-rush/
     index.html          the whole game in one file; loads ../shared/auth.js (optional)
     previ.png           1200×630 card image X shows before the player loads
+  coop-sweep/           Coop Sweep: paper-craft minesweeper with hidden hens
+    index.html          the whole game in one file; loads hens/manifest.js and ../shared/auth.js
+    previ.png           1200×630 card image, rendered from the game (?shot)
+    hens/               THE ONLY hen art folder (swappable): PNGs, manifest.js, SOURCES.md
   shared/auth.js        shared accounts client: sign-in chip, play recording
   account/index.html    account page/popup: password, wallet (SIWE), link, reset
 server/                 accounts + login + play tracking API (Node 22, Fastify, SQLite)
@@ -37,6 +41,19 @@ deploy/
 
 The docs came from Aeterna, so where they say `web/<game>/`, read
 `games/<game>/` in this repo.
+
+## Games
+
+| Game | Path | Plays | Score recorded |
+|---|---|---|---|
+| Lunch Rush | `/lunch-rush/` | tower-defence lunch line, 3 misses and out | seconds survived (higher is better) |
+| Coop Sweep | `/coop-sweep/` | minesweeper, 8×8 with 10 hidden hens. Tap digs; long-press, right-click or the FLAG toggle flags; arrows/Space/F/R on keyboard. First dig is always safe | seconds to clear, on win and loss (lower is better, only wins count as best) |
+
+**Coop Sweep's hen art is not cleared for public use.** It comes from the Hens
+NFT collection (hens.farm, Robinhood Chain). No license or terms for the art
+were found. See `games/coop-sweep/hens/SOURCES.md`. Get permission from
+hens.farm before posting it, or replace the PNGs in that folder: the game also
+runs with its own drawn hens if the folder is empty.
 
 ## Play / test locally
 
@@ -131,6 +148,9 @@ npm test             # 22 unit tests: sessions, login, SIWE (replay, domain, exp
 npm run e2e          # boots the real server, signs up, records and fetches plays, SIWE
 npm run browser      # real Chrome: Lunch Rush in a cross-site 480x480 iframe (needs
                      # CHROME_PATH, default /usr/bin/google-chrome)
+npm run browser:coop-sweep   # real Chrome: Coop Sweep at 480x480 in an iframe, phone @3x touch,
+                             # no-API and no-art fallbacks; checks runs land in the DB
+npm run preview:coop-sweep   # re-render games/coop-sweep/previ.png from the game
 ```
 
 ### Settings and credentials

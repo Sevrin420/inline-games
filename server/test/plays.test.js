@@ -175,3 +175,25 @@ test('bad input on end is rejected; API responses are not cacheable', async () =
   assert.equal((await c.post(`/plays/${s.json.play_id}/end`, { meta: { x: 'y'.repeat(3000) } })).json.error, 'bad_meta');
   assert.equal(s.res.headers['cache-control'], 'no-store');
 });
+
+test('best respects scoreOrder and bestOutcome (time-to-clear games)', async () => {
+  const { app } = await makeApp({ games: [{ id: 'sweep', title: 'Sweep', access: 'open', scoreOrder: 'asc', bestOutcome: 'win' }, { id: 'lunch-rush', title: 'LR', access: 'open' }] });
+  const c = client(app);
+  for (const [outcome, score] of [['loss', 5], ['win', 80], ['win', 42], ['loss', 3]]) {
+    const s = await c.post('/plays/start', { game_id: 'sweep' });
+    await c.post(`/plays/${s.json.play_id}/end`, { outcome, score });
+  }
+  const m = (await c.get('/plays/mine?game_id=sweep')).json;
+  assert.equal(m.stats.plays, 4);
+  assert.equal(m.stats.best, 42, 'fastest win, losses ignored');
+  const s = await c.post('/plays/start', { game_id: 'lunch-rush' });
+  await c.post(`/plays/${s.json.play_id}/end`, { score: 9 });
+  assert.equal((await c.get('/plays/mine?game_id=lunch-rush')).json.stats.best, 9);
+});
+
+test('the shipped registry loads and has Coop Sweep as open', async () => {
+  const { loadGames } = await import('../src/games.js');
+  const g = loadGames(new URL('../games.json', import.meta.url).pathname);
+  assert.deepEqual(g.get('coop-sweep'), { id: 'coop-sweep', title: 'Coop Sweep', access: 'open', scoreTrusted: false, scoreOrder: 'asc', bestOutcome: 'win' });
+  assert.equal(g.get('lunch-rush').scoreOrder, 'desc');
+});
