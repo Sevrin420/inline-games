@@ -126,33 +126,11 @@ because X caches cards for days.
 Rules (details in `docs/Games_and_Login.md`):
 - Fits 480×480, works on phones.
 - Self-contained: no third-party scripts, fonts or API calls. Same-origin `../shared/auth.js` and the `/auth`, `/plays` API are fine because they're optional and the game must keep working without them.
-- The server must not send `X-Frame-Options`, and any CSP `frame-ancestors` must allow X (see below).
+- The server must not send `X-Frame-Options` or a narrow CSP `frame-ancestors`.
 - X caches cards. To force a new image, rename the image file.
 - A post with attached media doesn't show the player card, so post the link as
   a reply or post the card on its own.
 - Check a card with X's card validator or by posting from a test account.
-
-### Tweetcraft-style card (Coop Sweep)
-
-The X cards that do play inline (Tweetcraft, levelsio's Quake) post one page
-and point `twitter:player` at a *separate* game page. Coop Sweep has that shape
-too, alongside the original page (which is unchanged):
-
-- **Post this:** `https://membersonly.cc/coop-sweep/x/?v=N` (bump `N` so X
-  re-reads it). `games/coop-sweep/x/index.html` has only the card tags, a
-  square 1080×1080 `previ-square.jpg` (`node server/test/coop-sweep-preview-square.mjs`),
-  and sends people who open it to `/coop-sweep/`.
-- **Player:** `/coop-sweep/play/` is the same game file, generated at deploy
-  time by `tools/build-play-pages.mjs` (gitignored; edit `games/coop-sweep/index.html`).
-  It adds `<base href="/coop-sweep/">` and a "Play in new tab" link that only
-  shows inside a frame.
-- **Headers (Caddy, exactly like tweetcraft.jai.vin):** `/coop-sweep/x/*` and
-  `/coop-sweep/play/*` get `Cache-Control: no-store` and
-  `Content-Security-Policy: frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com`.
-  That CSP is deliberate here and only on these two paths.
-- Test: `cd server && npm run browser:play-page` (Node 22 + Chrome).
-- Undo: restore the Caddyfile backup and reload; delete `games/coop-sweep/x/`,
-  `previ-square.jpg` and the build step, then run Deploy games.
 
 New game: copy `games/lunch-rush/` to `games/<name>/`, change the title,
 description, URLs and image, and keep it to one file.

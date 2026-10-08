@@ -65,11 +65,6 @@ jobs:
       - name: Make sure /opt/games exists
         run: ssh vps 'mkdir -p /opt/games'
 
-      # games/<game>/play/ (the X card's player page) is generated from
-      # games/<game>/index.html, not committed. See tools/build-play-pages.mjs.
-      - name: Build play pages
-        run: node tools/build-play-pages.mjs
-
       # --delete keeps /opt/games an exact mirror of games/ (a removed game
       # disappears from the server). It only ever acts inside /opt/games.
       # --chmod makes files world-readable so Caddy (user "caddy") can serve them.
