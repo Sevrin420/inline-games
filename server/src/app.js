@@ -12,6 +12,7 @@ import { createSessions, SESSION_DAYS } from './sessions.js';
 import { createSiwe, SiweError } from './siwe.js';
 import { createGate } from './nft.js';
 import { createLimiter } from './ratelimit.js';
+import { registerLeaderboard } from './leaderboard.js';
 
 export const SESSION_COOKIE = 'mo_session';
 export const ANON_COOKIE = 'mo_anon';
@@ -51,6 +52,7 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     insertAnon: db.prepare('INSERT INTO anon_players (anon_id, created_at) VALUES (?, ?)'),
     claimAnon: db.prepare('UPDATE anon_players SET claimed_by_account_id = ? WHERE anon_id = ? AND (claimed_by_account_id IS NULL OR claimed_by_account_id = ?)'),
     reattribute: db.prepare("UPDATE play_events SET account_id = ?, player_key = ? WHERE player_key = ?"),
+    reattributeBoard: db.prepare("UPDATE leaderboard_entries SET account_id = ?, player_key = ? WHERE player_key = ?"),
     insertPlay: db.prepare('INSERT INTO play_events (game_id, player_key, account_id, started_at, access_level) VALUES (?, ?, ?, ?, ?)'),
     play: db.prepare('SELECT * FROM play_events WHERE id = ?'),
     endPlay: db.prepare('UPDATE play_events SET ended_at = ?, outcome = ?, score = ?, meta = ? WHERE id = ? AND ended_at IS NULL'),
@@ -103,6 +105,7 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
       if (row.claimed_by_account_id !== null && row.claimed_by_account_id !== accountId) return false;
       q.claimAnon.run(accountId, anonId, accountId);
       q.reattribute.run(accountId, `account:${accountId}`, `anon:${anonId}`);
+      q.reattributeBoard.run(accountId, `account:${accountId}`, `anon:${anonId}`);
       return true;
     });
     // Either way this anon id is spent for this browser: a later guest play
@@ -389,6 +392,9 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     const s = q[`stats_${byAcct ? 'account_id' : 'player_key'}_${fn}`].get(only, only, k, gameId, gameId);
     return { player: byAcct ? 'account' : 'anon', stats: { plays: s.plays, completed: s.completed, best: s.best }, plays };
   });
+
+  // ---- leaderboards (src/leaderboard.js)
+  registerLeaderboard(app, { db, games, cfg, now, iso, fail, limited, playerOf });
 
   // ---- housekeeping: close plays left open too long (no outcome = not completed)
   function sweep() {

@@ -21,6 +21,8 @@
  *   startPlay(gameId)           -> Promise<play_id | null>
  *   endPlay(playId, { outcome, score, meta })
  *   mine(gameId)                -> { stats, plays } | null
+ *   leaderboard(gameId, playId) -> { status, json } board (+ candidate for playId), see /plays/leaderboard
+ *   postLeaderboard(gameId, playId, name) -> { status, json }
  *   mountBadge({ gameId, formatScore, corner })  small sign-in chip + panel
  */
 (function () {
@@ -129,6 +131,15 @@
   };
   A.mine = function (gameId) {
     return api('GET', '/plays/mine' + (gameId ? '?game_id=' + encodeURIComponent(gameId) : '')).then(function (r) { return r.status === 200 ? r.json : null; });
+  };
+
+  // Leaderboards (games/shared/leaderboard.js draws the panel). Raw {status, json}
+  // so the panel can show the server's message; status 0 = unreachable.
+  A.leaderboard = function (gameId, playId) {
+    return api('GET', '/plays/leaderboard/' + encodeURIComponent(gameId) + (playId ? '?play_id=' + encodeURIComponent(playId) : ''));
+  };
+  A.postLeaderboard = function (gameId, playId, name) {
+    return api('POST', '/plays/leaderboard/' + encodeURIComponent(gameId), { play_id: playId, name: name });
   };
 
   // Account popup. In an embedded frame the popup signs in first-party, then

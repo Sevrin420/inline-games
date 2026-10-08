@@ -57,6 +57,24 @@ CREATE TABLE IF NOT EXISTS play_events (
 );
 CREATE INDEX IF NOT EXISTS play_events_account ON play_events(account_id, started_at);
 CREATE INDEX IF NOT EXISTS play_events_player  ON play_events(player_key, started_at);
+
+-- addition: leaderboards. One entry per winning play, at most once per play.
+-- value is what the board ranks by (for coop-sweep: the server-measured play
+-- duration in ms). Admin removal is a soft delete (removed_at), so a removed
+-- play can't simply be posted again.
+CREATE TABLE IF NOT EXISTS leaderboard_entries (
+  id          INTEGER PRIMARY KEY,
+  game_id     TEXT NOT NULL,
+  play_id     INTEGER NOT NULL UNIQUE REFERENCES play_events(id),
+  player_key  TEXT NOT NULL,
+  account_id  INTEGER REFERENCES accounts(id),
+  name        TEXT NOT NULL,
+  value       INTEGER NOT NULL,
+  created_at  TEXT NOT NULL,
+  removed_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS leaderboard_rank   ON leaderboard_entries(game_id, value, id);
+CREATE INDEX IF NOT EXISTS leaderboard_player ON leaderboard_entries(player_key);
 `;
 
 export function openDb(dbPath) {

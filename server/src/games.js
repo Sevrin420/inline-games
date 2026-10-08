@@ -17,7 +17,33 @@ export function loadGames(file) {
     if (scoreOrder !== 'asc' && scoreOrder !== 'desc') throw new Error(`Game ${g.id}: scoreOrder must be asc or desc`);
     const bestOutcome = g.bestOutcome === undefined ? null : g.bestOutcome;
     if (bestOutcome !== null && (typeof bestOutcome !== 'string' || !/^[a-z_-]{1,32}$/.test(bestOutcome))) throw new Error(`Game ${g.id}: bad bestOutcome`);
-    map.set(g.id, { id: g.id, title: String(g.title || g.id), access: g.access, scoreTrusted: g.scoreTrusted === true, scoreOrder, bestOutcome });
+    map.set(g.id, { id: g.id, title: String(g.title || g.id), access: g.access, scoreTrusted: g.scoreTrusted === true, scoreOrder, bestOutcome,
+      leaderboard: leaderboardConfig(g) });
   }
   return map;
+}
+
+// Optional per-game leaderboard. Absent = no leaderboard for that game.
+//   metric           'duration': server-measured play time in ms (start -> end); can't be set by the client
+//                    'score':    the client-reported score (unverified; only for games that accept that)
+//   order            'asc' (smaller is better, e.g. a time) or 'desc'
+//   outcome          only finished plays with this outcome can be posted (e.g. 'win')
+//   minMs            duration floor: faster "wins" are refused as implausible (duration metric only)
+//   postWindowHours  how long after a play ends it can still be posted
+function leaderboardConfig(g) {
+  const lb = g.leaderboard;
+  if (lb === undefined || lb === null || lb === false) return null;
+  const bad = m => { throw new Error(`Game ${g.id}: leaderboard ${m}`); };
+  if (typeof lb !== 'object') bad('must be an object');
+  const metric = lb.metric || 'duration';
+  if (metric !== 'duration' && metric !== 'score') bad('metric must be duration or score');
+  const order = lb.order || (metric === 'duration' ? 'asc' : 'desc');
+  if (order !== 'asc' && order !== 'desc') bad('order must be asc or desc');
+  const outcome = lb.outcome === undefined ? null : lb.outcome;
+  if (outcome !== null && (typeof outcome !== 'string' || !/^[a-z_-]{1,32}$/.test(outcome))) bad('bad outcome');
+  const minMs = lb.minMs === undefined ? 0 : lb.minMs;
+  if (!Number.isInteger(minMs) || minMs < 0) bad('minMs must be a non-negative integer');
+  const postWindowHours = lb.postWindowHours === undefined ? 24 : lb.postWindowHours;
+  if (typeof postWindowHours !== 'number' || !(postWindowHours > 0)) bad('postWindowHours must be > 0');
+  return { metric, order, outcome, minMs, postWindowHours };
 }
