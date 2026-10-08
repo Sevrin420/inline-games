@@ -19,10 +19,11 @@ games/                  everything here is served statically from /opt/games
     previ.png           1200×630 card image, rendered from the game (?shot)
     hens/               THE ONLY hen art folder (swappable): PNGs, manifest.js, SOURCES.md
   shared/auth.js        shared accounts client: sign-in chip, play recording
+  shared/leaderboard.js shared paper-craft leaderboard panel (post a name after a win, view top 10)
   account/index.html    account page/popup: password, wallet (SIWE), link, reset
 server/                 accounts + login + play tracking API (Node 22, Fastify, SQLite)
-  src/                  app.js (routes), sessions, siwe, nft gate, db schema, config
-  games.json            game registry: id, title, access level, scoreTrusted
+  src/                  app.js (routes), leaderboard.js, names.js, sessions, siwe, nft gate, db schema, config
+  games.json            game registry: id, title, access level, scoreTrusted, leaderboard
   test/                 unit tests, local end-to-end check, browser X-card check
   .env.example          every setting, production values (nothing secret)
 docs/
@@ -37,6 +38,7 @@ deploy/
   deploy-api.yml        MANUAL: test, then ship server/ as the inline-games-api service
   test-api.yml          on PRs: server tests + local e2e on GitHub runners (no VPS)
   vps-check.yml         MANUAL: pick a fixed read-only check to run on the VPS
+  leaderboard-admin.yml MANUAL: list leaderboard entries, or remove one (bad name)
 ```
 
 The docs came from Aeterna, so where they say `web/<game>/`, read
@@ -49,11 +51,53 @@ The docs came from Aeterna, so where they say `web/<game>/`, read
 | Lunch Rush | `/lunch-rush/` | tower-defence lunch line, 3 misses and out | seconds survived (higher is better) |
 | Coop Sweep | `/coop-sweep/` | minesweeper, 8×8 with 10 hidden hens. Tap digs; long-press, right-click or the FLAG toggle flags; arrows/Space/F/R on keyboard. First dig is always safe | seconds to clear, on win and loss (lower is better, only wins count as best) |
 
-**Coop Sweep's hen art is not cleared for public use.** It comes from the Hens
-NFT collection (hens.farm, Robinhood Chain). No license or terms for the art
-were found. See `games/coop-sweep/hens/SOURCES.md`. Get permission from
-hens.farm before posting it, or replace the PNGs in that folder: the game also
-runs with its own drawn hens if the folder is empty.
+Coop Sweep's hen art comes from the Hens NFT collection (hens.farm, Robinhood
+Chain); the owner confirmed permission from hens.farm to use it (2026-10-07).
+See `games/coop-sweep/hens/SOURCES.md`. The game also runs with its own drawn
+hens if that folder is empty.
+
+## Leaderboard
+
+Coop Sweep has a fastest-wins leaderboard. After a win, a paper panel shows the
+time, a name field and **Post** (or **Skip**), then the top 10 with your entry
+highlighted. The little trophy button (bottom right of the board, or the `L`
+key) shows the top 10 any time; viewing mid-run pauses the clock. If the API
+can't be reached, the trophy and panel simply don't appear.
+
+Rules (enforced by the server, `server/src/leaderboard.js`):
+- Only a finished play with outcome `win`, for that game, by the same guest or
+  account that played it, within 24 hours, once per play.
+- The time on the board is the **server's own measurement** (`ended_at -
+  started_at` of the recorded play, in ms), never a number the browser sends.
+  Wins faster than 2 s are refused as implausible.
+- Names: 1-16 characters, trimmed, letters/numbers/spaces/`_ - .` only, a basic
+  blocklist (`server/src/names.js`), HTML-escaped in API output.
+- Rate limits: 20 attempts per IP and 6 posts per player per 10 minutes.
+- Signed-in players get their username prefilled. A guest's entries move to
+  their account when they sign in (same as their plays).
+- Honest limit: the *win itself* is declared by the browser (the server doesn't
+  replay the board), so a determined cheater could post a fake win slower than
+  2 s. Remove bad entries with the admin tools below.
+
+API: `GET /plays/leaderboard/:gameId[?play_id=]` (top 10, your own best + rank,
+prefill, and whether/where a play would land), `POST /plays/leaderboard/:gameId`
+`{play_id, name}`. It's generic per game id: give another game a `leaderboard`
+block in `server/games.json` (`metric` `duration` or `score`, `order`, `outcome`,
+`minMs`, `postWindowHours`) and load `shared/leaderboard.js`. Only Coop Sweep
+has one now.
+
+**Removing a bad name (admin).** Admin endpoints need `ADMIN_TOKEN`, which
+lives only in `/etc/inline-games-api.env` on the VPS (root-readable;
+`deploy-api.yml` generates a random one if it's missing and never prints it).
+Easiest: Actions → **Leaderboard admin (manual)** → `list` to see entry ids,
+then `remove` with the id. Or on the VPS as root:
+
+```
+# list the latest entries with ids
+sed -n 's/^ADMIN_TOKEN=/X-Admin-Token: /p' /etc/inline-games-api.env | curl -sS -H @- 'http://127.0.0.1:3100/plays/leaderboard/coop-sweep/admin?limit=50'
+# remove entry 42 (soft delete: hidden from the board, and that play can't be posted again)
+sed -n 's/^ADMIN_TOKEN=/X-Admin-Token: /p' /etc/inline-games-api.env | curl -sS -X DELETE -H @- -H 'Origin: https://membersonly.cc' http://127.0.0.1:3100/plays/leaderboard/coop-sweep/entries/42
+```
 
 ## Play / test locally
 
@@ -150,6 +194,8 @@ npm run browser      # real Chrome: Lunch Rush in a cross-site 480x480 iframe (n
                      # CHROME_PATH, default /usr/bin/google-chrome)
 npm run browser:coop-sweep   # real Chrome: Coop Sweep at 480x480 in an iframe, phone @3x touch,
                              # no-API and no-art fallbacks; checks runs land in the DB
+npm run browser:leaderboard  # real Chrome: win -> post a name -> on the board, in the 480x480 cross-site
+                             # iframe and on a phone (touch, keyboard-sized viewport); offline/no-API cases
 npm run preview:coop-sweep   # re-render games/coop-sweep/previ.png from the game
 ```
 
@@ -254,9 +300,10 @@ env files (`/etc/aeterna-server.env`, `/opt/aeterna-server/.env`) are untouched.
 ## Not done yet
 
 - [ ] Later: add a `push` trigger to `deploy-games.yml`.
-- [ ] Accounts, wallet login and play tracking: built on branch `login`, not deployed. See "Going live" above.
+- [x] Accounts, wallet login and play tracking: live since 2026-10-07 (PR #1).
+- [x] Coop Sweep (PR #2) and its leaderboard: live.
 - [ ] Choose the NFT gate chain and collection, then set `NFT_GATE_*`.
-- [ ] Not built yet: password change while signed in, leaderboards, reward payouts.
+- [ ] Not built yet: password change while signed in, a Lunch Rush leaderboard, reward payouts.
 - [ ] Aeterna's *manual* workflows `launch.yml` ("LAUNCH") and `restart-game.yml`
       ("Restart the run") still restart `aeterna-server` if someone runs them by
       hand. Don't run them while Abbey is paused.

@@ -14,7 +14,8 @@
     "e2e": "node --disable-warning=ExperimentalWarning test/e2e-local.mjs",
     "browser": "node --disable-warning=ExperimentalWarning test/browser-embed.mjs",
     "browser:coop-sweep": "node --disable-warning=ExperimentalWarning test/browser-coop-sweep.mjs",
-    "preview:coop-sweep": "node test/coop-sweep-preview.mjs"
+    "preview:coop-sweep": "node test/coop-sweep-preview.mjs",
+    "browser:leaderboard": "node --disable-warning=ExperimentalWarning test/browser-leaderboard.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

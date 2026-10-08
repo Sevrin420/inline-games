@@ -7,7 +7,8 @@ name: Deploy accounts API (manual)
 #   /opt/inline-games-api/                 code (exact mirror of server/, minus tests)
 #   /etc/systemd/system/inline-games-api.service
 #   /opt/inline-games-node/bin/node        copy of the box's Node binary the service runs
-#   /etc/inline-games-api.env              created from server/.env.example ONLY if missing
+#   /etc/inline-games-api.env              created from server/.env.example ONLY if missing;
+#                                          ADMIN_TOKEN appended (random) if it has none
 #   /var/lib/inline-games-api/             SQLite database (created by systemd)
 #   system user `inline-games`             created if missing
 # What it never touches: /etc/caddy/Caddyfile, /opt/games, /opt/web,
@@ -113,6 +114,12 @@ jobs:
               echo "Created /etc/inline-games-api.env from .env.example"
             else
               echo "Keeping existing /etc/inline-games-api.env"
+            fi
+            # Admin token for leaderboard moderation: generate one if missing. Never printed.
+            if ! grep -Eq "^ADMIN_TOKEN=.{24,}" /etc/inline-games-api.env; then
+              sed -i "/^ADMIN_TOKEN=/d" /etc/inline-games-api.env
+              printf "ADMIN_TOKEN=%s\n" "$(openssl rand -hex 32)" >> /etc/inline-games-api.env
+              echo "Generated ADMIN_TOKEN in /etc/inline-games-api.env (not printed)"
             fi
             # The service user cannot read /root, where /usr/local/bin/node points,
             # so run the service from a root-owned, world-readable copy of it.

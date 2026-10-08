@@ -48,6 +48,8 @@ export function loadConfig(env = process.env) {
     devStaticDir: env.DEV_STATIC_DIR || null,
     logLevel: env.LOG_LEVEL || 'info',
     gate,
+    // Admin-only endpoints (leaderboard moderation). Unset or short = disabled.
+    adminToken: env.ADMIN_TOKEN && env.ADMIN_TOKEN.length >= 24 ? env.ADMIN_TOKEN : null,
   };
   return cfg;
 }

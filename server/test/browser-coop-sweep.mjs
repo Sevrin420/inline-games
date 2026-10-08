@@ -91,6 +91,15 @@ async function winRun(page, frame, { touch = false, screenshot = null } = {}) {
   assert.equal(await state(frame), 'won');
 }
 
+// After a win (with the API up) the leaderboard panel appears: the post form,
+// or (for these very fast automated wins, under the 2 s floor) a view with a
+// note. Dismiss it with its last button (Skip / Close).
+async function skipBoard(frame) {
+  await frame.waitForSelector('.lb-veil .lb-row .lb-btn', { timeout: 8000 });
+  await frame.evaluate(() => [...document.querySelectorAll('.lb-row .lb-btn')].pop().click());
+  assert.equal(await frame.$('.lb-veil'), null);
+}
+
 try {
   // ---------------------------------------------------------- 480x480 X card (cross-site iframe)
   const card = await open(`http://127.0.0.1:${topPort}/`, { width: 480, height: 480, deviceScaleFactor: 2 }, { embedded: true });
@@ -102,7 +111,8 @@ try {
   ok(`loads at 480x480 in a cross-site iframe; 6 hen images; canvas ${dpr[0]}px for ${dpr[1]}css @${dpr[2]}x`);
   await wait(1100); // let a second tick so the winning time is > 0
   await winRun(card.page, f, { screenshot: shotPath });
-  ok('run 1 (mouse): first click safe, two long-press flags, cleared the pasture -> won');
+  await skipBoard(f);
+  ok('run 1 (mouse): first click safe, two long-press flags, cleared the pasture -> won (leaderboard offered, skipped)');
   // restart via the hen button, then lose by digging a hen
   await wait(1000);
   await card.page.mouse.click(...await pt(f, 64, 11));
@@ -165,7 +175,7 @@ try {
   assert.equal(await phone.frame.evaluate(() => document.getElementById('c').width), 390 * 3);
   await wait(1100);
   await winRun(phone.page, phone.frame, { touch: true });
-  await wait(500);
+  await skipBoard(phone.frame);
   const mine = await phone.page.evaluate(() => fetch('/plays/mine?game_id=coop-sweep').then(r => r.json()));
   assert.equal(mine.player, 'anon'); assert.equal(mine.stats.plays, 1); assert.ok(mine.stats.best >= 1);
   assert.deepEqual(phone.errors, []);
@@ -174,7 +184,7 @@ try {
   await phone.page.evaluate(() => window.MembersAuth.signup('sweeper_1', 'a long password'));
   await phone.page.touchscreen.tap(...await pt(phone.frame, 64, 11));
   await winRun(phone.page, phone.frame, { touch: true });
-  await wait(500);
+  await skipBoard(phone.frame);
   const last = plays().at(-1);
   assert.match(last.player_key, /^account:\d+$/); assert.equal(last.outcome, 'win');
   ok('signed in on the phone: next win recorded to the account');

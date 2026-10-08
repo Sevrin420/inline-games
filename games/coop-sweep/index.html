@@ -40,9 +40,11 @@
 <!-- Optional shared accounts (sign-in chip + play recording). Async and fail-safe:
      if it doesn't load, or the API isn't there, the game plays exactly as a guest. -->
 <script src="../shared/auth.js" async data-game="coop-sweep" data-corner="br" data-score="mmss"></script>
+<!-- Optional leaderboard panel (needs auth.js + the server). Hidden if either is missing. -->
+<script src="../shared/leaderboard.js" async></script>
 </head>
 <body>
-<canvas id="c" tabindex="0" aria-label="Coop Sweep game. Arrow keys move, Space digs, F flags, R restarts."></canvas>
+<canvas id="c" tabindex="0" aria-label="Coop Sweep game. Arrow keys move, Space digs, F flags, R restarts, L shows the leaderboard."></canvas>
 <script>
 'use strict';
 (() => {
@@ -69,6 +71,8 @@ const SHOT = QS.has('shot');   // card-image capture: a staged mid-game board, n
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const rnd = (a, b) => a + Math.random() * (b - a);
 const mmss = t => { t = Math.floor(t); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+// Leaderboard times are the server's measurement in ms: m:ss.t
+const mmsst = ms => { const d = Math.floor(ms / 100), s = Math.floor(d / 10); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + '.' + (d % 10); };
 const idx = (c, r) => r * COLS + c;
 const inB = (c, r) => c >= 0 && r >= 0 && c < COLS && r < ROWS;
 function around(i) {
@@ -374,7 +378,9 @@ function win() {
   const s = Math.floor(g.t);
   if (!best || s < best) { best = s; store.set('coop-sweep-best', String(s)); g.newBest = true; }
   sfx('win');
-  trackEnd(g, 'win');
+  const done = trackEnd(g, 'win');
+  // Offer the leaderboard once the end card has shown and the win is on the server.
+  if (done) setTimeout(() => done.then(id => { if (id && G === g && LB.ok) openBoard(id); }), 1400);
 }
 function restart() {
   if (G && G.state === 'play') trackEnd(G, 'abandoned');
@@ -392,13 +398,36 @@ function trackStart(g) {
   const A = window.MembersAuth;
   g.playP = A ? A.startPlay('coop-sweep').catch(() => null) : null;
 }
+// Returns a promise of the play id once the end is recorded (null if it wasn't).
 function trackEnd(g, outcome) {
   const A = window.MembersAuth;
-  if (!A || !g.playP) return;
+  if (!A || !g.playP) return null;
   const score = outcome === 'abandoned' ? null : Math.floor(g.t);
   const meta = { ms: Math.round(g.t * 1000), dug: g.opened, flags: g.flags, board: `${COLS}x${ROWS}/${HENS}` };
   const p = g.playP; g.playP = null;
-  p.then(id => id && A.endPlay(id, { outcome, score, meta })).catch(() => {});
+  return p.then(id => id && A.endPlay(id, { outcome, score, meta }).then(play => (play ? id : null))).catch(() => null);
+}
+
+// ---------------------------------------------------------------- leaderboard
+// Optional (../shared/leaderboard.js): fastest wins, timed by the server. The
+// trophy button only appears once the board answers; a win opens the post panel.
+const LB = { ok: false };
+function lbInit() {
+  const L = window.MembersLeaderboard;
+  if (L && !SHOT) L.check('coop-sweep').then(ok => { LB.ok = ok; });
+}
+const lbOpen = () => !!(window.MembersLeaderboard && window.MembersLeaderboard.isOpen());
+function openBoard(playId) {
+  const L = window.MembersLeaderboard, g = G;
+  if (!L || !LB.ok || lbOpen()) return;
+  // Viewing mid-run pauses the clock; closing resumes it.
+  const pausedHere = g.state === 'play' && !g.paused;
+  if (pausedHere) g.paused = true;
+  L.open({
+    gameId: 'coop-sweep', playId: playId || null, format: mmsst,
+    onPlayAgain: () => { if (G === g) restart(); },
+    onClose: () => { if (pausedHere && G === g) g.paused = false; try { cv.focus({ preventScroll: true }); } catch (e) { /* old browsers */ } },
+  });
 }
 
 // ---------------------------------------------------------------- effects
@@ -454,6 +483,7 @@ function cellAt(lx, ly) {
 const BTN = {
   restart: { x: 64, y: 11, r: 9 },
   sound: { x: 8, y: 143, r: 5.5 },
+  board: { x: 108, y: 139, r: 5.5 },
   dig: { x: 36, y: 136, w: 28, h: 14 },
   flag: { x: 64, y: 136, w: 28, h: 14 },
 };
@@ -580,6 +610,15 @@ function drawHUD(g) {
   if (sound) { ctx.arc(s.x + 1, s.y, 1.6, -0.9, 0.9); ctx.moveTo(s.x + 2.3, s.y - 2.2); ctx.arc(s.x + 1, s.y, 2.7, -0.9, 0.9); }
   else { ctx.moveTo(s.x + 1.6, s.y - 1.4); ctx.lineTo(s.x + 3.6, s.y + 1.4); ctx.moveTo(s.x + 3.6, s.y - 1.4); ctx.lineTo(s.x + 1.6, s.y + 1.4); }
   ctx.stroke();
+  // leaderboard (only when the board is reachable): a little paper trophy
+  if (LB.ok && !SHOT) {
+    const b = BTN.board;
+    E(ctx, b.x, b.y, b.r, b.r, '#fffdf4'); ctx.lineWidth = 0.6; ctx.stroke();
+    PL(ctx, [b.x - 2.4, b.y - 2.6, b.x + 2.4, b.y - 2.6, b.x + 1.8, b.y + 0.2, b.x, b.y + 1, b.x - 1.8, b.y + 0.2], '#f8d030');
+    ctx.lineWidth = 0.45; ctx.strokeStyle = INK; ctx.beginPath();
+    ctx.arc(b.x - 2.5, b.y - 1.5, 1, Math.PI * 0.5, Math.PI * 1.5); ctx.moveTo(b.x + 2.5, b.y - 2.5); ctx.arc(b.x + 2.5, b.y - 1.5, 1, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+    ctx.fillStyle = INK; ctx.fillRect(b.x - 0.35, b.y + 1, 0.7, 1.2); rp(ctx, b.x - 1.6, b.y + 2.1, 3.2, 1, 0.3); ctx.fill();
+  }
 }
 
 // Word of paper letter tiles (shared look with Lunch Rush's title).
@@ -643,6 +682,7 @@ function onTap(lx, ly) {
   if (g.paused) { g.paused = false; return; }
   if (inCircle(BTN.sound, lx, ly)) { sound = !sound; store.set('coop-sweep-sound', sound ? 'on' : 'off'); sfx('flag'); return; }
   if (inCircle(BTN.restart, lx, ly)) { restart(); return; }
+  if (LB.ok && inCircle(BTN.board, lx, ly)) { openBoard(null); return; }
   if (inRect(BTN.dig, lx, ly)) { mode = 'dig'; return; }
   if (inRect(BTN.flag, lx, ly)) { mode = 'flag'; return; }
   if (g.state === 'won' || g.state === 'lost') { if (clock - g.endAt > 0.8) restart(); return; }
@@ -687,6 +727,7 @@ cv.addEventListener('pointercancel', e => endPress(e, true));
 cv.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('keydown', e => {
   if (e.target && /^(INPUT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return; // e.g. the sign-in panel
+  if (lbOpen()) { if (e.key === 'Escape') window.MembersLeaderboard.close(); return; } // board panel is up
   const g = G, k = e.key;
   const move = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] }[k];
   if (move) { g.kb = true; g.cur = { c: clamp(g.cur.c + move[0], 0, COLS - 1), r: clamp(g.cur.r + move[1], 0, ROWS - 1) }; e.preventDefault(); return; }
@@ -698,6 +739,7 @@ window.addEventListener('keydown', e => {
   } else if (k === 'f' || k === 'F' || k === 'x' || k === 'X') { g.kb = true; act(idx(g.cur.c, g.cur.r), 'flag'); }
   else if (k === 'r' || k === 'R') restart();
   else if (k === 'm' || k === 'M') { sound = !sound; store.set('coop-sweep-sound', sound ? 'on' : 'off'); }
+  else if (k === 'l' || k === 'L') openBoard(null);
 });
 window.addEventListener('resize', resize);
 // Pause on tab hide: the clock stops, the board is covered, a tap resumes.
@@ -720,6 +762,8 @@ if (SHOT) {
   G.paused = true; // freeze the clock at 0:37 (the paused overlay is never drawn in shot mode)
 }
 resize();
+// The optional scripts are async; once the page has loaded, see if there's a board.
+if (document.readyState === 'complete') lbInit(); else window.addEventListener('load', lbInit);
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
@@ -737,6 +781,7 @@ window.__CS = {
   cellCenter, step(sec, dt = 1 / 60) { for (let t = 0; t < sec; t += dt) update(dt); render(); },
   screen(lx, ly) { const r = cv.getBoundingClientRect(); return [(OX + lx * SC) * r.width / cv.width + r.left, (OY + ly * SC) * r.height / cv.height + r.top]; },
   henImagesLoaded: () => HENIMG.filter(Boolean).length,
+  get lbReady() { return LB.ok; }, openBoard, BTN,
 };
 })();
 </script>

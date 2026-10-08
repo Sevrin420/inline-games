@@ -191,9 +191,11 @@ test('best respects scoreOrder and bestOutcome (time-to-clear games)', async () 
   assert.equal((await c.get('/plays/mine?game_id=lunch-rush')).json.stats.best, 9);
 });
 
-test('the shipped registry loads and has Coop Sweep as open', async () => {
+test('the shipped registry loads: Coop Sweep open with a time leaderboard, Lunch Rush has none', async () => {
   const { loadGames } = await import('../src/games.js');
   const g = loadGames(new URL('../games.json', import.meta.url).pathname);
-  assert.deepEqual(g.get('coop-sweep'), { id: 'coop-sweep', title: 'Coop Sweep', access: 'open', scoreTrusted: false, scoreOrder: 'asc', bestOutcome: 'win' });
+  assert.deepEqual(g.get('coop-sweep'), { id: 'coop-sweep', title: 'Coop Sweep', access: 'open', scoreTrusted: false, scoreOrder: 'asc', bestOutcome: 'win',
+    leaderboard: { metric: 'duration', order: 'asc', outcome: 'win', minMs: 2000, postWindowHours: 24 } });
   assert.equal(g.get('lunch-rush').scoreOrder, 'desc');
+  assert.equal(g.get('lunch-rush').leaderboard, null);
 });

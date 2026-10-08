@@ -11,6 +11,7 @@
     "access": "open",
     "scoreTrusted": false,
     "scoreOrder": "asc",
-    "bestOutcome": "win"
+    "bestOutcome": "win",
+    "leaderboard": { "metric": "duration", "order": "asc", "outcome": "win", "minMs": 2000, "postWindowHours": 24 }
   }
 ]
