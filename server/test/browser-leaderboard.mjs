@@ -94,7 +94,7 @@ try {
   const card = await open(`http://127.0.0.1:${topPort}/`, { width: 480, height: 480, deviceScaleFactor: 2 }, { embedded: true });
   const f = card.frame;
   await f.waitForFunction(() => window.__CS.lbReady, { timeout: 8000 });
-  await f.waitForFunction(() => window.__CS.henImagesLoaded() === 6);
+  await f.waitForFunction(() => window.__CS.henImagesLoaded() === window.__CS.ART.length);
   await f.evaluate(() => window.__CS.step(0.1));
   await card.page.screenshot({ path: path.join(os.tmpdir(), 'lb-card-trophy.png') });
   ok('480x480 cross-site iframe: board reachable, trophy button shown');
