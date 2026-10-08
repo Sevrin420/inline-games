@@ -114,7 +114,7 @@ jobs:
             else
               echo "Keeping existing /etc/inline-games-api.env"
             fi
-            # The service user can't read /root, where /usr/local/bin/node points,
+            # The service user cannot read /root, where /usr/local/bin/node points,
             # so run the service from a root-owned, world-readable copy of it.
             NODE_REAL=$(readlink -f /usr/local/bin/node)
             install -d -m 0755 /opt/inline-games-node/bin
