@@ -1,4 +1,5 @@
-# EXAMPLE ONLY. This file is NOT applied automatically. No workflow in this
+# Applied by hand on the VPS on 2026-10-07 (live /etc/caddy/Caddyfile matches
+# this). Still NOT applied automatically. No workflow in this
 # repo writes /etc/caddy/Caddyfile.
 #
 # Today, Aeterna's deploy-server.yml rewrites the whole Caddyfile on every push

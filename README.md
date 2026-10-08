@@ -72,9 +72,8 @@ secrets** (names only; the values live in GitHub, never in the repo):
 | `VPS_HOST` | server hostname or IP |
 | `VPS_USER` | ssh login user |
 
-**These must be added to this repo** (Settings → Secrets and variables →
-Actions). Secrets aren't copied between repos, and GitHub can't show existing
-values, so they have to be re-entered from wherever the originals are kept.
+These are set on this repo. `VPS_SSH_KEY` is a dedicated deploy key for this
+repo (not Aeterna's key), installed for `root` on the VPS on 2026-10-07.
 
 Workflows (Actions tab → pick one → Run workflow):
 
@@ -106,19 +105,51 @@ ssh vps 'ls -la /opt/games'
 rsync -az --delete --chmod=D755,F644 games/ vps:/opt/games/
 ```
 
-What's on the server today (from Aeterna): Caddy on 80/443 for
-`membersonly.cc`, proxying to the Abbey Node app (`aeterna-server` systemd unit,
-code in `/opt/aeterna-server`, static files in `/opt/web`). Lunch Rush is
-currently served from `/opt/web/lunch-rush/` by that app.
+What's on the server today (since the 2026-10-07 cutover): Caddy on 80/443
+serves `membersonly.cc` **statically from `/opt/games`** (no Node app involved).
+`/lunch-rush` redirects (308) to `/lunch-rush/`, and `/` redirects (302) to
+`/lunch-rush/`. The live `/etc/caddy/Caddyfile` matches `deploy/Caddyfile.example`.
+Throbbin Abbey is **paused**: the `aeterna-server` unit is stopped and disabled,
+but its code (`/opt/aeterna-server`), static files (`/opt/web`), database and
+env files (`/etc/aeterna-server.env`, `/opt/aeterna-server/.env`) are untouched.
+
+## Done (2026-10-07 cutover)
+
+- [x] Secrets `VPS_SSH_KEY`, `VPS_HOST`, `VPS_USER` added to this repo.
+- [x] Ran "Deploy games": `/opt/games/lunch-rush/` is filled (identical to the old
+      `/opt/web/lunch-rush/` files).
+- [x] Caddy switch: `membersonly.cc` now serves `/opt/games`. The old config is
+      backed up at `/etc/caddy/Caddyfile.bak-abbey-20261008-081308` (server time, UTC).
+- [x] Throbbin Abbey paused: `aeterna-server` stopped and disabled.
+- [x] Aeterna's push-to-deploy (`deploy-server.yml`, "Deploy Aeterna Server")
+      disabled in GitHub Actions, so a push to Aeterna `main` can no longer
+      restart Abbey or overwrite the Caddyfile.
 
 ## Not done yet
 
-- [ ] **Add the secrets** `VPS_SSH_KEY`, `VPS_HOST`, `VPS_USER` to this repo.
-- [ ] **Run "Deploy games"** once to fill `/opt/games` (doesn't affect the live site).
-- [ ] **Caddy switch**: point `membersonly.cc` at `/opt/games` using
-      `deploy/Caddyfile.example`, and stop Aeterna's deploy from rewriting
-      `/etc/caddy/Caddyfile` (today it does that on every push to Aeterna `main`).
-- [ ] **Pause Throbbin Abbey**: stop/disable `aeterna-server` and turn off
-      Aeterna's push-to-deploy, *after* the Caddy switch so `/lunch-rush/` stays up.
-- [ ] Later: add a `push` trigger to `deploy-games.yml` once the above is settled.
+- [ ] Later: add a `push` trigger to `deploy-games.yml`.
 - [ ] Accounts, wallet login and play tracking (in `docs/`) are specified, not built.
+- [ ] Aeterna's *manual* workflows `launch.yml` ("LAUNCH") and `restart-game.yml`
+      ("Restart the run") still restart `aeterna-server` if someone runs them by
+      hand. Don't run them while Abbey is paused.
+
+## How to restore Abbey
+
+On the VPS, as root:
+
+```
+cp /etc/caddy/Caddyfile.bak-abbey-20261008-081308 /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+systemctl enable --now aeterna-server
+```
+
+Then turn Aeterna's auto-deploy back on:
+
+```
+gh workflow enable deploy-server.yml -R Sevrin420/Aeterna
+```
+
+The restored config proxies all of `membersonly.cc` to the Node app on :3000,
+which serves `/lunch-rush/` from `/opt/web/lunch-rush/` again. Turning
+`deploy-server.yml` back on means the next push to Aeterna `main` rewrites the
+Caddyfile again, which would take `/opt/games` out of service.
