@@ -115,20 +115,25 @@ python3 -m http.server 8000
 To check the X card size, resize the window (or use the browser's device
 toolbar) to 480×480. The game must play at that size and on phones.
 
-## How X player cards work here
+## How X cards work here
 
-Each game's `index.html` carries the card tags in `<head>`: `twitter:card`
-`player`, `twitter:player` (the URL X iframes), `twitter:player:width/height`
-480, and `twitter:image` (the 1200×630 `previ.png`). Lunch Rush's tags still
-point at `https://membersonly.cc/lunch-rush/`, and they should keep doing that
-because X caches cards for days.
+**As of 2026-10-08 the games use `summary_large_image`, not `player`.** X stopped
+playing player cards inline (even Tweetcraft and webduno's demo now just open the
+link), and a player card showed a play button that did nothing. Each game's
+`index.html` carries `twitter:card` `summary_large_image`, title, description,
+`twitter:image` (the 1200×630 `previ.png`) + alt, and og tags. The post shows the
+big image; tapping it opens the game in the browser, where login and the
+leaderboard work. Post with a fresh `?v=N` so X re-reads the page.
+
+To switch back if X re-enables playable cards: set `twitter:card` to `player`
+and re-add `twitter:player` (the page URL) and `twitter:player:width/height` 480.
 
 Rules (details in `docs/Games_and_Login.md`):
 - Fits 480×480, works on phones.
 - Self-contained: no third-party scripts, fonts or API calls. Same-origin `../shared/auth.js` and the `/auth`, `/plays` API are fine because they're optional and the game must keep working without them.
 - The server must not send `X-Frame-Options` or a narrow CSP `frame-ancestors`.
 - X caches cards. To force a new image, rename the image file.
-- A post with attached media doesn't show the player card, so post the link as
+- A post with attached media doesn't show the card, so post the link as
   a reply or post the card on its own.
 - Check a card with X's card validator or by posting from a test account.
 
