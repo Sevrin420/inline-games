@@ -1,0 +1,43 @@
+# EXAMPLE ONLY, NOT APPLIED AUTOMATICALLY. This is deploy/Caddyfile.example (the
+# live config today) plus the accounts API. Apply it by hand on the VPS AFTER
+# the API is running (deploy-api.yml), then run deploy-games.yml:
+#   cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak-pre-login-$(date +%Y%m%d-%H%M%S)
+#   cp Caddyfile.login.example /etc/caddy/Caddyfile
+#   caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+# To undo: copy the backup back and reload. Games keep working as guests either way.
+
+membersonly.cc {
+	encode gzip
+
+	# Accounts + play tracking API: systemd unit inline-games-api on 127.0.0.1:3100.
+	# Only these prefixes reach Node; everything else is static files.
+	@api path /auth/* /plays/*
+	handle @api {
+		reverse_proxy 127.0.0.1:3100
+	}
+
+	handle {
+		root * /opt/games
+		file_server
+
+		# Directory URLs without the slash -> with it, so relative URLs resolve.
+		redir /lunch-rush /lunch-rush/ 308
+		redir /account /account/ 308
+
+		# HTML/JS/CSS revalidate on every load so a redeploy reaches players at
+		# once; images cache for a day. (Scoped to static files: API responses
+		# carry their own Cache-Control: no-store.)
+		@code path *.html *.js *.css */
+		header @code Cache-Control "no-cache, must-revalidate"
+		@assets not path *.html *.js *.css */
+		header @assets Cache-Control "public, max-age=86400"
+
+		# Nothing at / yet. Send visitors to Lunch Rush instead of a 404.
+		redir / /lunch-rush/ 302
+	}
+
+	# X player cards load the game in an iframe. Never send X-Frame-Options.
+	# No CSP today; if you add one it must still let X frame the page, e.g.:
+	#   header Content-Security-Policy "frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com"
+	header -X-Frame-Options
+}

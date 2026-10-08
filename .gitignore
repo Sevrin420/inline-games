@@ -1,6 +1,7 @@
 # Secrets: never commit these
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 id_rsa*
@@ -13,3 +14,8 @@ logs/
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Local API data
+server/data/
+*.sqlite
+*.sqlite-*

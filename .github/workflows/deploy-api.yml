@@ -1,0 +1,135 @@
+name: Deploy accounts API (manual)
+
+# MANUAL ONLY: no push trigger. Ships server/ (accounts, login, play tracking)
+# to the VPS as the systemd service `inline-games-api` on 127.0.0.1:3100.
+#
+# What it touches on the VPS:
+#   /opt/inline-games-api/                 code (exact mirror of server/, minus tests)
+#   /etc/systemd/system/inline-games-api.service
+#   /etc/inline-games-api.env              created from server/.env.example ONLY if missing
+#   /var/lib/inline-games-api/             SQLite database (created by systemd)
+#   system user `inline-games`             created if missing
+# What it never touches: /etc/caddy/Caddyfile, /opt/games, /opt/web,
+# /opt/aeterna-server, the aeterna-server service.
+#
+# Until the Caddy routes in deploy/Caddyfile.login.example are applied by hand,
+# the API is only reachable from the box itself, and the games stay guest-only.
+#
+# Needs repo secrets: VPS_SSH_KEY, VPS_HOST, VPS_USER (root, or a user with sudo-less root).
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Nothing reaches the server unless the tests pass.
+      - name: Test
+        working-directory: server
+        run: |
+          npm ci
+          npm test
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config <<CFG
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User ${{ secrets.VPS_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ControlMaster auto
+            ControlPath ~/.ssh/cm-%C
+            ControlPersist 10m
+            ConnectTimeout 20
+            ServerAliveInterval 30
+            ServerAliveCountMax 6
+          CFG
+          chmod 600 ~/.ssh/config
+          for i in 1 2 3 4 5 6; do
+            if ssh -N -f vps; then echo "SSH master established on attempt $i"; break; fi
+            if [ "$i" = 6 ]; then echo "::error::Could not open an SSH connection to the VPS after 6 attempts."; exit 1; fi
+            echo "Attempt $i refused (MaxStartups throttling?), retrying in $((i * 15))s"
+            sleep $((i * 15))
+          done
+          ssh -O check vps
+
+      - name: Preflight on the VPS
+        run: |
+          ssh vps '
+            set -e
+            NODE=/usr/local/bin/node
+            [ -x "$NODE" ] || { echo "::error::$NODE not found"; exit 1; }
+            v=$($NODE -p "process.versions.node"); echo "node $v"
+            $NODE -e "const [a,b]=process.versions.node.split(\".\").map(Number); process.exit(a>22||(a===22&&b>=13)?0:1)" \
+              || { echo "::error::Node >= 22.13 required (node:sqlite); found $v"; exit 1; }
+            if ss -ltn "sport = :3100" | grep -q LISTEN && ! systemctl is-active --quiet inline-games-api; then
+              echo "::error::Something other than inline-games-api is listening on :3100"; exit 1
+            fi
+            command -v rsync >/dev/null
+          '
+
+      - name: Create service user and code directory
+        run: |
+          ssh vps '
+            set -e
+            id -u inline-games >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin inline-games
+            mkdir -p /opt/inline-games-api
+          '
+
+      - name: Sync code
+        run: |
+          rsync -az --delete \
+            --exclude 'node_modules' --exclude 'data' --exclude '.env' --exclude 'test' \
+            --chmod=D755,F644 \
+            -e ssh \
+            server/ vps:/opt/inline-games-api/
+
+      - name: Install dependencies, env file and unit; restart
+        run: |
+          rsync -az -e ssh deploy/inline-games-api.service vps:/etc/systemd/system/inline-games-api.service
+          ssh vps '
+            set -e
+            export PATH=/usr/local/bin:$PATH
+            cd /opt/inline-games-api
+            npm ci --omit=dev --no-audit --no-fund
+            if [ ! -f /etc/inline-games-api.env ]; then
+              install -m 0640 -o root -g inline-games .env.example /etc/inline-games-api.env
+              echo "Created /etc/inline-games-api.env from .env.example"
+            else
+              echo "Keeping existing /etc/inline-games-api.env"
+            fi
+            systemctl daemon-reload
+            systemctl enable inline-games-api
+            systemctl restart inline-games-api
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              curl -fsS http://127.0.0.1:3100/healthz && break
+              [ "$i" = 10 ] && { journalctl -u inline-games-api -n 50 --no-pager; exit 1; }
+              sleep 1
+            done
+            echo
+            systemctl --no-pager status inline-games-api | head -12
+            curl -fsS http://127.0.0.1:3100/auth/config; echo
+          '
+
+      - name: Reminder about Caddy
+        run: |
+          echo "::notice::API is running on the VPS at 127.0.0.1:3100. The Caddyfile was NOT changed. To put it live, apply deploy/Caddyfile.login.example by hand, then run 'Deploy games (manual)'."
+
+      - name: Close the SSH connection
+        if: always()
+        run: ssh -O exit vps 2>/dev/null || true

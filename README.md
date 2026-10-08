@@ -10,22 +10,33 @@ also holds the separate Throbbin Abbey game. Nothing here depends on Abbey code.
 ## Layout
 
 ```
-games/
+games/                  everything here is served statically from /opt/games
   lunch-rush/
-    index.html      the whole game, one self-contained file (no external requests)
-    previ.png       1200×630 card image X shows before the player loads
+    index.html          the whole game in one file; loads ../shared/auth.js (optional)
+    previ.png           1200×630 card image X shows before the player loads
+  shared/auth.js        shared accounts client: sign-in chip, play recording
+  account/index.html    account page/popup: password, wallet (SIWE), link, reset
+server/                 accounts + login + play tracking API (Node 22, Fastify, SQLite)
+  src/                  app.js (routes), sessions, siwe, nft gate, db schema, config
+  games.json            game registry: id, title, access level, scoreTrusted
+  test/                 unit tests, local end-to-end check, browser X-card check
+  .env.example          every setting, production values (nothing secret)
 docs/
-  Games_and_Login.md    how inline X cards work, login + anonymous play plan
-  Auth_and_Accounts.md  full account / wallet (SIWE) / NFT-gating design
+  Games_and_Login.md    how inline X cards work, login + anonymous play
+  Auth_and_Accounts.md  account / wallet (SIWE) / NFT-gating spec + implementation notes
 deploy/
-  Caddyfile.example     how Caddy would serve /opt/games (not applied automatically)
+  Caddyfile.example        the live Caddy config today (static /opt/games)
+  Caddyfile.login.example  same plus the /auth and /plays API routes (apply by hand)
+  inline-games-api.service systemd unit for the API
 .github/workflows/
   deploy-games.yml      MANUAL: rsync games/ -> /opt/games on the VPS
+  deploy-api.yml        MANUAL: test, then ship server/ as the inline-games-api service
+  test-api.yml          on PRs: server tests + local e2e on GitHub runners (no VPS)
   vps-check.yml         MANUAL: pick a fixed read-only check to run on the VPS
 ```
 
-The docs were copied unchanged from Aeterna, so where they say `web/<game>/`
-read `games/<game>/` in this repo.
+The docs came from Aeterna, so where they say `web/<game>/`, read
+`games/<game>/` in this repo.
 
 ## Play / test locally
 
@@ -51,7 +62,7 @@ because X caches cards for days.
 
 Rules (details in `docs/Games_and_Login.md`):
 - Fits 480×480, works on phones.
-- Self-contained: no external scripts, fonts or API calls.
+- Self-contained: no third-party scripts, fonts or API calls. Same-origin `../shared/auth.js` and the `/auth`, `/plays` API are fine because they're optional and the game must keep working without them.
 - The server must not send `X-Frame-Options` or a narrow CSP `frame-ancestors`.
 - X caches cards. To force a new image, rename the image file.
 - A post with attached media doesn't show the player card, so post the link as
@@ -60,6 +71,101 @@ Rules (details in `docs/Games_and_Login.md`):
 
 New game: copy `games/lunch-rush/` to `games/<name>/`, change the title,
 description, URLs and image, and keep it to one file.
+
+## Accounts and login
+
+Implements `docs/Auth_and_Accounts.md` (details and deviations at the end of
+that doc).
+
+- **Sign in** with a username and password (argon2id, no email), or a wallet
+  through Sign-In with Ethereum (EIP-4361). A wallet with no account gets a
+  wallet-only account. One wallet per account. A linked wallet can reset the
+  password, and a reset logs out every other session.
+- **Sessions**: a random 256-bit token, stored as its SHA-256, with a 30-day
+  sliding expiry. On normal pages it lives in an `HttpOnly; Secure;
+  SameSite=Lax; Domain=.membersonly.cc` cookie.
+- **Inside the X card** the game is a third-party iframe, so that cookie never
+  arrives. `shared/auth.js` notices it is embedded, asks the API for the token
+  in the response body (`X-Auth-Mode: token`), keeps it in the iframe's own
+  storage, and sends `Authorization: Bearer`. Players can sign in or sign up
+  right in the 480×480 card, or tap "Use a wallet ↗". That opens `/account/` in
+  a popup, which signs in first-party and passes the iframe a token through
+  `postMessage`.
+- **Guests always work.** Every play is recorded under an anonymous id
+  (`anon:<uuid>`, in a one-year cookie, or in iframe storage when embedded).
+  The first sign-up, login or wallet link moves those plays to the account,
+  once. If `auth.js` or the API is missing, the game plays exactly as before and
+  shows no sign-in chip.
+- **Plays**: `POST /plays/start {game_id}` returns `play_id`, then
+  `POST /plays/:id/end {outcome, score, meta}`. The server decides whose play it
+  is. Plays left open longer than 24 hours are closed with no outcome. Lunch Rush
+  reports seconds survived as `score`, which the server records as unverified
+  (`scoreTrusted: false`).
+- **Access levels** (`open`, `account`, `wallet`, `nft`) are set per game in
+  `server/games.json` and enforced on `/plays/start`. `nft` reads `balanceOf`
+  on the gate contract, with a 45 s cache.
+- **Same-origin check** on every POST, plus rate limits on login, signup, SIWE
+  and plays.
+
+Endpoints: `/auth/{config,signup,login,logout,me,token,claim}`,
+`/auth/siwe/{nonce,login,link,reset}`,
+`/plays/{start,:id/end,mine,games,access/:gameId}`.
+
+### Run it locally
+
+Needs Node 22.13 or newer (it uses the built-in `node:sqlite`).
+
+```
+cd server
+npm ci
+DEV_STATIC_DIR=../games PUBLIC_ORIGIN=http://localhost:3100 SIWE_DOMAIN=localhost:3100 \
+  COOKIE_DOMAIN= COOKIE_SECURE=false TRUST_PROXY= npm start
+# open http://localhost:3100/lunch-rush/  and  http://localhost:3100/account/
+```
+
+Tests:
+
+```
+npm test             # 22 unit tests: sessions, login, SIWE (replay, domain, expiry, purpose),
+                     # link/reset, access levels with a stubbed chain, plays, claims
+npm run e2e          # boots the real server, signs up, records and fetches plays, SIWE
+npm run browser      # real Chrome: Lunch Rush in a cross-site 480x480 iframe (needs
+                     # CHROME_PATH, default /usr/bin/google-chrome)
+```
+
+### Settings and credentials
+
+Everything is in `server/.env.example`, and none of it is secret. On the VPS it
+lives at `/etc/inline-games-api.env`. Password and wallet login need **no
+third-party credentials**. The only external values are for the NFT gate, which
+nothing uses yet:
+
+| Variable | Needed when | Where it comes from |
+|---|---|---|
+| `NFT_GATE_CHAIN_ID` | a game uses access `nft` | the chain you pick (Robinhood 4663 or Avalanche 43114, still open) |
+| `NFT_GATE_RPC_URL` | same | a public RPC for that chain, or a provider URL (Alchemy, QuickNode, …). It may contain an API key |
+| `NFT_GATE_CONTRACT` | same | the gate collection's address |
+
+While these are blank, `nft` games answer `503 gate_unconfigured` and
+`/auth/me` reports `nftStatus: "unconfigured"`.
+
+### Going live (in this order)
+
+1. Merge the `login` PR.
+2. Actions → **Deploy accounts API (manual)** → Run. It runs the tests, then
+   installs the `inline-games-api` service on 127.0.0.1:3100 and creates
+   `/etc/inline-games-api.env` from `.env.example` if it's missing. It doesn't
+   touch Caddy, so nothing public changes yet.
+3. On the VPS, back up `/etc/caddy/Caddyfile`, copy in
+   `deploy/Caddyfile.login.example`, then run `caddy validate` and
+   `systemctl reload caddy`.
+4. Actions → **Deploy games (manual)** → Run. This ships the updated Lunch Rush,
+   `shared/auth.js` and `/account/`.
+5. Check: `https://membersonly.cc/auth/config` returns JSON, the Lunch Rush card
+   shows "Guest · Sign in", and a run shows up in `/plays/mine`.
+
+To undo: put the Caddyfile backup back and reload. The games fall back to
+guest-only on their own.
 
 ## Connecting to the VPS
 
@@ -128,7 +234,9 @@ env files (`/etc/aeterna-server.env`, `/opt/aeterna-server/.env`) are untouched.
 ## Not done yet
 
 - [ ] Later: add a `push` trigger to `deploy-games.yml`.
-- [ ] Accounts, wallet login and play tracking (in `docs/`) are specified, not built.
+- [ ] Accounts, wallet login and play tracking: built on branch `login`, not deployed. See "Going live" above.
+- [ ] Choose the NFT gate chain and collection, then set `NFT_GATE_*`.
+- [ ] Not built yet: password change while signed in, leaderboards, reward payouts.
 - [ ] Aeterna's *manual* workflows `launch.yml` ("LAUNCH") and `restart-game.yml`
       ("Restart the run") still restart `aeterna-server` if someone runs them by
       hand. Don't run them while Abbey is paused.
