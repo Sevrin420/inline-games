@@ -1,0 +1,15 @@
+# Secrets: never commit these
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+deploy_key*
+
+# Logs and local junk
+*.log
+logs/
+node_modules/
+.DS_Store
+Thumbs.db

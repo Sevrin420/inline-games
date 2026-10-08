@@ -1,0 +1,41 @@
+# EXAMPLE ONLY. This file is NOT applied automatically. No workflow in this
+# repo writes /etc/caddy/Caddyfile.
+#
+# Today, Aeterna's deploy-server.yml rewrites the whole Caddyfile on every push
+# so that membersonly.cc proxies to the Throbbin Abbey Node app on :3000. That
+# app is what currently serves /lunch-rush/ (from /opt/web/lunch-rush/).
+#
+# Once Abbey is paused and the games are deployed to /opt/games with
+# deploy-games.yml, a Caddyfile like this serves them straight from disk,
+# with no Node app involved. Apply it by hand on the VPS:
+#   sudo cp Caddyfile.example /etc/caddy/Caddyfile   (after editing)
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+# And stop Aeterna's deploy from overwriting it again (remove its push trigger
+# or its "Set up HTTPS reverse proxy (Caddy)" step).
+
+membersonly.cc {
+	encode gzip
+
+	root * /opt/games
+	file_server
+
+	# /lunch-rush (no slash) -> /lunch-rush/ so relative URLs resolve.
+	redir /lunch-rush /lunch-rush/ 308
+
+	# Same caching as the Node server used: HTML/JS/CSS revalidate on every
+	# load so a redeploy reaches players at once; images cache for a day.
+	@code path *.html *.js *.css */
+	header @code Cache-Control "no-cache, must-revalidate"
+	@assets not path *.html *.js *.css */
+	header @assets Cache-Control "public, max-age=86400"
+
+	# X player cards load the game in an iframe. Never send X-Frame-Options.
+	# Today's live site sends no CSP at all, and that works on X. If you ever
+	# add one, it must still let X frame the page, e.g.:
+	#   header Content-Security-Policy "frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com"
+	header -X-Frame-Options
+
+	# Nothing at / yet. Send visitors to Lunch Rush instead of a 404.
+	redir / /lunch-rush/ 302
+}
