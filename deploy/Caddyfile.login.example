@@ -23,14 +23,28 @@ membersonly.cc {
 		# Directory URLs without the slash -> with it, so relative URLs resolve.
 		redir /lunch-rush /lunch-rush/ 308
 		redir /account /account/ 308
+		redir /coop-sweep/x /coop-sweep/x/ 308
+		redir /coop-sweep/play /coop-sweep/play/ 308
 
 		# HTML/JS/CSS revalidate on every load so a redeploy reaches players at
 		# once; images cache for a day. (Scoped to static files: API responses
 		# carry their own Cache-Control: no-store.)
-		@code path *.html *.js *.css */
+		@code {
+			path *.html *.js *.css */
+			not path /coop-sweep/x/* /coop-sweep/play/*
+		}
 		header @code Cache-Control "no-cache, must-revalidate"
 		@assets not path *.html *.js *.css */
 		header @assets Cache-Control "public, max-age=86400"
+
+		# Tweetcraft-style X card pages (post /coop-sweep/x/?v=N; its twitter:player is
+		# /coop-sweep/play/). Same headers as tweetcraft.jai.vin: never cached, and only
+		# X/Twitter (or this site) may frame them. Everything else keeps no CSP.
+		@xcard path /coop-sweep/x/* /coop-sweep/play/*
+		header @xcard {
+			Cache-Control "no-store"
+			Content-Security-Policy "frame-ancestors 'self' https://x.com https://*.x.com https://twitter.com https://*.twitter.com"
+		}
 
 		# Nothing at / yet. Send visitors to Lunch Rush instead of a 404.
 		redir / /lunch-rush/ 302
