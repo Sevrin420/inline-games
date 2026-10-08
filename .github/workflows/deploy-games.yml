@@ -1,0 +1,84 @@
+name: Deploy games (manual)
+
+# MANUAL ONLY for now: there is deliberately no `push` trigger, so nothing
+# reaches the server until you press "Run workflow" in the Actions tab.
+#
+# What it does: copies games/ to /opt/games/ on the VPS. That is all.
+# What it never does: touch /opt/web, /opt/aeterna-server, the
+# aeterna-server service, or /etc/caddy/Caddyfile. Serving /opt/games is a
+# one-time manual Caddy change, see deploy/Caddyfile.example.
+#
+# Needs these repo secrets (same names as Sevrin420/Aeterna):
+#   VPS_SSH_KEY  private key the VPS accepts
+#   VPS_HOST     server hostname or IP
+#   VPS_USER     ssh user
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-games
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same pattern as Aeterna's deploy-server.yml: open ONE ssh connection,
+      # retry it if sshd's MaxStartups throttling refuses it (the box takes
+      # constant ssh scanning), then multiplex every later command over it.
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config <<CFG
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User ${{ secrets.VPS_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ControlMaster auto
+            ControlPath ~/.ssh/cm-%C
+            ControlPersist 10m
+            ConnectTimeout 20
+            ServerAliveInterval 30
+            ServerAliveCountMax 6
+          CFG
+          chmod 600 ~/.ssh/config
+          for i in 1 2 3 4 5 6; do
+            if ssh -N -f vps; then
+              echo "SSH master established on attempt $i"
+              break
+            fi
+            if [ "$i" = 6 ]; then
+              echo "::error::Could not open an SSH connection to the VPS after 6 attempts."
+              exit 1
+            fi
+            echo "Attempt $i refused (MaxStartups throttling?), retrying in $((i * 15))s"
+            sleep $((i * 15))
+          done
+          ssh -O check vps
+
+      - name: Make sure /opt/games exists
+        run: ssh vps 'mkdir -p /opt/games'
+
+      # --delete keeps /opt/games an exact mirror of games/ (a removed game
+      # disappears from the server). It only ever acts inside /opt/games.
+      # --chmod makes files world-readable so Caddy (user "caddy") can serve them.
+      - name: Sync games
+        run: |
+          rsync -az --delete \
+            --chmod=D755,F644 \
+            --exclude '.DS_Store' \
+            -e ssh \
+            games/ vps:/opt/games/
+
+      - name: Show what is on the server
+        run: ssh vps 'ls -la /opt/games; find /opt/games -maxdepth 2 -type f | sort'
+
+      - name: Close the SSH connection
+        if: always()
+        run: ssh -O exit vps 2>/dev/null || true

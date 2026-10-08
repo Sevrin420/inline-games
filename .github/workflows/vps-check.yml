@@ -1,0 +1,72 @@
+name: VPS check (read-only)
+
+# Safer replacement for Aeterna's vps-run.yml. Instead of a free-text box that
+# runs ANY command over ssh, you pick one fixed, read-only check from a
+# dropdown. Nothing here changes the server.
+#
+# Needs repo secrets: VPS_SSH_KEY, VPS_HOST, VPS_USER.
+
+on:
+  workflow_dispatch:
+    inputs:
+      check:
+        description: 'Which read-only check to run on the VPS'
+        required: true
+        type: choice
+        default: list-games
+        options:
+          - list-games
+          - caddy-status
+          - caddy-logs
+          - show-caddyfile
+          - aeterna-server-status
+          - disk-usage
+          - memory-and-uptime
+          - lunch-rush-headers
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config <<CFG
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User ${{ secrets.VPS_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 20
+          CFG
+          chmod 600 ~/.ssh/config
+
+      # The input is read from an env var and matched against a fixed list;
+      # it is never pasted into the shell, so it cannot inject a command.
+      - name: Run check
+        env:
+          CHECK: ${{ inputs.check }}
+        run: |
+          case "$CHECK" in
+            list-games)            CMD='ls -la /opt/games 2>&1; find /opt/games -maxdepth 2 2>/dev/null | sort' ;;
+            caddy-status)          CMD='systemctl --no-pager status caddy' ;;
+            caddy-logs)            CMD='journalctl -u caddy -n 100 --no-pager' ;;
+            show-caddyfile)        CMD='cat /etc/caddy/Caddyfile' ;;
+            aeterna-server-status) CMD='systemctl --no-pager status aeterna-server; systemctl is-enabled aeterna-server' ;;
+            disk-usage)            CMD='df -h /; du -sh /opt/* 2>/dev/null' ;;
+            memory-and-uptime)     CMD='uptime; free -h' ;;
+            lunch-rush-headers)    CMD='curl -sI --max-time 15 https://membersonly.cc/lunch-rush/' ;;
+            *) echo "::error::Unknown check: $CHECK"; exit 1 ;;
+          esac
+          echo "Running: $CMD"
+          for i in 1 2 3 4; do
+            ssh vps "$CMD" && exit 0
+            rc=$?
+            # 255 = ssh itself failed (e.g. MaxStartups refusal); retry that only.
+            [ "$rc" != 255 ] && exit "$rc"
+            echo "ssh refused (attempt $i), retrying in $((i * 15))s"
+            sleep $((i * 15))
+          done
+          exit 1
