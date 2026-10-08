@@ -1,0 +1,35 @@
+# systemd unit for the accounts + play tracking API (server/ in this repo).
+# Installed by .github/workflows/deploy-api.yml to /etc/systemd/system/.
+[Unit]
+Description=inline-games API (accounts, login, play tracking)
+After=network.target
+
+[Service]
+Type=simple
+User=inline-games
+Group=inline-games
+WorkingDirectory=/opt/inline-games-api
+EnvironmentFile=/etc/inline-games-api.env
+# Same Node install that `npm ci` uses on this box (needs >= 22.13 for node:sqlite).
+ExecStart=/usr/local/bin/node --disable-warning=ExperimentalWarning src/server.js
+Restart=on-failure
+RestartSec=3
+
+# Database lives in /var/lib/inline-games-api (created and owned by systemd).
+StateDirectory=inline-games-api
+StateDirectoryMode=0750
+
+# Hardening: the app can't write anywhere except its state directory.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

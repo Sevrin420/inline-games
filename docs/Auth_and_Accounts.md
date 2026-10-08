@@ -1,6 +1,6 @@
 # Accounts and Auth (shared across all games)
 
-Status: **spec, not implemented.** Decisions below are settled unless marked open.
+Status: **built in `server/` (branch `login`), not deployed yet.** Decisions below are settled unless marked open. Where the build had to go beyond or around this spec, see "Implementation notes" at the end.
 
 ## Goals
 
@@ -211,3 +211,19 @@ The current dev stand-in (`POST /register` with a client-generated pseudo-wallet
 4. Access-level middleware and the NFT gate reader, with the chain read stubbed in tests.
 5. Migrate the existing game to `/auth/me`.
 6. Play tracking: `anon_players` and `play_events` tables, `/plays/start` and `/plays/:id/end`, and anonymous-to-account claim on signup, login and link, with tests for double-claim and cross-account attempts.
+
+## Implementation notes (inline-games `server/`)
+
+Built to this spec, in build order, with tests (`server/test/`). Where it differs or adds:
+
+- **Embedded play (X player card).** A game inside the X card is a third-party iframe, so browsers don't send `SameSite=Lax` cookies to it. Requests that send `X-Auth-Mode: token` get the session token in the JSON body instead of a cookie. The game keeps it in its own (partitioned) `localStorage` and sends `Authorization: Bearer`. The anonymous id travels the same way, in `X-Anon-Id`. These are rows in the same `sessions` table, with an added `kind` column (`cookie` | `bearer`). Trade-off: a bearer token is readable by page script, unlike an HttpOnly cookie. Top-level pages still use the cookie only.
+- **Extra endpoints.** `POST /auth/token`: a cookie session (the `/account/` popup) mints a bearer token for the game iframe, delivered by same-origin `postMessage`. `POST /auth/claim`: claims the caller's anonymous id after a popup sign-in. `GET /auth/config`, `GET /plays/mine`, `GET /plays/games`, `GET /plays/access/:gameId`.
+- **`/auth/me`** also returns `hasPassword`, so games can show the signup warning while no wallet is linked.
+- **SIWE.** `POST /auth/siwe/nonce` also accepts `address` and then returns a ready-to-sign EIP-4361 message built by the server. Every field is still verified on submit. Nonces for `reset` carry no `account_id`, because the account is found from the wallet that signs. Login chain: `SIWE_CHAIN_ID` (default 1).
+- **Wallet-only usernames** are generated as `wallet-<6 hex>`. Chosen usernames can't contain `-`, so the two never collide.
+- **Signup with a taken username** returns `409 username_unavailable`. That reveals that the name exists, which no username system can avoid at signup. Login errors are generic, and login spends the same argon2 time for unknown users.
+- **On claim**, `play_events.player_key` is rewritten to `account:<id>` as well as `account_id`, and the browser's anon cookie or id is dropped, so later guest plays start a fresh anonymous history.
+- **Scores from the browser.** `scoreTrusted` in `server/games.json` marks whether a game's scores can be trusted. Lunch Rush is `false`.
+- **Rate limits** are in memory: signup 10 per 10 minutes per IP; login 20 per 10 minutes per IP and 10 per 15 minutes per username; SIWE 30 per 10 minutes per IP; plays/start 120 per minute per IP.
+- **NFT gate**: one gate, from env (`NFT_GATE_*`). It's unconfigured until the gate chain and collection are decided (open item 1), and `nft` games answer `503 gate_unconfigured` until then.
+- **Not built**: password change while signed in (only the wallet reset exists), a leaderboard endpoint, reward computation, and migration of Abbey pseudo-wallet players (open item 2).

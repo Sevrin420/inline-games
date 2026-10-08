@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your account · membersonly.cc</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<style>
+  :root { --ink: #2a1a10; --paper: #fffdf4; --sun: #f8d030; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #8fd3ff; color: var(--ink); font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; display: flex; justify-content: center; padding: 16px; }
+  main { width: 100%; max-width: 380px; }
+  .card { background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 16px; margin: 0 0 8px; }
+  p { margin: 6px 0; } small, .muted { color: #6b5a4a; }
+  input { width: 100%; margin: 4px 0; padding: 9px; border: 1.5px solid var(--ink); border-radius: 8px; font: inherit; background: #fff; }
+  button { font: 600 15px system-ui, sans-serif; border: 1.5px solid var(--ink); border-radius: 8px; padding: 9px 12px; margin: 6px 6px 0 0; cursor: pointer; background: var(--sun); color: var(--ink); }
+  button.alt { background: #fff; } button:disabled { opacity: .5; cursor: default; }
+  .warn { background: #fff1c9; border: 1px solid #e0b030; border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
+  .err { color: #c01808; min-height: 1.2em; font-size: 14px; } .ok { color: #1d7a2a; }
+  .hide { display: none; } code { font-size: 12.5px; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>membersonly.cc account</h1>
+    <p class="muted" id="status">Checking…</p>
+    <p class="err" id="err"></p>
+  </div>
+
+  <!-- Signed in -->
+  <div class="card hide" id="me">
+    <h2 id="me-name"></h2>
+    <p id="me-wallet" class="muted"></p>
+    <p class="warn hide" id="me-warn"></p>
+    <div id="link-box" class="hide">
+      <button id="link-btn" type="button">Link a wallet</button>
+    </div>
+    <div>
+      <button id="back-btn" type="button" class="hide">Back to the game</button>
+      <button id="logout-btn" type="button" class="alt">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Signed out -->
+  <div class="card hide" id="signin">
+    <h2>Sign in</h2>
+    <form id="login-form">
+      <input id="u" type="text" placeholder="Username" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required>
+      <input id="p" type="password" placeholder="Password" autocomplete="current-password" maxlength="200" required>
+      <button type="submit">Sign in</button>
+      <button type="button" class="alt" id="signup-btn">Create account</button>
+    </form>
+    <p class="warn hide" id="signup-warn"></p>
+  </div>
+
+  <div class="card hide" id="wallet">
+    <h2>Wallet</h2>
+    <p class="muted">Sign a message with your wallet. No transaction, no gas. A wallet with no account gets a new wallet-only account.</p>
+    <button id="siwe-btn" type="button">Sign in with wallet</button>
+    <p class="muted hide" id="nowallet">No wallet found in this browser. Open this page in your wallet app's browser (for example MetaMask or Coinbase Wallet).</p>
+    <details>
+      <summary>Forgot your password?</summary>
+      <p class="muted">You can reset it only if your account has a linked wallet.</p>
+      <input id="newpw" type="password" placeholder="New password" autocomplete="new-password" maxlength="200">
+      <button id="reset-btn" type="button" class="alt">Reset with wallet</button>
+    </details>
+  </div>
+</main>
+
+<script src="../shared/auth.js"></script>
+<script>
+(function () {
+  var A = window.MembersAuth;
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var embedFlow = params.get('embed') === '1';
+  var show = function (id, on) { $(id).classList.toggle('hide', !on); };
+  var err = function (m) { $('err').textContent = m || ''; };
+
+  // After sign-in from a game's X-card iframe: hand that frame a token, then close.
+  function handoff() {
+    if (!embedFlow) { notifyOpener(null); return; }
+    if (!window.opener) {
+      $('status').textContent = 'Signed in. Go back to the game. If it still says Guest, sign in there with your username and password.';
+      return;
+    }
+    A.api('POST', '/auth/token', {}).then(function (r) {
+      if (r.status !== 200 || !r.json) { err('Could not pass your sign-in to the game.'); return; }
+      notifyOpener(r.json.token);
+      $('status').textContent = 'Signed in. Returning to the game…';
+      setTimeout(function () { window.close(); }, 600);
+    });
+  }
+  function notifyOpener(token) {
+    try { if (window.opener) window.opener.postMessage({ type: 'mo-auth', token: token }, location.origin); } catch (e) { /* opener gone */ }
+  }
+
+  function render() {
+    var u = A.user;
+    show('me', !!u); show('signin', !u); show('wallet', true);
+    show('back-btn', !!u && embedFlow && !!window.opener);
+    $('siwe-btn').classList.toggle('hide', !!u);
+    if (u) {
+      $('status').textContent = 'Signed in.';
+      $('me-name').textContent = u.username;
+      $('me-wallet').textContent = u.wallet ? 'Wallet ' + u.wallet : 'No wallet linked.';
+      show('link-box', !u.wallet);
+      show('me-warn', !u.wallet && u.hasPassword);
+      $('me-warn').textContent = A.config.signupWarning;
+    } else {
+      $('status').textContent = 'Not signed in. Guests can still play every open game.';
+    }
+  }
+
+  function done(r) {
+    if (r.ok) { err(''); render(); handoff(); } else err(r.message);
+  }
+
+  function getWallet() {
+    var eth = window.ethereum;
+    if (!eth) { show('nowallet', true); return Promise.reject(new Error('No wallet found in this browser.')); }
+    return eth.request({ method: 'eth_requestAccounts' }).then(function (accts) {
+      if (!accts || !accts[0]) throw new Error('No account selected in the wallet.');
+      var address = accts[0];
+      return {
+        address: address,
+        sign: function (message) {
+          var hex = '0x' + Array.prototype.map.call(new TextEncoder().encode(message), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+          return eth.request({ method: 'personal_sign', params: [hex, address] });
+        },
+      };
+    });
+  }
+  function walletFlow(purpose, extra) {
+    err('');
+    return getWallet().then(function (w) { return A.siwe(purpose, w.address, w.sign, extra); },
+      function (e) { return { ok: false, message: e.message }; });
+  }
+
+  $('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    A.login($('u').value.trim(), $('p').value).then(done);
+  });
+  $('signup-btn').addEventListener('click', function () {
+    var warn = $('signup-warn');
+    if (warn.classList.contains('hide')) { // show the required warning before creating the account
+      warn.textContent = A.config.signupWarning + ' Tap Create account again to continue.';
+      show('signup-warn', true); return;
+    }
+    A.signup($('u').value.trim(), $('p').value).then(done);
+  });
+  $('siwe-btn').addEventListener('click', function () { walletFlow('login').then(done); });
+  $('link-btn').addEventListener('click', function () {
+    walletFlow('link').then(function (r) { if (r.ok) { render(); $('status').textContent = 'Wallet linked.'; } else err(r.message); });
+  });
+  $('reset-btn').addEventListener('click', function () { walletFlow('reset', { newPassword: $('newpw').value }).then(done); });
+  $('logout-btn').addEventListener('click', function () { A.logout().then(function () { render(); notifyOpener(null); }); });
+  $('back-btn').addEventListener('click', handoff);
+
+  A.ready.then(function () {
+    if (!A.available) { $('status').textContent = 'Accounts are not switched on yet. You can still play as a guest.'; return; }
+    render();
+    A.onChange(render);
+  });
+})();
+</script>
+</body>
+</html>

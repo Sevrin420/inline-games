@@ -35,6 +35,9 @@
   body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 </style>
+<!-- Optional shared accounts (sign-in chip + play recording). Async and fail-safe:
+     if it doesn't load, or the API isn't there, the game plays exactly as a guest. -->
+<script src="../shared/auth.js" async data-game="lunch-rush" data-corner="br" data-score="mmss"></script>
 </head>
 <body>
 <canvas id="c" aria-label="Lunch Rush game"></canvas>
@@ -622,7 +625,7 @@ function leak(g, s) {
   const [x, y] = P(CTR.c + 0.5, CTR.r + 0.3);
   floatText(g, 'MISSED!', x, y - 14, '#ff5040', 7);
   g.shake = 0.45; g.flash = 0.5;
-  if (g.leaks >= 3) { g.over = true; g.overT = 0; if (!g.demo) mode = 'over'; sel = null; }
+  if (g.leaks >= 3) { g.over = true; g.overT = 0; if (!g.demo) { mode = 'over'; trackEnd(g); } sel = null; }
 }
 function feed(g, s) {
   s.alive = false;
@@ -1041,7 +1044,23 @@ function onTap(lx, ly) {
   if (!t || special(t.c, t.r) || (sel && sel.c === t.c && sel.r === t.r)) { sel = null; return; }
   sel = t;
 }
-function start() { G = newGame(false); mode = 'play'; sel = null; }
+function start() { G = newGame(false); mode = 'play'; sel = null; trackStart(G); }
+
+// ---------------------------------------------------------------- play recording
+// Uses the optional shared accounts client (../shared/auth.js). Every call is
+// guarded and asynchronous, so a missing script or server never affects play.
+// Score = whole seconds survived. Scores come from the browser, so the server
+// treats them as unverified (scoreTrusted: false in server/games.json).
+function trackStart(g) {
+  const A = window.MembersAuth;
+  g.playP = A ? A.startPlay('lunch-rush').catch(() => null) : null;
+}
+function trackEnd(g) {
+  const A = window.MembersAuth;
+  if (!A || !g.playP) return;
+  const score = Math.floor(g.t), meta = { ms: Math.round(g.t * 1000) };
+  g.playP.then(id => id && A.endPlay(id, { outcome: 'completed', score, meta })).catch(() => {});
+}
 cv.addEventListener('pointerdown', e => {
   e.preventDefault();
   const rect = cv.getBoundingClientRect();

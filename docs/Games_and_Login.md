@@ -8,9 +8,9 @@ This is the working reference for the series of games. Read `Auth_and_Accounts.m
 |---|---|
 | Inline X player cards | **Live** for Lunch Rush (`/lunch-rush/`) |
 | Throbbin Abbey | Live, on its own wallet-based dev login |
-| Shared accounts (username + password) | **Specified, not built** |
-| Wallet sign-in (SIWE) and NFT gating | **Specified, not built** |
-| Anonymous play tracking | **Specified, not built**. Lunch Rush doesn't record plays yet |
+| Shared accounts (username + password) | **Built** in `server/`, not deployed yet |
+| Wallet sign-in (SIWE) and NFT gating | **Built**. NFT gate unconfigured until the chain and collection are chosen |
+| Anonymous play tracking | **Built**. Lunch Rush records plays once the API is deployed |
 
 Nothing below says a feature works unless the table says it does.
 
