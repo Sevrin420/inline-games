@@ -19,3 +19,6 @@ Thumbs.db
 server/data/
 *.sqlite
 *.sqlite-*
+
+# Generated at deploy time by tools/build-play-pages.mjs (edit games/<game>/index.html instead)
+games/*/play/

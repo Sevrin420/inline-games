@@ -15,7 +15,8 @@
     "browser": "node --disable-warning=ExperimentalWarning test/browser-embed.mjs",
     "browser:coop-sweep": "node --disable-warning=ExperimentalWarning test/browser-coop-sweep.mjs",
     "preview:coop-sweep": "node test/coop-sweep-preview.mjs",
-    "browser:leaderboard": "node --disable-warning=ExperimentalWarning test/browser-leaderboard.mjs"
+    "browser:leaderboard": "node --disable-warning=ExperimentalWarning test/browser-leaderboard.mjs",
+    "browser:play-page": "node --disable-warning=ExperimentalWarning test/browser-play-page.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
