@@ -85,8 +85,10 @@
   }
 
   A.refresh = function () {
-    return api('GET', '/auth/me').then(function (r) {
-      if (r.status === 200 && r.json) { A.user = r.json; }
+    // Embedded with no token: certainly signed out, so don't even ask.
+    if (embedded && !store.get(TOKEN_KEY)) { A.user = null; emit(); return Promise.resolve(null); }
+    return api('GET', '/auth/me?optional=1').then(function (r) {
+      if (r.status === 200 && r.json && r.json.accountId) { A.user = r.json; }
       else { A.user = null; if (r.status === 401 && embedded) store.del(TOKEN_KEY); }
       emit(); return A.user;
     });

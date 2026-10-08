@@ -4,5 +4,13 @@
     "title": "Lunch Rush",
     "access": "open",
     "scoreTrusted": false
+  },
+  {
+    "id": "coop-sweep",
+    "title": "Coop Sweep",
+    "access": "open",
+    "scoreTrusted": false,
+    "scoreOrder": "asc",
+    "bestOutcome": "win"
   }
 ]

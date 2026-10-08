@@ -106,3 +106,11 @@ test('token mode (embedded iframe): token in body, bearer header works, /auth/to
   assert.equal((await frame.get('/auth/me')).json.username, 'hana');
   assert.equal((await client(app).post('/auth/token')).status, 401);
 });
+
+test('/auth/me?optional=1 answers 200 {signedIn:false} instead of 401', async () => {
+  const { app } = await makeApp();
+  const r = await client(app).get('/auth/me?optional=1');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.json, { signedIn: false });
+  assert.equal((await client(app).get('/auth/me')).status, 401);
+});

@@ -3,7 +3,7 @@ name: Test accounts API
 # Runs the server tests on GitHub's runners only. Never touches the VPS.
 on:
   pull_request:
-    paths: ['server/**', 'games/shared/**', 'games/lunch-rush/**', '.github/workflows/test-api.yml']
+    paths: ['server/**', 'games/**', '.github/workflows/test-api.yml']
   workflow_dispatch: {}
 
 jobs:

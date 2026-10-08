@@ -17,7 +17,7 @@ export async function makeApp({ env = {}, games, balances = new Map(), gateConfi
     now,
     readBalance: async addr => { reads.push(addr); return balances.get(addr) ?? 0n; },
   });
-  const gameMap = games ? new Map(games.map(g => [g.id, { scoreTrusted: false, ...g }])) : undefined;
+  const gameMap = games ? new Map(games.map(g => [g.id, { scoreTrusted: false, scoreOrder: 'desc', bestOutcome: null, ...g }])) : undefined;
   const app = await buildApp({ cfg, db, games: gameMap, gate: gateConfigured ? gate : createGate({ configured: false }), now });
   return { app, db, clock, reads, balances, cfg };
 }
