@@ -22,6 +22,10 @@ Nothing below says a feature works unless the table says it does.
 
 ## Launching a game inline on X
 
+> **2026-10-08:** X no longer plays player cards inline (it just opens the link, even for
+> Tweetcraft), so the live games now use `twitter:card` `summary_large_image` (big image that
+> opens the game). The player-card setup below is kept for if X turns it back on. See README.
+
 X embeds a game as a **player card**: a 480×480 iframe in the timeline.
 
 Required tags in `<head>` (see `web/lunch-rush/index.html`):

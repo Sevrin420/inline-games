@@ -108,8 +108,9 @@ try {
   await step('static pages: Lunch Rush (card tags intact), shared client, account page', async () => {
     const g = await p('GET', '/lunch-rush/');
     assert.equal(g.status, 200);
-    assert.match(g.text, /<meta name="twitter:card" content="player">/);
-    assert.match(g.text, /<meta name="twitter:player" content="https:\/\/membersonly\.cc\/lunch-rush\/">/);
+    assert.match(g.text, /<meta name="twitter:card" content="summary_large_image">/);
+    assert.match(g.text, /<meta name="twitter:image" content="https:\/\/membersonly\.cc\/lunch-rush\/previ\.png">/);
+    assert.doesNotMatch(g.text, /twitter:player"/);
     assert.match(g.text, /src="\.\.\/shared\/auth\.js" async/);
     assert.equal((await p('GET', '/shared/auth.js')).status, 200);
     assert.equal((await p('GET', '/account/')).status, 200);
