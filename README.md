@@ -17,7 +17,7 @@ games/                  everything here is served statically from /opt/games
   coop-sweep/           Coop Sweep: paper-craft minesweeper with hidden hens
     index.html          the whole game in one file; loads hens/manifest.js and ../shared/auth.js
     previ.png           1200×630 card image, rendered from the game (?shot)
-    hens/               THE ONLY hen art folder (swappable): PNGs, manifest.js, SOURCES.md
+    hens/               THE ONLY bird art folder (swappable): 6 hens.farm Hens + 8 Chikn PNGs, manifest.js, SOURCES.md
   shared/auth.js        shared accounts client: sign-in chip, play recording
   shared/leaderboard.js shared paper-craft leaderboard panel (post a name after a win, view top 10)
   account/index.html    account page/popup: password, wallet (SIWE), link, reset
@@ -51,10 +51,12 @@ The docs came from Aeterna, so where they say `web/<game>/`, read
 | Lunch Rush | `/lunch-rush/` | tower-defence lunch line, 3 misses and out | seconds survived (higher is better) |
 | Coop Sweep | `/coop-sweep/` | minesweeper, 8×8 with 10 hidden hens. Tap digs; long-press, right-click or the FLAG toggle flags; arrows/Space/F/R on keyboard. First dig is always safe | seconds to clear, on win and loss (lower is better, only wins count as best) |
 
-Coop Sweep's hen art comes from the Hens NFT collection (hens.farm, Robinhood
-Chain); the owner confirmed permission from hens.farm to use it (2026-10-07).
-See `games/coop-sweep/hens/SOURCES.md`. The game also runs with its own drawn
-hens if that folder is empty.
+Coop Sweep's birds come from two collections in one pool: 6 Hens (hens.farm,
+Robinhood Chain) and 8 Chikn PFPs (chikn.farm, Avalanche). Each board hides 10
+different birds drawn at random from all 14. The owner states permission from
+both hens.farm and Chikn (2026-10-07). Credits, token ids, source URLs and
+sha256 hashes are in `games/coop-sweep/hens/SOURCES.md`. If an image fails to load,
+another bird stands in, and the game draws its own paper hens if the folder is empty.
 
 ## Leaderboard
 

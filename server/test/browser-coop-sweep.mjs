@@ -104,11 +104,18 @@ try {
   // ---------------------------------------------------------- 480x480 X card (cross-site iframe)
   const card = await open(`http://127.0.0.1:${topPort}/`, { width: 480, height: 480, deviceScaleFactor: 2 }, { embedded: true });
   const f = card.frame;
-  await f.waitForFunction(() => window.__CS.henImagesLoaded() === 6);
+  await f.waitForFunction(() => window.__CS.henImagesLoaded() === window.__CS.ART.length);
   await f.waitForSelector('.mo-chip');
   const dpr = await f.evaluate(() => [document.getElementById('c').width, innerWidth, devicePixelRatio]);
   assert.equal(dpr[0], dpr[1] * dpr[2], 'canvas backing store matches devicePixelRatio');
-  ok(`loads at 480x480 in a cross-site iframe; 6 hen images; canvas ${dpr[0]}px for ${dpr[1]}css @${dpr[2]}x`);
+  ok(`loads at 480x480 in a cross-site iframe; ${await f.evaluate(() => window.__CS.henImagesLoaded())} bird images (hens.farm + Chikn); canvas ${dpr[0]}px for ${dpr[1]}css @${dpr[2]}x`);
+  const mix = await f.evaluate(() => { const C = window.__CS, seen = new Set(); let chikn = 0, dup = 0;
+    for (let b = 0; b < 300; b++) { const a = C.deal();
+      if (new Set(a.map(x => x.file)).size !== a.length) dup++; a.forEach(x => { seen.add(x.file); if (x.set === 'chikn') chikn++; }); }
+    return { seen: seen.size, total: C.ART.length, chiknPerBoard: chikn / 300, dup }; });
+  assert.equal(mix.seen, mix.total, 'every bird turns up'); assert.equal(mix.dup, 0, 'no repeats on a board');
+  assert.ok(mix.chiknPerBoard > 4.5 && mix.chiknPerBoard < 7, `even mix (${mix.chiknPerBoard} Chikn per board)`);
+  ok(`300 boards: all ${mix.total} birds used, no repeats per board, ${mix.chiknPerBoard.toFixed(2)} Chikn / 10 per board`);
   await wait(1100); // let a second tick so the winning time is > 0
   await winRun(card.page, f, { screenshot: shotPath });
   await skipBoard(f);
@@ -171,7 +178,7 @@ try {
 
   // ---------------------------------------------------------- phone, touch, top-level
   const phone = await open(`${origin}/coop-sweep/`, { width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
-  await phone.frame.waitForFunction(() => window.__CS.henImagesLoaded() === 6);
+  await phone.frame.waitForFunction(() => window.__CS.henImagesLoaded() === window.__CS.ART.length);
   assert.equal(await phone.frame.evaluate(() => document.getElementById('c').width), 390 * 3);
   await wait(1100);
   await winRun(phone.page, phone.frame, { touch: true });
@@ -204,6 +211,13 @@ try {
   await noArt.page.screenshot({ path: path.join(os.tmpdir(), 'coop-sweep-no-art.png') });
   assert.deepEqual(noArt.errors.filter(e => !/Failed to load resource|ERR_FAILED/.test(e)), []);
   ok('hens/ folder missing: falls back to drawn paper hens, still playable');
+  // only the Chikn images fail: their cells borrow a loaded hens.farm image, no errors
+  const noChikn = await open(`http://127.0.0.1:${barePort}/coop-sweep/`, { width: 480, height: 480 }, { block: /\/hens\/(chikn-|pfp-)/ });
+  await noChikn.frame.waitForFunction(() => window.__CS.henImagesLoaded() === window.__CS.ART.filter(a => a.set !== 'chikn').length);
+  await noChikn.frame.evaluate(() => { const C = window.__CS; C.reveal(0); C.reveal(C.G.cells.findIndex(c => c.hen)); C.step(2); });
+  assert.equal(await state(noChikn.frame), 'lost');
+  assert.deepEqual(noChikn.errors.filter(e => !/Failed to load resource|ERR_FAILED/.test(e)), []);
+  ok('Chikn images missing: those birds fall back to loaded hen art, still playable');
 
   console.log(`\nCoop Sweep browser check passed. Gameplay screenshot: ${shotPath}`);
   await cleanup(); process.exit(0);
