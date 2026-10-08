@@ -6,6 +6,7 @@ name: Deploy accounts API (manual)
 # What it touches on the VPS:
 #   /opt/inline-games-api/                 code (exact mirror of server/, minus tests)
 #   /etc/systemd/system/inline-games-api.service
+#   /opt/inline-games-node/bin/node        copy of the box's Node binary the service runs
 #   /etc/inline-games-api.env              created from server/.env.example ONLY if missing
 #   /var/lib/inline-games-api/             SQLite database (created by systemd)
 #   system user `inline-games`             created if missing
@@ -113,6 +114,15 @@ jobs:
             else
               echo "Keeping existing /etc/inline-games-api.env"
             fi
+            # The service user can't read /root, where /usr/local/bin/node points,
+            # so run the service from a root-owned, world-readable copy of it.
+            NODE_REAL=$(readlink -f /usr/local/bin/node)
+            install -d -m 0755 /opt/inline-games-node/bin
+            if ! cmp -s "$NODE_REAL" /opt/inline-games-node/bin/node; then
+              install -m 0755 -o root -g root "$NODE_REAL" /opt/inline-games-node/bin/node
+              echo "Installed Node $(/opt/inline-games-node/bin/node -v) at /opt/inline-games-node/bin/node"
+            fi
+            runuser -u inline-games -- /opt/inline-games-node/bin/node -v >/dev/null
             systemctl daemon-reload
             systemctl enable inline-games-api
             systemctl restart inline-games-api

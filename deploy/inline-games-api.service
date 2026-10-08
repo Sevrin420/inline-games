@@ -10,8 +10,11 @@ User=inline-games
 Group=inline-games
 WorkingDirectory=/opt/inline-games-api
 EnvironmentFile=/etc/inline-games-api.env
-# Same Node install that `npm ci` uses on this box (needs >= 22.13 for node:sqlite).
-ExecStart=/usr/local/bin/node --disable-warning=ExperimentalWarning src/server.js
+# A world-readable copy of the Node binary `npm ci` uses on this box (needs
+# >= 22.13 for node:sqlite). /usr/local/bin/node is a symlink into /root, which
+# this unprivileged user (and ProtectHome) can't reach, so deploy-api.yml copies
+# the binary to /opt/inline-games-node/bin/node on every deploy.
+ExecStart=/opt/inline-games-node/bin/node --disable-warning=ExperimentalWarning src/server.js
 Restart=on-failure
 RestartSec=3
 
