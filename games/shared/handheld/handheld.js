@@ -20,6 +20,8 @@
  * A sliding power switch on the top rim turns the screen off (CRT shut-off,
  * game frozen: requestAnimationFrame callbacks are held, Web Audio suspended,
  * input blocked) and back on (boot wordmark). Always ON on load.
+ * A mute button on the body (bottom-left) silences all game audio and is
+ * remembered in localStorage; power-off mute and user mute share one gate.
  *
  * The game element keeps receiving direct taps/clicks. Games must size their
  * canvas from the element's box (getBoundingClientRect), not window.inner*;
@@ -93,27 +95,49 @@
     var q = held_raf; held_raf = [];
     rawRAF(function (t) { q.forEach(function (cb) { try { cb(t); } catch (e) { setTimeout(function () { throw e; }); } }); });
   }
-  var audioCtxs = [];
+  // Shared audio gate: power-off OR user mute. Suspends Web Audio, mutes/pauses media.
+  var userMuted = false;
+  try { userMuted = localStorage.getItem('handheld.muted') === '1'; } catch (e) { /* blocked */ }
+  var audioCtxs = [], heldCtx = [], heldMedia = [];
+  function audioGated() { return powerOff || userMuted; }
+  function gateAudio() {
+    if (audioGated()) {
+      audioCtxs.forEach(function (c) {
+        if (c.state === 'running' && heldCtx.indexOf(c) < 0) {
+          heldCtx.push(c); try { c.suspend(); } catch (e) { }
+        }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) {
+        if (heldMedia.some(function (x) { return x.el === m; })) return;
+        var ent = { el: m, wasMuted: !!m.muted, paused: false };
+        try { if (!m.muted) m.muted = true; } catch (e) { }
+        if (!m.paused) { ent.paused = true; try { m.pause(); } catch (e) { } }
+        heldMedia.push(ent);
+      });
+    } else {
+      heldCtx.forEach(function (c) { try { if (c.state === 'suspended') c.resume(); } catch (e) { } });
+      heldCtx = [];
+      heldMedia.forEach(function (x) {
+        try { if (!x.wasMuted) x.el.muted = false; } catch (e) { }
+        if (x.paused) try { x.el.play(); } catch (e) { }
+      });
+      heldMedia = [];
+    }
+  }
   ['AudioContext', 'webkitAudioContext'].forEach(function (name) {
     var Orig = window[name];
     if (typeof Orig !== 'function') return;
     try {
-      var Wrapped = function () { var c = Reflect.construct(Orig, arguments, new.target || Wrapped); audioCtxs.push(c); return c; };
+      var Wrapped = function () {
+        var c = Reflect.construct(Orig, arguments, new.target || Wrapped);
+        audioCtxs.push(c);
+        if (audioGated()) { try { c.suspend(); if (heldCtx.indexOf(c) < 0) heldCtx.push(c); } catch (e) { } }
+        return c;
+      };
       Wrapped.prototype = Orig.prototype; Object.setPrototypeOf(Wrapped, Orig);
       window[name] = Wrapped;
     } catch (e) { /* very old engine: leave audio alone */ }
   });
-  var mutedByPower = [];
-  function muteAll(off) {
-    if (off) {
-      mutedByPower = [];
-      audioCtxs.forEach(function (c) { if (c.state === 'running') { mutedByPower.push(c); try { c.suspend(); } catch (e) { } } });
-      Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { if (!m.paused) { mutedByPower.push(m); try { m.pause(); } catch (e) { } } });
-    } else {
-      mutedByPower.forEach(function (m) { try { if (m.resume) m.resume(); else m.play(); } catch (e) { } });
-      mutedByPower = [];
-    }
-  }
   // While powered off, keyboard input never reaches the game (registered at load = first in line).
   ['keydown', 'keyup', 'keypress'].forEach(function (t) {
     window.addEventListener(t, function (e) { if (powerOff && !e.handheldPower) { e.stopImmediatePropagation(); if (e.cancelable) e.preventDefault(); } }, true);
@@ -181,16 +205,21 @@
     var speaker = h('div', 'hh-speaker', [h('i')]);
     var model = h('div', 'hh-model', ['MO-26 \u00B7 POCKET \u00B7 SQ']);
     var screws = ['tl', 'tr', 'bl', 'br'].map(function (p) { return h('i', 'hh-screw hh-screw-' + p); });
-    var bTheme = h('button', 'hh-mbtn', ['THEME']), bFx = h('button', 'hh-mbtn', ['FX']), bHide = h('button', 'hh-mbtn', ['HIDE']);
-    [bTheme, bFx, bHide].forEach(function (b) { b.type = 'button'; });
-    bTheme.title = 'Change shell color'; bFx.title = 'Screen effect'; bHide.title = 'Hide the handheld (play full screen)';
-    var menu = h('div', 'hh-menu', [bTheme, bFx, bHide]);
-    var showBtn = h('button', 'hh-show', [h('i')]);
-    showBtn.type = 'button'; showBtn.title = 'Show the handheld'; showBtn.setAttribute('aria-label', 'Show the handheld');
+    // Mute button (bottom-left). Speaker icon; slash appears when muted. Replaces the old THEME/FX/HIDE pills.
+    var muteSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    muteSvg.setAttribute('viewBox', '0 0 24 24'); muteSvg.setAttribute('class', 'hh-mute-ico'); muteSvg.setAttribute('aria-hidden', 'true');
+    muteSvg.innerHTML = '<path class="hh-spk-body" d="M3 9v6h4l5 4V5L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>'
+      + '<path class="hh-spk-slash" d="M3.27 2L2 3.27 21.73 23 23 21.73 3.27 2z"/>';
+    var muteBtn = h('button', 'hh-mute', [muteSvg]);
+    muteBtn.type = 'button';
+    muteBtn.setAttribute('aria-label', 'Mute');
+    muteBtn.setAttribute('aria-pressed', userMuted ? 'true' : 'false');
+    muteBtn.title = userMuted ? 'Unmute' : 'Mute';
+    if (userMuted) muteBtn.classList.add('hh-muted');
     var toast = h('div', 'hh-toast');
     screws.forEach(function (n) { device.appendChild(n); });
-    [top, bezel, brand, dpad, ab, sel, start, menu, speaker, model].forEach(function (n) { device.appendChild(n); });
-    root.appendChild(device); root.appendChild(showBtn); root.appendChild(toast);
+    [top, bezel, brand, dpad, ab, sel, start, muteBtn, speaker, model].forEach(function (n) { device.appendChild(n); });
+    root.appendChild(device); root.appendChild(toast);
 
     var parent = el.parentNode, next = el.nextSibling;
     view.insertBefore(el, view.firstChild);
@@ -200,17 +229,19 @@
 
 
     // ------------------------------------------------------------ settings
-    var themeId = store.get('theme') || opts.theme || DEFAULT_THEME;
+    // Sunset is the fixed default. Theme/FX still exist via API and optional URL (?theme=), but there is no UI.
+    var themeId = qs.get('theme') || opts.theme || store.get('theme') || DEFAULT_THEME;
     if (!THEMES.some(function (t) { return t.id === themeId; })) themeId = DEFAULT_THEME; // v1 ids -> new default
-    var fx = store.get('fx') || opts.fx || 'glass';
+    var fx = opts.fx || store.get('fx') || 'glass';
     if (FX.indexOf(fx) < 0) fx = 'glass';
-    var shown = qs.get('handheld') === '0' ? false : qs.get('handheld') === '1' ? true : store.get('on') !== 'off';
+    // Shell is on unless ?handheld=0 (or none/shot above). No HIDE button / restore chip.
+    var shown = qs.get('handheld') !== '0';
     var toastT = 0, powered = true, pwrAnim = '';
     var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     function say(t) { toast.textContent = t; toast.classList.add('hh-toast-on'); clearTimeout(toastT); toastT = setTimeout(function () { toast.classList.remove('hh-toast-on'); }, 1100); }
     function applyClasses() {
       root.className = 'hh-root hh-theme-' + themeId + ' hh-fx-' + fx + (shown ? '' : ' hh-off') + (layout ? ' hh-' + layout : '') + (pointerMode ? ' hh-pointer' : '') +
-        (powered ? '' : ' hh-pwr-off') + (pwrAnim ? ' ' + pwrAnim : '');
+        (powered ? '' : ' hh-pwr-off') + (pwrAnim ? ' ' + pwrAnim : '') + (userMuted ? ' hh-audio-muted' : '');
     }
     function setTheme(id, quiet) {
       if (!THEMES.some(function (t) { return t.id === id; })) return;
@@ -220,16 +251,33 @@
     function setFx(v, quiet) { if (FX.indexOf(v) < 0) return; fx = v; store.set('fx', v); applyClasses(); if (!quiet) say('Screen: ' + FX_NAME[v]); }
     function setVisible(v) {
       if (!v && !powered) setPower(true, true); // never leave a hidden, powered-off game behind
-      shown = !!v; store.set('on', shown ? 'on' : 'off');
+      shown = !!v;
       if (!shown) releaseAll();
       layoutNow();
     }
+    function setMuted(on, quiet) {
+      on = !!on;
+      if (on === userMuted) { applyClasses(); muteBtn.classList.toggle('hh-muted', on); muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false'); return; }
+      userMuted = on;
+      store.set('muted', on ? '1' : '0');
+      muteBtn.classList.toggle('hh-muted', on);
+      muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      muteBtn.title = on ? 'Unmute' : 'Mute';
+      muteBtn.setAttribute('aria-label', on ? 'Unmute' : 'Mute');
+      applyClasses();
+      gateAudio();
+      try { window.dispatchEvent(new CustomEvent('handheld:mute', { detail: { muted: on } })); } catch (e) { /* old browser */ }
+      if (opts.onMute) try { opts.onMute(on); } catch (e) { /* game's problem */ }
+      if (!quiet) say(on ? 'Muted' : 'Sound on');
+    }
     function nudge(e) { e.preventDefault(); e.stopPropagation(); }
-    [bTheme, bFx, bHide, showBtn].forEach(function (b) { b.addEventListener('pointerdown', function (e) { e.stopPropagation(); }); });
-    bTheme.addEventListener('click', function (e) { nudge(e); var i = THEMES.map(function (t) { return t.id; }).indexOf(themeId); setTheme(THEMES[(i + 1) % THEMES.length].id); buzz(); });
-    bFx.addEventListener('click', function (e) { nudge(e); setFx(FX[(FX.indexOf(fx) + 1) % FX.length]); buzz(); });
-    bHide.addEventListener('click', function (e) { nudge(e); setVisible(false); });
-    showBtn.addEventListener('click', function (e) { nudge(e); setVisible(true); });
+    muteBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); muteBtn.classList.add('hh-down'); });
+    muteBtn.addEventListener('pointerup', function () { muteBtn.classList.remove('hh-down'); });
+    muteBtn.addEventListener('pointercancel', function () { muteBtn.classList.remove('hh-down'); });
+    muteBtn.addEventListener('pointerleave', function () { muteBtn.classList.remove('hh-down'); });
+    muteBtn.addEventListener('click', function (e) { nudge(e); setMuted(!userMuted); buzz(); });
+    // Apply persisted mute to audio as soon as the shell mounts (contexts may already exist).
+    if (userMuted) gateAudio();
 
     // ------------------------------------------------------------ layout
     var dead = false, layout = '', scale = 1, inResize = false, lastW = 0, lastH = 0;
@@ -428,7 +476,7 @@
       names.forEach(function (n) { if (old.indexOf(n) < 0) { counts[n] = (counts[n] || 0) + 1; if (counts[n] === 1) press(n); } });
       if (names.length || pointers[id]) pointers[id] = names;
     }
-    function controlsTarget(t) { return t && device.contains(t) && !screen.contains(t) && !menu.contains(t) && !top.contains(t); }
+    function controlsTarget(t) { return t && device.contains(t) && !screen.contains(t) && !muteBtn.contains(t) && !top.contains(t); }
     device.addEventListener('pointerdown', function (e) {
       if (!controlsTarget(e.target)) return;
       e.preventDefault();
@@ -494,13 +542,13 @@
       clearPwr();
       if (!on) {
         if (powered) { releaseAll(); try { window.dispatchEvent(new Event('blur')); } catch (e) { } }
-        powered = false; powerOff = true; muteAll(true);
+        powered = false; powerOff = true; gateAudio();
         pwr.setAttribute('aria-checked', 'false');
         if (quick || reduced) setAnim(''); else { setAnim('hh-anim-off'); later(560, function () { setAnim(''); }); }
         emit(false);
       } else {
         powered = true; pwr.setAttribute('aria-checked', 'true');
-        var wake = function () { powerOff = false; thawFrames(); muteAll(false); emit(true); };
+        var wake = function () { powerOff = false; thawFrames(); gateAudio(); emit(true); };
         if (quick || reduced) { setAnim(''); wake(); return; }
         setAnim('hh-anim-boot');
         later(1250, function () { wake(); setAnim('hh-anim-on'); });
@@ -545,8 +593,9 @@
       root: root, screen: screen, element: el,
       press: press, release: release,
       tap: function () { doAction('a', true); doAction('a', false); },
-      setTheme: setTheme, setFx: setFx, setVisible: setVisible, setPower: setPower,
+      setTheme: setTheme, setFx: setFx, setVisible: setVisible, setPower: setPower, setMuted: setMuted,
       get power() { return powered; },
+      get muted() { return userMuted; },
       get theme() { return themeId; }, get fx() { return fx; }, get visible() { return shown; }, get layout() { return layout || 'off'; },
       get cursor() { return { x: cur.x, y: cur.y, shown: cur.shown }; },
       setCursor: function (x, y) { cur.x = x; cur.y = y; showCursor(); },
