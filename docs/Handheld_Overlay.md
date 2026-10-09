@@ -2,7 +2,7 @@
 
 `games/shared/handheld/` is a shared "brick handheld" shell any game can opt into: a molded-plastic
 body around a big **square** game screen, with a sliding power switch on the top rim, a D-pad, A/B, START/SELECT,
-a dot-grille speaker, screws, power/battery LEDs and a cartridge-slot hint. On phones
+a mute button, a dot-grille speaker, screws, power/battery LEDs and a cartridge-slot hint. On phones
 the buttons are real touch controls. The design and branding (MEMBERSONLY *pocket*,
 "MEMBERSONLY.CC · INLINE PLAY SYSTEM") are our own. It uses no third-party logos, names or artwork.
 
@@ -103,10 +103,15 @@ Change this with `adopt: '<selector>'`, or turn it off with `adopt: null`.
 
 ## Look and settings
 
-These are set with the small **THEME / FX / HIDE** buttons on the body and remembered in `localStorage`
-(`handheld.theme`, `handheld.fx`, `handheld.on`). The settings are shared by every game on the site.
-
-- **Themes** (v2; older saved theme ids fall back to the default):
+- **Mute:** the embossed speaker button on the bottom-left of the body (where THEME / FX / HIDE used to sit).
+  Tap it to silence **all** game audio: Web Audio contexts are suspended, and `<audio>`/`<video>` elements are
+  muted and paused. Tap again to restore. The slash appears on the icon while muted. Remembered in
+  `localStorage` as `handheld.muted` (`1` / `0`), shared by every game on the site. Games can listen for
+  `window` `handheld:mute` (`e.detail.muted`), read `Handheld.current.muted`, call `setMuted(bool)`, or pass
+  `onMute(muted)` to `mount`. Power-off uses the same audio gate, so turning the console back on while mute
+  is on stays silent.
+- **Themes** (no on-shell UI; Sunset is the fixed default). Optional `?theme=<id>`, `mount({ theme })`, or
+  `setTheme(id)`. Older saved theme ids fall back to Sunset. Available ids:
   - `sunset` (default): orange → coral → magenta → plum gradient, yellow A, violet B.
   - `nova`: deep midnight-navy two-tone body, neon coral A, teal B.
   - `matcha`: soft green, cream A, peach B, forest bezel.
@@ -114,15 +119,15 @@ These are set with the small **THEME / FX / HIDE** buttons on the body and remem
   - `gold`: champagne-gold metallic with a black bezel and black buttons.
   - `vapor`: pink → lilac → cyan with a faint grid, hot-pink A, cyan B.
   - Each theme also sets the D-pad, START/SELECT, LED, wordmark and page-glow colours.
+  - If set via API/URL, the choice is stored in `handheld.theme`.
 - **Materials:** specular highlight, molded micro-texture, chamfered edges, embossed wordmark and labels,
   an inset screen with glossy cover glass over the whole bezel. All CSS gradients/shadows, no images.
-- **Screen effect:**
+- **Screen effect** (no on-shell UI; default `glass`). Optional `mount({ fx })` or `setFx(...)`. Stored in
+  `handheld.fx` when changed via API:
   - `glass`: a subtle reflection and inner shadow. This is the default.
   - `lcd`: the glass plus a faint scanline/pixel grid.
   - `off`: no effect.
   - All of these are static CSS layers, so they add no per-frame cost.
-- **Hide:** the game goes back to full-window play. A small handheld button in the top-left corner brings
-  the shell back.
 - **Layout:**
   - **Portrait** puts the screen on top and the controls below. Phones use this layout.
   - **Landscape** puts the D-pad on the left, the screen in the middle and A/B on the right. Desktops and
@@ -135,16 +140,17 @@ These are set with the small **THEME / FX / HIDE** buttons on the body and remem
   collapses to a line and a dot (CRT style), the screen goes black, both LEDs go dark, and the game is
   paused: the shell holds the page's `requestAnimationFrame` callbacks, suspends Web Audio contexts and pauses
   `<audio>`/`<video>`, releases held buttons (and sends a `blur`), and blocks keys, buttons and taps. **ON**: a
-  short wordmark boot, then the picture opens back up and everything resumes where it was. Power is never
-  remembered: the shell always starts ON. Hiding the shell while it is off turns it back on.
+  short wordmark boot, then the picture opens back up and everything resumes where it was (unless mute is on).
+  Power is never remembered: the shell always starts ON.
   Games can listen for `window` `handheld:power` (`e.detail.on`) or pass `onPower(on)` to `mount`.
 - **Sign-in chip:** adopted into the top-right of the rim, clear of the power switch.
 - **Power-on flash:** a short MEMBERSONLY *pocket* flash plays once per browser session. It is skipped
   with reduced motion.
 
 URL switches:
-- `?handheld=0` starts with the shell hidden.
-- `?handheld=1` forces it on.
+- `?handheld=0` starts with the shell disabled (full-window game; no restore chip).
+- `?handheld=1` forces the shell on (same as the default).
+- `?theme=<id>` picks a colour theme for this load (see list above).
 - `?handheld=none` and `?shot` never mount the shell. `?shot` is the X-card image capture, so card images
   stay clean.
 
@@ -157,6 +163,7 @@ as before.
 - `press(name)` and `release(name)`
 - `tap()`
 - `setTheme(id)`, `setFx('glass'|'lcd'|'off')`, `setVisible(bool)`
+- `setMuted(bool)` and `muted`
 - `setCursor(x, y)` (fractions of the game view, `.hh-view`) and `cursor`
 - `setPower(bool, quick)` and `power`
 - `theme`, `fx`, `visible`, `layout`
@@ -173,8 +180,8 @@ as before.
 Thimblewood mounts its `#stage` (the 3D canvas and the UI canvas together) with `data-aspect="1"`, so it
 fills the square screen; tilt-shift, bloom and the
 pixel UI all render inside the screen. While the shell shows, the game sets `html.tw-shell`, hides its own
-stick and A button, and renders the 3D view at a chunkier internal resolution. Hiding the shell (HIDE or
-`?handheld=0`) brings the touch controls back.
+stick and A button, and renders the 3D view at a chunkier internal resolution. Disabling the shell with
+`?handheld=0` brings the touch controls back.
 
 Lunch Rush gained a small key handler for this: Enter or Space starts a run from the title or game-over
 screen, and Escape deselects.
@@ -191,6 +198,7 @@ This runs the demo page, Lunch Rush and Thimblewood (WebGL via SwiftShader) at 3
 - cursor + A taps, and direct screen taps;
 - the square screen and the game fitted inside it at its own aspect;
 - the power switch: tap OFF freezes the game, blocks keys and buttons, LED dark; drag to ON resumes;
-- theme, FX and hide (and that they're remembered; power is not);
+- the mute button: toggles `Handheld.current.muted`, fires `handheld:mute`, suspends Web Audio, persists in
+  `localStorage` (`handheld.muted`);
 - `?shot` and `?handheld=0`;
 - no console errors.

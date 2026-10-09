@@ -189,25 +189,54 @@ try {
     ok(`${tag} Lunch Rush: square ${Math.round(sq.sw)}px screen, game fitted ${Math.round(sq.vw)}x${Math.round(sq.vh)} with side bars`);
     await powerCycle(page, tag, 'lunch-rush', () => { const u = document.getElementById('c').toDataURL(); return u.length + ':' + u.slice(-120); }, touch);
 
-    // themes, screen effect, hide/show; remembered
-    await page.click('.hh-menu .hh-mbtn:nth-child(1)'); await page.click('.hh-menu .hh-mbtn:nth-child(2)');
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx]), ['nova', 'lcd']);
-    await wait(1200);
-    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-nova-lcd.png`) });
-    for (const th of ['matcha', 'smoke', 'gold', 'vapor', 'sunset']) { await page.evaluate(t => window.Handheld.current.setTheme(t, true), th); if (tag === '390x844') await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) }); }
-    await page.evaluate(() => { window.Handheld.current.setTheme('gold', true); window.Handheld.current.setFx('glass', true); });
-    await page.click('.hh-menu .hh-mbtn:nth-child(3)'); // HIDE
-    await wait(100);
-    const off = await page.evaluate(() => { const c = document.getElementById('c'), r = c.getBoundingClientRect(); return [window.Handheld.current.visible, r.width === innerWidth && r.height === innerHeight, c.width]; });
-    assert.equal(off[0], false); assert.ok(off[1], 'hidden: game fills the window');
-    assert.equal(off[2], Math.round(vp.width * Math.min(2, vp.deviceScaleFactor)), 'hidden: canvas back to window size');
-    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-hidden.png`) });
-    if (touch) await page.touchscreen.tap(...await center(page, '.hh-show')); else await page.click('.hh-show');
-    assert.equal(await page.evaluate(() => window.Handheld.current.visible), true);
+    // mute button: toggles all audio, fires handheld:mute, persists
+    assert.equal(await page.evaluate(() => document.querySelectorAll('.hh-mbtn, .hh-show, .hh-menu').length), 0, 'no THEME/FX/HIDE UI');
+    assert.ok(await page.$('.hh-mute'), 'mute button present');
+    await page.evaluate(() => {
+      window.__muteEv = null;
+      window.addEventListener('handheld:mute', e => { window.__muteEv = e.detail.muted; });
+    });
+    // resume a test AudioContext under a user gesture so mute can suspend it
+    await page.evaluate(async () => {
+      const ctx = new AudioContext();
+      window.__testCtx = ctx;
+      if (ctx.state === 'suspended') await ctx.resume();
+      return ctx.state;
+    });
+    assert.equal(await page.evaluate(() => window.__testCtx.state), 'running', 'test AudioContext running before mute');
+    if (touch) await page.touchscreen.tap(...await center(page, '.hh-mute')); else await page.click('.hh-mute');
+    await wait(200);
+    const muted = await page.evaluate(() => ({
+      api: window.Handheld.current.muted,
+      cls: document.querySelector('.hh-mute').classList.contains('hh-muted'),
+      aria: document.querySelector('.hh-mute').getAttribute('aria-pressed'),
+      ev: window.__muteEv,
+      ls: localStorage.getItem('handheld.muted'),
+      ctx: window.__testCtx.state,
+      root: document.querySelector('.hh-root').classList.contains('hh-audio-muted'),
+    }));
+    assert.equal(muted.api, true); assert.ok(muted.cls); assert.equal(muted.aria, 'true');
+    assert.equal(muted.ev, true); assert.equal(muted.ls, '1'); assert.ok(muted.root);
+    assert.equal(muted.ctx, 'suspended', 'Web Audio suspended while muted');
+    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-muted.png`) });
+    // theme still available via API (no UI); snap sunset default + one alt for visuals
+    assert.equal(await page.evaluate(() => window.Handheld.current.theme), 'sunset');
+    if (tag === '390x844') {
+      for (const th of ['nova', 'gold', 'sunset']) {
+        await page.evaluate(t => window.Handheld.current.setTheme(t, true), th);
+        await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) });
+      }
+    }
     await page.reload({ waitUntil: 'load' }); await page.waitForFunction(lrReady);
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx, window.Handheld.current.visible]), ['gold', 'glass', true], 'settings remembered');
+    await wait(1500);
+    assert.equal(await page.evaluate(() => window.Handheld.current.muted), true, 'mute remembered across reload');
+    assert.ok(await page.evaluate(() => document.querySelector('.hh-mute').classList.contains('hh-muted')));
+    if (touch) await page.touchscreen.tap(...await center(page, '.hh-mute')); else await page.click('.hh-mute');
+    await wait(150);
+    assert.equal(await page.evaluate(() => window.Handheld.current.muted), false, 'unmute');
+    assert.equal(await page.evaluate(() => localStorage.getItem('handheld.muted')), '0');
     assert.equal(await page.evaluate(() => window.Handheld.current.power), true, 'always powered on at load');
-    ok(`${tag} Lunch Rush: THEME/FX/HIDE buttons work, hidden mode is full-window, settings remembered across reloads`);
+    ok(`${tag} Lunch Rush: mute toggles, suspends Web Audio, fires handheld:mute, persists across reloads; no THEME/FX/HIDE`);
     assert.deepEqual(errors, []);
     await page.evaluate(() => localStorage.clear());
     await page.close();
@@ -230,14 +259,19 @@ try {
     const x0 = (await st()).x; await hold(page, '.hh-dpad', 600, { touch, dx: -40 });
     assert.ok((await st()).x < x0 - 5, 'D-pad left walks');
     await powerCycle(page, tag, 'thimblewood', () => window.Thimblewood.state().t, touch);
-    await page.click('.hh-menu .hh-mbtn:nth-child(3)'); await wait(200);
-    const hid = await page.evaluate(() => [window.Handheld.current.visible, document.getElementById('c').getBoundingClientRect().width === innerWidth]);
-    assert.deepEqual(hid, [false, true], 'HIDE: full window');
-    if (touch) assert.notEqual(await page.evaluate(() => getComputedStyle(document.getElementById('touch')).display), 'none', 'HIDE: own touch controls back');
-    await page.click('.hh-show'); await wait(200);
+    // mute on Thimblewood
+    assert.equal(await page.evaluate(() => window.Handheld.current.muted), false);
+    if (touch) await page.touchscreen.tap(...await center(page, '.hh-mute')); else await page.click('.hh-mute');
+    await wait(150);
+    assert.equal(await page.evaluate(() => window.Handheld.current.muted), true, 'mute on');
+    assert.ok(await page.evaluate(() => document.querySelector('.hh-mute').classList.contains('hh-muted')));
+    await page.screenshot({ path: path.join(shots, `thimblewood-${tag}-muted.png`) });
+    if (touch) await page.touchscreen.tap(...await center(page, '.hh-mute')); else await page.click('.hh-mute');
+    await wait(100);
+    assert.equal(await page.evaluate(() => window.Handheld.current.muted), false, 'unmute');
     await page.screenshot({ path: path.join(shots, `thimblewood-${tag}.png`) });
     assert.deepEqual(errors, []);
-    ok(`${tag} Thimblewood: square stage fills the square screen, A starts, D-pad walks, HIDE brings back its own controls`);
+    ok(`${tag} Thimblewood: square stage fills the square screen, A starts, D-pad walks, mute toggles`);
     await page.evaluate(() => localStorage.clear());
     await page.close();
   }
@@ -249,8 +283,9 @@ try {
   await none.page.evaluate(() => localStorage.setItem('handheld.theme', 'classic')); await none.page.reload({ waitUntil: 'load' }); await none.page.waitForFunction(lrReady);
   assert.equal(await none.page.evaluate(() => window.Handheld.current.theme), 'sunset', 'old/unknown saved theme falls back to Sunset');
   assert.equal(await none.page.evaluate(() => window.Handheld.current.visible), false);
+  assert.equal(await none.page.evaluate(() => document.querySelector('.hh-show')), null, 'no floating restore button');
   assert.deepEqual([...shot.errors, ...none.errors], []);
-  ok('?shot (card capture) is never wrapped; ?handheld=0 starts hidden');
+  ok('?shot (card capture) is never wrapped; ?handheld=0 disables the shell (no restore chip)');
 
   console.log(`\nHandheld browser check passed. Screenshots in ${shots}`);
   await browser.close(); if (glBrowser) await glBrowser.close(); srv.close(); process.exit(0);

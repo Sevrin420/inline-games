@@ -406,7 +406,7 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 .hh-down .hh-pillcap { transform: translateY(1.5px); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4), 0 0 8px var(--acc2); }
 .hh-pillwrap .hh-lbl { font-size: 7.5px; margin-top: 6px; }
 
-/* ================================================================ speaker, model number, menu */
+/* ================================================================ speaker, model number, mute */
 .hh-speaker { grid-area: speaker; justify-self: end; align-self: center; position: relative; width: 58px; height: 58px; margin-right: 18px; border-radius: 50%;
   background: radial-gradient(circle, var(--well) 60%, transparent 72%); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi); }
 .hh-speaker i { position: absolute; inset: 6px; border-radius: 50%;
@@ -416,22 +416,36 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 .hh-model { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font: 800 6px/1 var(--hh-font); letter-spacing: .22em; color: var(--ink); opacity: .55;
   text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); white-space: nowrap; pointer-events: none; }
 .hh-land .hh-model { bottom: 6px; }
-.hh-menu { grid-area: menu; align-self: center; display: flex; gap: 5px; margin-left: 12px; }
-.hh-land .hh-menu { justify-self: center; margin: 0; }
-.hh-mbtn {
-  font: 800 7.5px/1 var(--hh-font); letter-spacing: .1em; color: var(--ink); cursor: pointer;
-  padding: 5px 7px; border-radius: 10px; border: 0; background: var(--well);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi); opacity: .85;
+/* Mute: single embossed button in the old THEME/FX/HIDE slot (grid area "menu") */
+.hh-mute {
+  grid-area: menu; align-self: center; justify-self: start; margin-left: 14px;
+  position: relative; width: 46px; height: 46px; padding: 0; border: 0; cursor: pointer;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .35) 0 10%, transparent 42%),
+    linear-gradient(165deg, var(--pill1), var(--pill2));
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, .35), inset 0 -2px 3px rgba(0, 0, 0, .35),
+    0 3px 0 rgba(0, 0, 0, .4), 0 6px 10px rgba(0, 0, 0, .3);
+  color: var(--ink); transition: transform .05s, box-shadow .05s, filter .15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.hh-mbtn:hover { opacity: 1; }
-.hh-show {
-  display: none; position: fixed; left: 8px; top: 8px; z-index: 20; width: 30px; height: 30px; padding: 0; cursor: pointer;
-  border-radius: 8px 8px 12px 8px; border: 1.5px solid rgba(0, 0, 0, .55); background: linear-gradient(165deg, var(--b1), var(--b4));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .35); opacity: .75;
+.hh-land .hh-mute { justify-self: center; margin: 0; }
+.hh-mute:hover { filter: brightness(1.08); }
+.hh-mute.hh-down, .hh-mute:active {
+  transform: translateY(2px) scale(.97);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4), 0 1px 0 rgba(0, 0, 0, .35), 0 0 12px var(--acc2);
 }
-.hh-show i { position: absolute; left: 6px; right: 6px; top: 5px; height: 9px; border-radius: 2px; background: var(--bez2); box-shadow: 0 0 0 1px var(--acc2); }
-.hh-show:hover { opacity: 1; }
-.hh-off .hh-show { display: block; }
+.hh-mute-ico { width: 22px; height: 22px; display: block; fill: currentColor; filter: drop-shadow(0 1px 0 var(--embhi)); }
+.hh-mute .hh-spk-slash { display: none; }
+.hh-mute.hh-muted {
+  color: var(--ink2);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, .2), inset 0 -2px 3px rgba(0, 0, 0, .4),
+    0 3px 0 rgba(0, 0, 0, .4), 0 0 14px var(--acc1);
+}
+.hh-mute.hh-muted .hh-spk-slash { display: block; fill: var(--acc1); }
+.hh-mute.hh-muted .hh-spk-body { opacity: .85; }
 .hh-toast {
   position: fixed; left: 50%; top: 14px; z-index: 30; transform: translate(-50%, -10px); opacity: 0; pointer-events: none;
   font: 800 12px/1 "Avenir Next", "Trebuchet MS", system-ui, sans-serif; letter-spacing: .08em; color: #fff; background: rgba(12, 14, 26, .86);
