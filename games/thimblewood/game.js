@@ -114,7 +114,7 @@ const pal = (base, n = 5, lo = .55, hi = .38) => { const out = []; for (let i = 
 const TREE = {
   autumn: ['#b4472b', '#d96a32', '#f0a03e'], gold: ['#a5772a', '#cf9d34', '#efc95c'], plum: ['#5a2a4e', '#8a4a6e', '#b0607a'],
   crimson: ['#7e2626', '#a8352e', '#d0533a'], amber: ['#b0601e', '#de8a2a', '#f6b746'], rust: ['#74361c', '#9e4c26', '#c56e36'],
-  apple: ['#5a7a2a', '#8aa03a', '#c8c050'], hedge: ['#3a5a26', '#557a30', '#8a9a40'],
+  apple: ['#5a7a2a', '#8aa03a', '#c8c050'], hedge: ['#3a5a26', '#557a30', '#8a9a40'], swamp: ['#24402e', '#36583c', '#587a4a'],
 };
 const treePal = k => { const c = TREE[k] || TREE.autumn; return [dark(c[0], .55), dark(c[0], .25), c[0], c[1], c[2], lite(c[2], .35)]; };
 // sky: background gradient; fog: haze colour; sun: key light; hemi: sky/ground fill; grade: [shadow tint, light tint]
@@ -142,6 +142,9 @@ const AP = {
   // ---- Sunscorch Desert: hot gold light, sandstone mesas, heat shimmer
   desert: { sky: ['#f8dca0', '#d88a5a'], fog: '#e8c098', sun: '#fff0c8', hemi: ['#fff0d0', '#7a5a48'], ground: '#d4ac6c', ground2: '#c89a5a', path: '#e8cc98', trees: ['hedge'], fireflies: 0, rays: .45, grade: [[.8, .7, .95], [1, .88, .7]], mist: '#f8e0b8', rock: '#c0784a', rockSpots: ['#a85a34', '#d89a6a', '#8a4a2a', '#e8b080'], litter: ['#c8a060', '#e8c890', '#a88048', '#f0dcb0'], fall: 'none', tufts: false, heat: 1, sand: 36, backdrop: 'mesa', hemiI: 1.2, sunI: 1.55, noPiles: true },
   bazaar: { sky: ['#f8d8a0', '#d8885a'], fog: '#e8c098', sun: '#fff0c8', hemi: ['#fff0d0', '#7a5a48'], ground: '#d4ac6c', ground2: '#c89a5a', path: '#e8cc98', cobble: '#c8a878', trees: ['gold'], fireflies: 0, rays: .5, grade: [[.8, .7, .95], [1, .88, .7]], mist: '#f8e0b8', litter: ['#c8a060', '#e8c890', '#a88048', '#c83a2a', '#3a6aa8'], fall: 'none', heat: .7, sand: 12, hemiI: 1.2, sunI: 1.55 },
+  // ---- Mistmire: green-grey murk, willows, glowing wisps over still water
+  swamp: { sky: ['#b4c8a8', '#4a5a50'], fog: '#7a9086', sun: '#f4ecc8', hemi: ['#e0ecd8', '#34443c'], ground: '#56663c', ground2: '#4a5a3e', path: '#958e66', trees: ['swamp', 'hedge', 'swamp'], fireflies: 26, flyC: '#b0ffd4', rays: .45, beams: 0, grade: [[.64, .74, .9], [.96, .98, .86]], mist: '#d4e4d4', rock: '#5e6a5c', litter: ['#5a6a3a', '#7a8a4a', '#3a4a2a', '#8a7a5a'], fall: 'none', willows: true, noPiles: true, fernC: '#4e7a3a', sea: ['#1c3a2e', '#3a5c40', '#a4c494'], hemiI: 1.3, sunI: 1.35 },
+  swamp2: { sky: ['#a8bca4', '#3a4a48'], fog: '#6a8078', sun: '#ece4c4', hemi: ['#d8e6d4', '#2e3e38'], ground: '#4e5e3a', ground2: '#46563e', path: '#8a8462', trees: ['swamp', 'swamp', 'hedge'], fireflies: 34, flyC: '#b0ffd4', rays: .35, beams: 0, grade: [[.6, .72, .9], [.94, .98, .88]], mist: '#cfe0d2', rock: '#5a6458', litter: ['#5a6a3a', '#7a8a4a', '#3a4a2a', '#8a7a5a'], fall: 'none', tufts: false, willows: true, noPiles: true, fernC: '#4e7a3a', sea: ['#18342a', '#34563c', '#9cbc8e'], hemiI: 1.25, sunI: 1.25 },
   glade: { sky: ['#ffe0a0', '#c88a5a'], fog: '#e0b080', sun: '#fff0c0', hemi: ['#fff0c8', '#7a5a6a'], ground: '#a48a3c', ground2: '#b4722e', path: '#dab47e', trees: ['gold', 'amber', 'autumn'], fireflies: 28, rays: 1, grade: [[.76, .66, .98], [1, .86, .6]], mist: '#fff0d6' },
 };
 const AUT = ['#c4542f', '#e08a2a', '#f5b445', '#b23a32', '#a5502a', '#d8583e', '#e9c24a'];
@@ -602,9 +605,11 @@ function paintPine(o) {
   return p.done({ ax: 26, ay: 83 });
 }
 function paintBush(o) {
-  const r = rng(o.seed), C = treePal(o.pal), p = new Pix(36, 26);
+  const r = rng(o.seed), C = o.snow ? ['#2e4a44', '#46665c', '#7a968c'] : treePal(o.pal), p = new Pix(36, 26);
   p.ell(11, 15, 9, 8, C); p.ell(25, 15, 9, 8, C); p.ell(18, 10, 10, 8.5, C);
-  if (o.berries !== false) for (let i = 0; i < 6; i++) { const x = 6 + r() * 24 | 0, y = 6 + r() * 14 | 0; if (p.on(x, y)) { p.set(x, y, '#c02a3a'); p.set(x, y - 1, '#ff6a6a'); } }
+  if (o.berries !== false && !o.snow) for (let i = 0; i < 6; i++) { const x = 6 + r() * 24 | 0, y = 6 + r() * 14 | 0; if (p.on(x, y)) { p.set(x, y, '#c02a3a'); p.set(x, y - 1, '#ff6a6a'); } }
+  if (o.snow) { for (let x = 0; x < 36; x++) { let y = 0; while (y < 26 && !p.on(x, y)) y++; if (y < 23) { p.set(x, y, '#ffffff'); p.set(x, y + 1, '#eef4fa'); if (x % 3) p.set(x, y + 2, '#c8d6e2'); } }
+    for (let i = 0; i < 14; i++) { const x = 4 + r() * 28 | 0, y = 8 + r() * 12 | 0; if (p.on(x, y) && p.on(x + 1, y)) { p.set(x, y, '#e8f0f8'); p.set(x + 1, y, '#ffffff'); } } }
   return p.done({ ax: 18, ay: 24 });
 }
 function paintMush(o) {
@@ -881,7 +886,7 @@ function paintPalm(o) { const r = rng(o.seed || 5), p = new Pix(84, 86), K = ['#
     for (let s = 0; s < len; s++) { const u = s / len, x = tx + Math.cos(a) * s, y = ty + Math.sin(a) * s * .55 + u * u * 22, w = Math.sin(u * Math.PI) * 4.6;
       for (let q = -w; q <= w; q += 1) p.set(x - Math.sin(a) * q * .4, y + q * .7, L[Math.max(0, Math.min(4, 2 + Math.round(-q / 2) + (s % 4 === 0 ? -1 : 0)))]); } }
   for (let k = 0; k < 4; k++) p.ell(tx - 4 + k * 3, ty + 4 + (k % 2), 2.2, 2.2, ['#5a3a1a', '#7a5428', '#9a7038']);
-  return p.done({ ax: 42, ay: 117 }); }
+  return p.done({ ax: 42, ay: 85 }); }
 function paintCairn(o) { const r = rng(o.seed || 2), p = new Pix(22, 30), G = ['#4a4a50', '#6a6a72', '#8a8a92', '#acacb4'];
   let y = 28; for (let k = 0; k < 5; k++) { const w = 9 - k * 1.3 + r(), h = 3 - k * .2; p.ell(11 + (r() - .5) * 2, y - h, w, h + .6, G); y -= h * 2 - .5; }
   p.ell(11, y + 1, 3, 1.2, '#f4f6fa'); return p.done({ ax: 11, ay: 29 }); }
@@ -1059,14 +1064,14 @@ const AREADEF = {
   },
   hollow: {
     name: 'The Old Hollow', pal: 'hollow', w: 480, h: 400,
-    exits: [{ e: 'e', a: 226, b: 284, to: 'clearing', sx: 16, sy: 255 }, { e: 'n', a: 102, b: 132, to: 'glade', sx: 180, sy: 282, hidden: true }],
-    paths: [[[490, 255], [330, 250], [250, 200]]],
-    props: [['bigtree', 240, 172, {}], ['stump', 336, 206, {}], ['lantern', 172, 214, {}], ['lantern', 322, 262, {}],
+    exits: [{ e: 'e', a: 226, b: 284, to: 'clearing', sx: 16, sy: 255 }, { e: 'n', a: 102, b: 132, to: 'glade', sx: 180, sy: 282, hidden: true }, { e: 'w', a: 226, b: 284, to: 'mire', sx: 504, sy: 255 }],
+    paths: [[[490, 255], [330, 250], [250, 200]], [[330, 250], [160, 262], [-10, 255]]],
+    props: [['bigtree', 240, 172, {}], ['sign', 64, 216, {}], ['stump', 336, 206, {}], ['lantern', 172, 214, {}], ['lantern', 322, 262, {}],
       ['bush', 117, GT + 22, { pal: 'autumn', id: 'fakebush', berries: false }],
       ['mush', 92, 210, { s: .6, cap: '#f08a3c' }], ['mush', 102, 216, { s: .42, cap: '#e2493b' }], ['rock', 400, 150, { c: '#a8a296' }],
       ['tree', 92, 330, { pal: 'gold' }], ['fern', 380, 340, {}], ['fern', 168, 300, {}], ['leafpile', 270, 320, {}], ['pumpkin', 432, 212, {}], ['pumpkin', 418, 220, { c: '#d06a1e' }], ['log', 300, 360, {}], ['leafpile', 150, 250, {}]],
     items: [['a10', 'acorn', 56, 300], ['a11', 'acorn', 424, 330]],
-    npcs: ['wick'], objs: ['door'],
+    npcs: ['wick'], objs: ['door', 'hollowsign'],
   },
   glade: {
     name: 'Hidden Glade', pal: 'glade', w: 360, h: 300,
@@ -1287,7 +1292,7 @@ const AREADEF = {
     name: 'Palm Oasis', pal: 'desert', border: 'desert', lush: true, w: 520, h: 400, cliffH: 40, pond: { x: 280, y: 196, rx: 110, ry: 46 },
     exits: [{ e: 'e', a: 226, b: 284, to: 'dunes', sx: 16, sy: 255 }, { e: 's', a: 240, b: 280, to: 'bazaar', sx: 280, sy: GT + 26 }],
     paths: [[[530, 255], [400, 284], [260, 300], [260, 410]]],
-    props: [['palm', 150, 168, { seed: 1 }], ['palm', 414, 166, { seed: 2 }], ['palm', 178, 264, { seed: 3 }], ['palm', 386, 262, { seed: 4 }], ['palm', 290, 136, { seed: 5 }], ['palm', 60, 140, { seed: 6 }],
+    props: [['palm', 140, 214, { seed: 1 }], ['palm', 424, 212, { seed: 2 }], ['palm', 178, 268, { seed: 3 }], ['palm', 386, 266, { seed: 4 }], ['reeds', 290, 148, {}], ['palm', 56, 196, { seed: 6 }], ['palm', 486, 330, { seed: 5 }],
       ['reeds', 186, 226, {}], ['reeds', 372, 228, {}], ['reeds', 230, 160, {}], ['lily', 250, 196, {}], ['lily', 320, 210, {}], ['lily', 290, 180, {}], ['flowers', 200, 290, {}], ['flowers', 360, 300, {}],
       ['cactus', 470, 340, { seed: 7 }], ['cactus', 50, 330, { seed: 8 }], ['claypots', 90, 250, { seed: 5 }], ['rock', 460, 130, { c: '#c0784a' }]],
     items: [], npcs: ['humphrey'], objs: [],
@@ -1298,11 +1303,35 @@ const AREADEF = {
     exits: [{ e: 'n', a: 260, b: 300, to: 'oasis', sx: 260, sy: 392 }],
     shops: [{ x0: 96, x1: 220, style: 'adobe2', roof: 'flat', sign: 'spice', door: .5, h: 52 }, { x0: 360, x1: 470, style: 'adobe', roof: 'flat', sign: 'rug', door: .4, h: 48 }],
     paths: [[[280, 40], [280, 400]], [[40, 250], [520, 250]]],
-    props: [['stall', 150, 186, { kind: 'spice' }], ['stall', 420, 186, { kind: 'rug' }], ['stall', 140, 330, { kind: 'pottery' }], ['palm', 40, 150, { seed: 7 }], ['palm', 522, 160, { seed: 8 }], ['palm', 470, 340, { seed: 9 }], ['well', 280, 300, {}],
+    props: [['stall', 150, 186, { kind: 'spice' }], ['stall', 420, 186, { kind: 'rug' }], ['stall', 140, 330, { kind: 'pottery' }], ['palm', 44, 230, { seed: 7 }], ['palm', 520, 236, { seed: 8 }], ['palm', 470, 340, { seed: 9 }], ['well', 280, 300, {}],
       ['claypots', 236, 100, { seed: 1 }], ['claypots', 500, 100, { seed: 3 }], ['crate', 60, 100, { stack: true }], ['barrel', 330, 96, {}], ['lamp', 230, 196, {}], ['lamp', 330, 196, {}], ['bench', 400, 330, {}]],
     strings: [[[96, 52, 46], [220, 52, 46], 8], [[360, 48, 46], [470, 48, 46], 6], [[150, 40, 186], [420, 40, 186], 14]],
     items: [], npcs: ['zahra'], objs: ['bazaarsign'],
     critters: [['cat', 330, 100], ['lizard', 200, 360], ['lizard', 380, 120]],
+  },
+  // ================= Mistmire (west of the Old Hollow)
+  mire: {
+    name: 'Mistmire Edge', pal: 'swamp', w: 520, h: 400, cliffH: 40, marsh: 2, pond: { x: 330, y: 150, rx: 96, ry: 34 },
+    exits: [{ e: 'e', a: 226, b: 284, to: 'hollow', sx: 16, sy: 255 }, { e: 'w', a: 226, b: 284, to: 'bog', sx: 504, sy: 255 }],
+    paths: [[[530, 255], [400, 262], [260, 238], [130, 250], [-10, 255]]],
+    props: [['willow', 110, 150, { seed: 1 }], ['willow', 470, 330, { seed: 2, c: '#7a8a3a' }], ['willow', 60, 340, { seed: 3 }], ['reeds', 240, 168, {}], ['reeds', 420, 150, {}], ['reeds', 300, 186, {}], ['reeds', 380, 178, {}],
+      ['lily', 300, 146, {}], ['lily', 350, 160, {}], ['lily', 280, 136, {}], ['log', 200, 330, {}], ['stump', 420, 210, {}], ['mush', 180, 196, { s: .5, cap: '#7a9a5a', glow: '#b0ffd4' }], ['mush', 190, 204, { s: .38, cap: '#5a8a6a', glow: '#b0ffd4' }],
+      ['mush', 330, 330, { s: .5, cap: '#9a6fc0' }], ['sign', 470, 214, {}], ['lantern', 150, 222, {}], ['fern', 250, 330, {}], ['fern', 120, 290, {}]],
+    items: [], npcs: [], objs: ['miresign'],
+    critters: [['frog', 240, 196], ['frog', 420, 196], ['wisp', 330, 150], ['wisp', 160, 300]],
+  },
+  bog: {
+    name: 'Willow Bog', pal: 'swamp2', w: 540, h: 400, cliffH: 36, marsh: 3, pond: { x: 300, y: 252, rx: 210, ry: 104 },
+    hut: { x0: 330, x1: 440, z0: 76, z1: 140 },
+    exits: [{ e: 'e', a: 226, b: 284, to: 'mire', sx: 16, sy: 255 }],
+    decks: [[150, 240, 560, 268], [96, 196, 176, 306], [372, 128, 396, 240]],
+    paths: [[[560, 255], [520, 255]]],
+    props: [['willow', 60, 140, { seed: 4 }], ['willow', 500, 140, { seed: 5, c: '#7a8a3a' }], ['willow', 40, 350, { seed: 6 }], ['willow', 510, 370, { seed: 7 }],
+      ['reeds', 130, 180, {}], ['reeds', 200, 330, {}], ['reeds', 420, 330, {}], ['reeds', 470, 200, {}], ['reeds', 250, 170, {}],
+      ['lily', 240, 220, {}], ['lily', 330, 300, {}], ['lily', 280, 300, {}], ['lily', 450, 230, {}], ['lily', 230, 290, {}], ['lily', 360, 210, {}],
+      ['boat', 210, 290, { c: 'white' }], ['lantern', 180, 236, {}], ['lantern', 400, 236, {}], ['bollard', 172, 270, {}], ['bollard', 500, 270, {}], ['mush', 70, 250, { s: .5, cap: '#7a9a5a', glow: '#b0ffd4' }], ['barrel', 360, 136, {}]],
+    items: [], npcs: ['ondine'], objs: ['bogpost', 'boghut'],
+    critters: [['wisp', 260, 200], ['wisp', 440, 300], ['wisp', 140, 320], ['wisp', 330, 330], ['frog', 300, 248], ['heron', 470, 310]],
   },
 };
 
@@ -1341,6 +1370,7 @@ const NPCS = {
   bryn: { area: 'pass', kind: 'goat', name: 'Bryn', color: '#c83a2a', x: 250, y: 172, h: 36, top: 44, range: 34, lines: [['Bryn. I keep the waystation. Tea\u2019s on, boots by the door.', 'The pass is the roof of the world. West, the land falls away to the desert.'], ['The rope bridge? Sturdy as a goat. I check every knot each spring.', 'Hear that wind? Means snow by supper.'], ['Eagles nest on the cliffs. They\u2019ll circle you for a while, then lose interest.']] },
   humphrey: { area: 'oasis', kind: 'camel', name: 'Humphrey', color: '#a07440', x: 120, y: 322, h: 52, top: 60, range: 40, lines: [['Mmmm. Humphrey. I carry spice to the bazaar, and bring stories back.', 'The palms drink first. Then the camels. Then the travellers. That is the oasis rule.'], ['South is the Mirage Bazaar. Zahra sells spice that makes your ears glow.'], ['Sand in your boots? Sand in your boots forever. Welcome to the desert.']] },
   zahra: { area: 'bazaar', kind: 'fennec', name: 'Zahra', color: '#a83a54', x: 150, y: 212, h: 34, top: 42, range: 34, lines: [['Saffron, cumin, sumac, star anise! Zahra\u2019s spices, the best this side of the pass.', 'Smell that? Cardamom. It makes even mountain tea taste like sunshine.'], ['The rug stall has carpets woven by moonlight. Or so they claim.', 'The well in the square never runs dry. Nobody knows why.'], ['My ears? They hear a bargain three streets away.']] },
+  ondine: { area: 'bog', kind: 'turtle', name: 'Ondine', color: '#4a7a3a', x: 136, y: 252, h: 30, top: 36, range: 38, lines: [['Ondine. I pole the ferry when the water\u2019s high, and nap on this boardwalk when it isn\u2019t.', 'Those little lights? Wisps. Harmless. They just like company.'], ['Never follow a wisp off the planks. They\u2019re terrible at directions.', 'The heron and I have an understanding. He takes the frogs\u2019 side.'], ['Slow and steady crosses every bog.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -1366,7 +1396,7 @@ function buildArea(id) {
   const treePal = () => (ap.trees || AP.meadow.trees)[(r() * (ap.trees || AP.meadow.trees).length) | 0];
   // border: a back row of trees along the top (forest only: town areas have buildings), then the sides and the front
   if (A.kind === 'forest') {
-    const fz = q => A.falls && Math.abs(q - A.falls.x) < A.falls.w / 2 + 34, hut = q => A.hut && q > A.hut.x0 - 30 && q < A.hut.x1 + 30, tk = q => ap.pines ? 'pine' : r() < q ? 'pine' : 'tree';
+    const fz = q => A.falls && Math.abs(q - A.falls.x) < A.falls.w / 2 + 34, hut = q => A.hut && q > A.hut.x0 - 30 && q < A.hut.x1 + 30, tk = q => ap.willows ? (r() < .45 ? 'willow' : 'tree') : ap.pines ? 'pine' : r() < q ? 'pine' : 'tree';
     if (A.border === 'desert') { for (let x = 16 + r() * 20; x < A.w; x += 50 + r() * 40) if (!inExit('n', x, 26)) add(r() < .6 ? 'cactus' : 'rock', x, GT + 10 + r() * 10, { seed: 1 + (r() * 9 | 0), c: ap.rock }); }
     else { for (let x = 6 + r() * 10; x < A.w; x += 30 + r() * 12) if (!inExit('n', x, 22) && !fz(x) && !hut(x)) add(tk(.3), x, GT + 12 + r() * 12, { pal: treePal(), snow: ap.snowPine });
     for (let x = 20 + r() * 20; x < A.w; x += 44 + r() * 20) if (!inExit('n', x, 30) && !fz(x) && !hut(x)) add(tk(.4), x, GT - 2 + r() * 6, { pal: treePal(), snow: ap.snowPine }); }
@@ -1379,7 +1409,7 @@ function buildArea(id) {
       if (inExit(side, y, 26)) continue;
       const x = side === 'w' ? 6 + r() * 8 : A.w - 6 - r() * 8; addB(r() < .3 ? 'bush' : ap.pines || r() < .5 ? 'pine' : 'tree', x, y, { pal: treePal(), snow: ap.snowPine });
     }
-    for (let x = 10 + r() * 10; x < A.w; x += 30 + r() * 14) if (!inExit('s', x, 22)) addB(r() < .7 ? 'bush' : 'fern', x, A.h - 2 - r() * 4, { pal: treePal(), berries: r() < .4 });
+    for (let x = 10 + r() * 10; x < A.w; x += 30 + r() * 14) if (!inExit('s', x, 22)) addB(r() < .7 ? 'bush' : ap.snowPine ? 'snowrock' : 'fern', x, A.h - 2 - r() * 4, { pal: treePal(), berries: !ap.snowPine && r() < .4, snow: ap.snowPine });
   } else if (A.border === 'town') {   // crates, barrels, flower boxes and hedges where the square meets the houses
     const pick = () => { const q = r(); return q < .28 ? ['barrel', {}] : q < .5 ? ['crate', { stack: r() < .4 }] : q < .75 ? ['planter', { seed: 1 + (r() * 4 | 0) }] : ['bush', { pal: 'hedge', berries: false }]; };
     for (const side of ['w', 'e']) { if (side === 'e' && A.view === 'e') continue; for (let y = GT + 44 + r() * 10; y < A.h - 14; y += 36 + r() * 18) {
@@ -1401,7 +1431,7 @@ function buildArea(id) {
     if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
     if (A.kind === 'cave') { const q = r(); add(q < .5 ? 'stalag' : 'mush', x, y, q < .5 ? { seed: 1 + (r() * 9 | 0), c: ap.rock } : { s: .35 + r() * .15, cap: ['#2f9e9a', '#8a5cc9', '#c4542f'][(r() * 3) | 0] }); i++; continue; }
     if (A.border === 'desert') { const q = r(); if (A.lush) { add(q < .12 ? 'cactus' : q < .55 ? 'fern' : q < .8 ? 'flowers' : 'rock', x, y, { seed: 1 + (r() * 9 | 0), c: q < .12 ? undefined : q < .55 ? '#6a9a3e' : q < .8 ? undefined : ap.rock }); i++; continue; } add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
-    { const q = r(); add(q < .45 ? (ap.noPiles ? (ap.pines ? 'cairn' : 'rock') : 'leafpile') : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : ap.noPiles && q >= .45 && q < .75 ? { c: ap.pines ? '#5e7a48' : '#7a7a4a' } : {}); } i++;
+    { const q = r(); add(q < .45 ? (ap.noPiles ? (ap.pines ? 'cairn' : 'rock') : 'leafpile') : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : ap.noPiles && q >= .45 && q < .75 ? { c: ap.fernC || (ap.pines ? '#5e7a48' : '#7a7a4a') } : {}); } i++;
   }
   A.solids = [];
   for (const p of A.props) { const sd = pv(PROPDEF[p.k].solid, p); if (sd && p.id !== 'fakebush' && p.id !== 'fakehedge') sd.forEach(s => A.solids.push({ x: p.x + s[0], y: p.y + s[1], r: s[2] })); }
@@ -1583,6 +1613,10 @@ const OBJS = {
   hutdoor: { area: 'pass', x: 375, y: 148, h: 30, top: 36, range: 28, use() { sfx.door(); say('Waystation', '#7a5a3a', null, ['Warm air and woodsmoke spill out of the hut.', 'A kettle sings on the stove. A sign reads: "Take a cup, leave a story."']); } },
   dunesign: { area: 'dunes', x: 480, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Frostcap Pass  \u00b7  West: Palm Oasis', 'The paint has been sand-blasted to a whisper.']); } },
   bazaarsign: { area: 'bazaar', x: 236, y: 290, h: 44, range: 26, use() { say('Well', '#5a8aa8', null, ['A deep, cool well in the middle of the bazaar.', 'You drop a pebble. A long time later: plink.']); } },
+  hollowsign: { area: 'hollow', x: 64, y: 216, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Mistmire  \u00b7  East: Sunny Clearing', 'Someone scratched a little wisp under the arrow.']); } },
+  miresign: { area: 'mire', x: 470, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: The Old Hollow  \u00b7  West: Willow Bog', '"Stay on the path. The bog keeps what it finds."']); } },
+  bogpost: { area: 'bog', x: 500, y: 254, h: 30, range: 24, use() { say('Ferry Post', '#5a8a5a', null, ['A bell on a post. A sign: "Ferry: ask Ondine. Fare: one good story."']); } },
+  boghut: { area: 'bog', x: 384, y: 148, h: 40, range: 26, use() { say('Stilt Hut', '#5a8a5a', null, ['The hut smells of peat smoke and mint tea. A kettle hums inside.']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
@@ -2389,6 +2423,11 @@ function buildExtras2(A, G, out, r) {
     for (let i = 0; i < 8; i++) { const x = -260 + i * (A.w + 520) / 7 + (r() - .5) * 60, z = CLIFF_Z - CLIFF_D - 120 - r() * 320, w = 60 + r() * 90, h = 40 + r() * 90; B.box(rk, x - w / 2, x + w / 2, CH - 2, CH + h, z - 40, z, { top: 'c|#d89a62' }); B.box(rk, x - w / 2 - 14, x + w / 2 + 14, CH - 2, CH + h * .3, z - 52, z + 12, { top: 'c|#d8a070' }); } }
   flushBuilder(B, G);
 }
+function buildExtras3(A, G, out, r) {   // marsh: thin layers of drifting ground mist
+  if (!A.marsh) return; const ap = A.ap;
+  for (let i = 0; i < A.marsh; i++) { const t = tex(MISTC, true, true); t.repeat.set(3, 2); t.offset.y = r();
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(A.w + 240, A.h - GT + 60).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: t, color: ap.mist, transparent: true, opacity: .09 + i * .03, depthWrite: false }));
+    m.position.set(A.w / 2, 3 + i * 5, (A.h + GT) / 2); m.renderOrder = 3; G.add(m); out.mist.push({ m, t, sp: .004 + r() * .005, a: .1 }); MATS.push(m.material); } }
 function worldFx2(A, W, t, dt, lowFx) {
   const ap = A.ap; let n0 = smN;
   if (W.spray) { const F = W.spray; for (let k = 0; k < (lowFx ? 6 : 12); k++) { const u = (t * .7 + k / 12) % 1; smAdd(F.x + (hash2(k, 1, 3) - .5) * F.w, -1 + u * 14, F.z + 6 + u * 8, '#f4fbff', .45 * (1 - u), 6 + u * 10); } }
@@ -2542,7 +2581,7 @@ function build3D(A) {
     const I = A.island, isl = new THREE.Mesh(new THREE.CylinderGeometry(I.r + 1, I.r + 4, 10, 12), new THREE.MeshLambertMaterial({ color: '#8a7a3a', flatShading: true })); isl.position.set(I.x, -4.4, I.y); isl.scale.z = .8; isl.receiveShadow = true; MATS.push(isl.material); G.add(isl);
   }
   if (A.id === 'glade') { const wm = waterMat(0); out.water.push(wm); const pond = new THREE.Mesh(new THREE.CircleGeometry(36, 28).rotateX(-Math.PI / 2), wm); pond.scale.x = 1.25; pond.position.set(128, -2.5, 168); pond.renderOrder = 2; G.add(pond); }
-  buildExtras(A, G, out, r); buildExtras2(A, G, out, r);
+  buildExtras(A, G, out, r); buildExtras2(A, G, out, r); buildExtras3(A, G, out, r);
   // props (repeated static props share one instanced draw per sprite)
   const inst = new Map();
   for (const p of A.props) {
@@ -2570,7 +2609,7 @@ function build3D(A) {
   // NPCs
   out.occ = []; for (const nid of A.npcs) { const n = NPCS[nid], fr = critFrames(n.kind), m = bb(fr[0]); m.userData.p = n; out.occ.push(m); const b = blob(n.kind === 'owl' ? 18 : n.kind === 'tortoise' ? 30 : 22, 9); G.add(m, b); out.npcs[nid] = { m, b, fr }; }
   // ambient critters: hens that wander (and scatter when you run at them), cats that doze
-  for (const [k, x, y] of A.critters || []) { const fr = critFrames(k), m = bb(fr[0], { cast: k !== 'gull' && k !== 'bat' && k !== 'eagle' }), b = blob(k === 'cat' ? 18 : 12, 6); G.add(m, b); out.crit.push({ k, x, y, hx: x, hy: y, tx: x, ty: y, wait: Math.random() * 3, m, b, fr, flip: 1, mv: 0, ph: Math.random() * 9 }); }
+  for (const [k, x, y] of A.critters || []) { const fr = critFrames(k), m = bb(fr[0], k === 'wisp' ? { cast: false, glow: '#ffffff', gi: .9 } : { cast: k !== 'gull' && k !== 'bat' && k !== 'eagle' }), b = blob(k === 'cat' ? 18 : 12, 6); G.add(m, b); out.crit.push({ k, x, y, hx: x, hy: y, tx: x, ty: y, wait: Math.random() * 3, m, b, fr, flip: 1, mv: 0, ph: Math.random() * 9 }); }
   // the market fountain: stone basin, a pillar with a bowl, water in both, a carved acorn on top
   if (A.fountain) { const F = A.fountain, stoneM = townMat('w|stone').clone(); MATS.push(stoneM); out.fountM = stoneM;
     const bas = new THREE.Mesh(cylUV(new THREE.CylinderGeometry(F.r, F.r + 2, 9, 22), F.r, 9), stoneM); bas.position.set(F.x, 4.5, F.y); bas.castShadow = bas.receiveShadow = true; G.add(bas);
@@ -2782,6 +2821,10 @@ function townFx(A, W, t, dt, lowFx) {
       const fy = e ? 150 + Math.sin(u * 1.7) * 14 : g ? 100 + Math.sin(u * 2.3) * 10 : 36 + Math.sin(t * 3 + c.ph) * 5; if (Math.abs(c.x - ox) > .01) c.flip = c.x > ox ? 1 : -1;
       const flap = !g || (t * (e ? .5 : 1.1) + c.ph) % 2.4 < (e ? .5 : 1.2); setFrame(c.m, fr[(flap ? Math.floor(t * (e ? 5 : g ? 8 : 11) + c.ph) % 2 : 0) * 2]);
       c.m.position.set(c.x, fy, c.y); c.m.scale.x = c.flip; const gy = standY(A, c.x, c.y); c.b.position.set(c.x, Math.max(gy, WATER_Y) + .25, c.y + 1); c.b.scale.set(e ? 9 : g ? 5 : 6, 1, e ? 3.5 : 2.2); continue;
+    } else if (c.k === 'wisp') {   // wisps drift in lazy loops a little above the water, pulsing
+      const u = t * .35 + c.ph; c.x = c.hx + Math.sin(u) * 46 + Math.sin(u * 2.3) * 12; c.y = c.hy + Math.sin(u * .8 + 1) * 22;
+      setFrame(c.m, fr[(Math.floor(t * 4 + c.ph) % 2) * 2]); c.m.material.emissiveIntensity = .75 + .25 * Math.sin(t * 5 + c.ph * 3);
+      c.m.position.set(c.x, Math.max(standY(A, c.x, c.y), WATER_Y) + 9 + Math.sin(t * 2.2 + c.ph) * 3, c.y); c.m.scale.x = 1; c.b.visible = false; continue;
     } else if (c.k === 'crab' || c.k === 'lizard') {   // crabs scuttle sideways between short pauses
       if (c.wait > 0) c.wait -= dt; else if (Math.hypot(c.tx - c.x, c.ty - c.y) < 1.5) { c.tx = c.hx + (Math.random() - .5) * 60; c.ty = c.hy + (Math.random() - .5) * 20; if (!canStand(A, c.tx, c.ty)) { c.tx = c.hx; c.ty = c.hy; } c.wait = .6 + Math.random() * 2.5; }
       const dx = c.tx - c.x, dy = c.ty - c.y, L = Math.hypot(dx, dy), sp = 26 * dt; c.mv = L > 1 && c.wait <= 0;
