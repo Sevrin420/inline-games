@@ -152,6 +152,9 @@ const AP = {
   // ---- Blossom Hills + Kettlebrook: spring light, pink canopies, drifting petals
   sakura: { sky: ['#f8dce4', '#9aa4cc'], fog: '#ead0dc', sun: '#fff2ea', hemi: ['#fff2f6', '#5a4e6e'], ground: '#7a9a4c', ground2: '#8eac5a', path: '#d8c6a6', trees: ['blossom', 'blossom2', 'blossom', 'hedge'], fireflies: 6, flyC: '#fff0f8', rays: .5, grade: [[.76, .72, 1], [1, .93, .92]], mist: '#fbe6ee', petals: ['#f8c8d8', '#f0a8c0', '#fde6ee', '#e890b0'], litter: ['#f4b8cc', '#fbe0ea', '#8aa850', '#6a8a40'], noPiles: true, fernC: '#5a8a3e', hemiI: 1.25, sunI: 1.4 },
   teatown: { sky: ['#f8dce4', '#9aa4cc'], fog: '#ead0dc', sun: '#fff2ea', hemi: ['#fff2f6', '#5a4e6e'], ground: '#7a9a4c', ground2: '#8eac5a', path: '#d8c6a6', cobble: '#b8aca0', trees: ['blossom', 'blossom2'], fireflies: 4, flyC: '#fff0f8', rays: .5, grade: [[.76, .72, 1], [1, .93, .92]], mist: '#fbe6ee', petals: ['#f8c8d8', '#f0a8c0', '#fde6ee', '#e890b0'], litter: ['#f4b8cc', '#fbe0ea', '#8aa850', '#6a8a40'], noPiles: true, hemiI: 1.35, sunI: 1.55 },
+  // ---- Smuggler's Cove + Echo Grotto: turquoise shallows, pale sand, a teal cave full of gold
+  cove: { sky: ['#cfeaf4', '#5a8ab8'], fog: '#a8d0dc', sun: '#fff6e0', hemi: ['#f4fbff', '#4a6070'], ground: '#dcc48e', ground2: '#ccb27c', path: '#ecdcb4', trees: ['hedge'], palms: true, fireflies: 0, rays: .4, grade: [[.74, .8, 1], [1, .95, .86]], mist: '#eef8fa', rock: '#8a7e70', rockSpots: ['#a89a88', '#6a5e52', '#c8bca8', '#5a8a6a'], litter: ['#f4ecd8', '#e8b8a0', '#c8a878', '#fff8ec'], fall: 'none', tufts: false, sea: ['#14586e', '#2a9aa8', '#c8f4ec'], hemiI: 1.3, sunI: 1.6, noPiles: true, fernC: '#4a8a4a' },
+  grotto: { sky: ['#0a1a1e', '#03080a'], fog: '#163038', sun: '#c8f0ff', hemi: ['#b8e8f0', '#14262c'], ground: '#4e6066', ground2: '#44565c', path: '#748a8e', trees: ['plum'], fireflies: 12, flyC: '#ffe27a', rays: .25, beams: 0, grade: [[.64, .74, 1], [.94, .96, 1]], mist: '#1e3a44', sunI: .95, hemiI: 1.6, rock: '#38484e', rockSpots: ['#5ac0c8', '#f0c040', '#24343a', '#4a5e66'], litter: ['#5ac0c8', '#24343a', '#56686e', '#f0c040'], fall: 'none', tufts: false, sea: ['#062a32', '#0e5a66', '#5ad0d8'] },
   glade: { sky: ['#ffe0a0', '#c88a5a'], fog: '#e0b080', sun: '#fff0c0', hemi: ['#fff0c8', '#7a5a6a'], ground: '#a48a3c', ground2: '#b4722e', path: '#dab47e', trees: ['gold', 'amber', 'autumn'], fireflies: 28, rays: 1, grade: [[.76, .66, .98], [1, .86, .6]], mist: '#fff0d6' },
 };
 const AUT = ['#c4542f', '#e08a2a', '#f5b445', '#b23a32', '#a5502a', '#d8583e', '#e9c24a'];
@@ -611,6 +614,37 @@ function paintBamboo(o) { const r = rng(o.seed || 4), p = new Pix(34, 92), G = [
     for (let j = 0; j < 4; j++) { const y = top + 4 + j * 12 + (r() * 6 | 0), s = r() < .5 ? -1 : 1; p.leaf(x + 1 + s * 4, y, 6, 1.6, s > 0 ? -.4 : 3.5, ['#2e5a26', '#4a8a34', '#8ac05a']); } }
   return p.done({ ax: 17, ay: 91 }); }
 Object.assign(CRIT, { crane: paintCrane });
+// ---------------------------------------------------------------- Smuggler's Cove + Echo Grotto
+function paintParrot(f, blink) {     // Captain Polly: a scarlet macaw in a tricorn hat
+  const p = new Pix(26, 40), R = ['#7a1010', '#b82018', '#e03a28', '#ff6a4a'], b = f ? 1 : 0;
+  p.poly([[11, 28], [8, 40], [12, 40], [14, 30]], ['#1a4a8a', '#2a6ac0', '#4a8ae0']); p.poly([[13, 28], [15, 40], [18, 40], [16, 29]], ['#a81818', '#d83020']);
+  p.ell(13, 22 + b * .5, 7, 8, R); p.ell(7, 23 + b * .5, 3, 6, ['#1a6a3a', '#2a9a4a', '#f0c030']);
+  p.ell(14, 11, 6, 5.6, R); p.ell(17, 12, 3, 3, '#f8f0e8'); eyes(p, [[16, 11]], blink, R[0]);
+  p.poly([[19, 10], [24, 12], [21, 16], [19, 14]], ['#2a2a2a', '#4a4a4a', '#e8e0d0']);
+  p.poly([[5, 7], [14, 2], [23, 7], [14, 6]], ['#1a1a1e', '#2a2a30', '#3a3a44']); p.rect(8, 6, 13, 2, '#2a2a30'); p.set(14, 4, '#f0d040');
+  p.rect(10, 30, 2, 2, '#8a8a8a'); p.rect(15, 30, 2, 2, '#8a8a8a');
+  return p.done();
+}
+function paintShip() { const p = new Pix(132, 120), H = ['#3a2010', '#5a3418', '#7a4a24', '#9a6434'], S = ['#c8b898', '#e0d4b8', '#f4ecd8'];
+  // hull
+  for (let y = 84; y < 116; y++) { const t = (y - 84) / 32, x0 = 6 + t * t * 26 + (y < 90 ? 0 : 0), x1 = 126 - t * 14; p.rect(x0 | 0, y, (x1 - x0) | 0, 1, H[(y >> 2) % 2 ? 2 : 1]); }
+  p.rect(4, 82, 124, 3, H[3]); p.rect(100, 70, 28, 14, H[2]); p.rect(100, 70, 28, 2, H[3]); for (let x = 103; x < 126; x += 6) p.rect(x, 74, 3, 4, '#ffd27a');
+  for (let x = 20; x < 96; x += 14) { p.ell(x, 94, 2.6, 2.6, '#1a1a1e'); p.set(x - 1, 93, '#4a4a52'); }
+  p.rect(6, 104, 112, 2, '#c8a040');
+  // masts and sails
+  p.col_(46, 14, 3, 70, ['#4a2a12', '#6a4020', '#8a5a2e']); p.col_(84, 24, 3, 60, ['#4a2a12', '#6a4020', '#8a5a2e']);
+  const sail = (cx, y0, w, h) => { for (let y = 0; y < h; y++) { const bw = w + Math.sin(y / h * Math.PI) * 6; p.rect(cx - bw / 2 | 0, y0 + y, bw | 0, 1, S[(y > h * .6) ? 0 : (y % 9 < 1 ? 0 : y > h * .3 ? 1 : 2)]); } };
+  sail(47, 22, 40, 26); sail(47, 52, 46, 24); sail(85, 32, 32, 20); sail(85, 56, 36, 20);
+  p.line(4, 82, 47, 14, '#3a2a1a'); p.line(128, 70, 85, 24, '#3a2a1a');
+  // jolly roger
+  p.rect(48, 4, 18, 11, '#1a1a1e'); p.ell(56, 8.5, 3.4, 3, '#f4ecd8'); p.set(55, 8, '#1a1a1e'); p.set(57, 8, '#1a1a1e'); p.line(52, 12, 60, 14, '#f4ecd8'); p.line(52, 14, 60, 12, '#f4ecd8');
+  return p.done({ ax: 66, ay: 108 }); }
+function paintChest(o) { const p = new Pix(28, 22), W = ['#4a2a12', '#6a4020', '#8a5a2e', '#b07a42'], G = ['#8a6a10', '#c8a020', '#f0d040', '#fff4a0'];
+  if (o.open) { p.rect(2, 0, 24, 6, W[1]); p.rect(2, 0, 24, 1, W[3]); for (let i = 0; i < 9; i++) p.ell(5 + i * 2.4, 9 - (i % 3), 2, 1.6, G); }
+  p.rect(2, 8, 24, 13, W[2]); p.rect(2, 8, 24, 1, W[3]); p.rect(2, 14, 24, 1, W[0]); for (const x of [2, 13, 24]) p.rect(x, 8, 2, 13, G[1]); p.rect(12, 11, 4, 4, G[2]); p.set(13, 13, W[0]);
+  if (!o.open) { p.ell(14, 8, 12, 4, W, { only: (x, y) => y <= 8 }); for (const x of [2, 13, 24]) p.rect(x, 4, 2, 5, G[1]); }
+  return p.done({ ax: 14, ay: 21 }); }
+Object.assign(CRIT, { parrot: paintParrot });
 Object.assign(CRIT, { goat: paintGoat, eagle: paintEagle, camel: paintCamel, fennec: paintFennec, lizard: paintLizard, raccoon: paintRaccoon, turtle: paintTurtle, wisp: paintWisp });
 
 Object.assign(CRIT, { otter: paintOtter, heron: paintHeron, seal: paintSeal, gull: paintGull, crab: paintCrab, miner: paintMiner, bat: paintBat, axolotl: paintAxolotl });
@@ -1040,6 +1074,8 @@ const PROPDEF = {
   column: { paint: paintColumn, solid: [[0, -2, 10]] },
   ruinarch: { paint: paintRuinArch, solid: [[-44, -2, 12], [-34, -2, 10], [34, -2, 10], [44, -2, 12]] },
   statue: { paint: paintStatue, solid: [[0, -3, 14]] },
+  ship: { paint: paintShip, float: true },
+  chest: { paint: paintChest, solid: [[0, -2, 10]] },
   torii: { paint: paintTorii, solid: [[-24, -2, 6], [24, -2, 6]] },
   stonelantern: { paint: paintStoneLantern, solid: [[0, -1, 6]], emi: true },
   bamboo: { paint: paintBamboo, solid: [[0, -1, 9]], sway: .012 },
@@ -1243,11 +1279,11 @@ const AREADEF = {
   },
   point: {
     name: 'Lighthouse Point', pal: 'coast', w: 480, h: 400, sea: 300, cliffH: 30, cam: [1.32, .1], lighthouse: { x: 330, y: 140 },
-    exits: [{ e: 'w', a: 196, b: 246, to: 'docks', sx: 544, sy: 222 }],
-    paths: [[[-10, 222], [200, 222], [300, 186], [330, 170]]],
+    exits: [{ e: 'w', a: 196, b: 246, to: 'docks', sx: 544, sy: 222 }, { e: 'e', a: 196, b: 246, to: 'cove', sx: 16, sy: 222 }],
+    paths: [[[-10, 222], [200, 222], [300, 186], [330, 170]], [[300, 200], [400, 222], [490, 222]]],
     props: [['rock', 140, 140, { c: '#9a9a96' }], ['rock', 400, 260, { c: '#8a8a86' }], ['rock', 60, 300, { c: '#9a9a96' }], ['rock', 380, 300, { c: '#7a7a76' }], ['bush', 90, 120, { pal: 'gold', berries: false }],
-      ['bush', 200, 110, { pal: 'amber', berries: false }], ['flowers', 160, 260, {}], ['flowers', 260, 140, {}], ['bench', 200, 160, {}], ['anchor', 100, 250, {}], ['buoy', 330, 360, {}], ['buoy', 170, 380, {}], ['boat', 440, 330, { c: 'white' }], ['pine', 40, 130, {}], ['pots', 280, 270, {}]],
-    items: [], npcs: ['bluff'], objs: ['lhdoor'],
+      ['bush', 200, 110, { pal: 'amber', berries: false }], ['flowers', 160, 260, {}], ['flowers', 260, 140, {}], ['bench', 200, 160, {}], ['anchor', 100, 250, {}], ['buoy', 330, 360, {}], ['buoy', 170, 380, {}], ['boat', 440, 330, { c: 'white' }], ['pine', 40, 130, {}], ['pots', 280, 270, {}], ['sign', 440, 196, {}]],
+    items: [], npcs: ['bluff'], objs: ['lhdoor', 'pointsign'],
     critters: [['gull', 330, 160], ['gull', 200, 260], ['gull', 420, 280], ['crab', 300, 290], ['crab', 150, 292]],
   },
   // ================= Emberdeep Mine (west of Hob's Forge)
@@ -1422,6 +1458,29 @@ const AREADEF = {
     items: [], npcs: ['mochi', 'kiko'], objs: ['villagesign'],
     critters: [['cat', 330, 100], ['hen', 480, 260], ['hen', 460, 270]],
   },
+  // ================= Smuggler's Cove (east of Lighthouse Point)
+  cove: {
+    name: 'Smuggler\u2019s Cove', pal: 'cove', w: 540, h: 420, sea: 300, cliffH: 46, cam: [1.3, .1],
+    exits: [{ e: 'w', a: 196, b: 246, to: 'point', sx: 464, sy: 222 }, { e: 'n', a: 410, b: 450, to: 'grotto', sx: 260, sy: 360, tunnel: true }],
+    decks: [[280, 286, 312, 404]],
+    paths: [[[-10, 222], [200, 226], [296, 260], [296, 290]], [[296, 240], [430, 180], [430, 40]]],
+    props: [['ship', 404, 376, {}], ['boat', 230, 346, { c: 'red' }], ['palm', 70, 150, { seed: 3 }], ['palm', 180, 120, { seed: 4 }], ['palm', 500, 170, { seed: 5 }], ['palm', 60, 280, { seed: 6 }],
+      ['chest', 150, 268, { seed: 1 }], ['crate', 340, 260, { stack: true }], ['crate', 360, 268, {}], ['barrel', 250, 264, {}], ['barrel', 236, 272, {}], ['anchor', 470, 260, {}], ['rock', 520, 290, { c: '#8a7e70' }], ['rock', 20, 296, { c: '#8a7e70' }],
+      ['bollard', 284, 290, {}], ['bollard', 308, 290, {}], ['lantern', 318, 330, {}], ['sign', 210, 196, {}], ['flowers', 120, 200, {}], ['fern', 520, 220, {}]],
+    items: [], npcs: ['polly'], objs: ['covesign', 'covechest'],
+    critters: [['crab', 120, 292], ['crab', 380, 292], ['gull', 300, 200], ['gull', 440, 320], ['gull', 150, 330]],
+  },
+  grotto: {
+    name: 'Echo Grotto', pal: 'grotto', kind: 'cave', w: 520, h: 400, cliffH: 100, pond: { x: 250, y: 196, rx: 180, ry: 74 },
+    exits: [{ e: 's', a: 240, b: 280, to: 'cove', sx: 430, sy: GT + 26 }],
+    decks: [[236, 186, 268, 334], [146, 164, 268, 198]],
+    paths: [[[260, 410], [260, 334]]],
+    props: [['chest', 168, 176, { open: true, seed: 2 }], ['ore', 196, 176, { seed: 3, c: '#f0c040' }], ['ore', 140, 186, { seed: 5, c: '#f0c040' }], ['crystal', 60, 320, { c: '#5ad0d8', glow: '#5ad0d8', seed: 2 }], ['crystal', 470, 320, { c: '#f0c040', glow: '#f0c040', seed: 5 }],
+      ['crystal', 470, 110, { c: '#5ad0d8', seed: 6 }], ['stalag', 120, 340, { seed: 8, c: '#38484e' }], ['stalag', 400, 350, { seed: 9, c: '#38484e' }], ['lantern', 222, 336, {}], ['lantern', 262, 168, {}], ['barrel', 330, 350, {}], ['crate', 360, 352, {}],
+      ['boat', 340, 210, { c: 'red' }], ['mush', 170, 350, { s: .5, cap: '#2f9e9a', glow: '#8fffe3' }]],
+    items: [], npcs: ['gilly'], objs: ['hoard'],
+    critters: [['bat', 260, 150], ['bat', 380, 200]],
+  },
 };
 
 // NPCs and things you can talk to / poke
@@ -1464,6 +1523,8 @@ const NPCS = {
   sumi: { area: 'blossom', kind: 'crane', name: 'Sumi', color: '#a8302a', x: 206, y: 268, h: 46, top: 52, range: 36, lines: [['Sumi. I write one poem for every petal that lands on the pond.', 'I am very behind.'], ['"Pink snow on green tea / a frog misses his lily / the duck does not care."', 'Hmm. Still working on it.'], ['The gate marks the way down to Kettlebrook. Mochi pours the best tea in the hills.']] },
   mochi: { area: 'teavillage', kind: 'rabbit', name: 'Mochi', color: '#5a8a3a', x: 150, y: 224, h: 34, range: 34, lines: [['Welcome to Kettlebrook! Sit, sit. The kettle has opinions about patience.', 'First steep: grassy. Second: sweet. Third: tastes like a nap.'], ['The bushes by the path are our own leaf. Pick the top two leaves and a bud, never more.', 'Kiko\u2019s dango go perfectly with a second cup.'], ['Come back when the blossoms fall. The tea tastes different then.']] },
   kiko: { area: 'teavillage', kind: 'mouse', name: 'Kiko', color: '#c8508a', x: 420, y: 224, h: 30, range: 32, lines: [['Dango! Three on a stick: pink for spring, white for snow, green for summer.', 'Autumn doesn\u2019t get a dumpling. Autumn has acorns.'], ['I roll a hundred before breakfast. My paws are very sticky.'], ['Sumi up the hill buys one a day and writes a poem about it.']] },
+  polly: { area: 'cove', kind: 'parrot', name: 'Captain Polly', color: '#c82a1a', x: 330, y: 300, h: 40, top: 46, range: 36, lines: [['Arr! Captain Polly of the good ship Crackerjack. Retired. Mostly.', 'Retired pirates still say arr. It\u2019s in the contract.'], ['That chest? Empty. Probably. Don\u2019t look. Fine, look.', 'The grotto up the cliff echoes. Shout your name and it shouts back louder. Rude.'], ['Seven seas, seventy islands, and the best biscuit was in Hearthvale.']] },
+  gilly: { area: 'grotto', kind: 'otter', name: 'Gilly', color: '#3a8a8a', x: 150, y: 320, h: 30, range: 34, lines: [['Shh! The gold is counting itself. I\u2019m just here to keep it company.', 'Polly says it\u2019s smuggler gold. I say it\u2019s otter gold now.'], ['Hello-o-o! ...hello-o-o. See? Echo Grotto.', 'The crystals glow brighter at high tide. Nobody knows why.'], ['Mind the planks. The water\u2019s cold and full of opinions.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -1490,7 +1551,7 @@ function buildArea(id) {
   const treePal = () => (ap.trees || AP.meadow.trees)[(r() * (ap.trees || AP.meadow.trees).length) | 0];
   // border: a back row of trees along the top (forest only: town areas have buildings), then the sides and the front
   if (A.kind === 'forest') {
-    const fz = q => A.falls && Math.abs(q - A.falls.x) < A.falls.w / 2 + 34, hut = q => A.hut && q > A.hut.x0 - 30 && q < A.hut.x1 + 30, tk = q => ap.willows ? (r() < .45 ? 'willow' : 'tree') : ap.pines ? 'pine' : r() < q ? 'pine' : 'tree';
+    const fz = q => A.falls && Math.abs(q - A.falls.x) < A.falls.w / 2 + 34, hut = q => A.hut && q > A.hut.x0 - 30 && q < A.hut.x1 + 30, tk = q => ap.palms ? (r() < .55 ? 'palm' : 'tree') : ap.willows ? (r() < .45 ? 'willow' : 'tree') : ap.pines ? 'pine' : r() < q ? 'pine' : 'tree';
     if (A.border === 'desert') { for (let x = 16 + r() * 20; x < A.w; x += 50 + r() * 40) if (!inExit('n', x, 26)) add(r() < .6 ? 'cactus' : 'rock', x, GT + 10 + r() * 10, { seed: 1 + (r() * 9 | 0), c: ap.rock }); }
     else { for (let x = 6 + r() * 10; x < A.w; x += 30 + r() * 12) if (!inExit('n', x, 22) && !fz(x) && !hut(x)) add(tk(.3), x, GT + 12 + r() * 12, { pal: treePal(), snow: ap.snowPine });
     for (let x = 20 + r() * 20; x < A.w; x += 44 + r() * 20) if (!inExit('n', x, 30) && !fz(x) && !hut(x)) add(tk(.4), x, GT - 2 + r() * 6, { pal: treePal(), snow: ap.snowPine }); }
@@ -1719,6 +1780,10 @@ const OBJS = {
   blossomsign: { area: 'blossom', x: 40, y: 212, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Stepping Stream  \u00b7  South, through the gate: Kettlebrook', 'Carved small: "Walk slowly. The trees are showing off."']); } },
   torii: { area: 'blossom', x: 270, y: 334, h: 70, top: 76, range: 22, use() { say('Vermilion Gate', '#c8302a', null, ['A tall red gate stands over the path. Walking through it feels like stepping into a new chapter.']); } },
   villagesign: { area: 'teavillage', x: 312, y: 96, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['Kettlebrook Tea Village  \u00b7  North: Blossom Hills', '"Mind the kettle. It bites when it whistles."']); } },
+  pointsign: { area: 'point', x: 440, y: 196, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Smuggler\u2019s Cove  \u00b7  West: Saltmere Docks', '"Pirates retired. Probably."']); } },
+  covesign: { area: 'cove', x: 210, y: 196, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Lighthouse Point  \u00b7  Up the cliff: Echo Grotto', 'Someone painted a skull on it. Then a smile on the skull.']); } },
+  covechest: { area: 'cove', x: 150, y: 270, h: 24, range: 24, use() { say('Old Chest', '#c8a020', null, ['Locked tight. Something inside rattles like a pocket full of buttons.']); } },
+  hoard: { area: 'grotto', x: 168, y: 178, h: 30, range: 28, use() { say('Smugglers\u2019 Hoard', '#f0c040', null, ['Coins, cups, a crown with one jewel missing, and a note: "Property of Gilly."']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
