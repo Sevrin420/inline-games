@@ -115,7 +115,7 @@ const pal = (base, n = 5, lo = .55, hi = .38) => { const out = []; for (let i = 
 const TREE = {
   autumn: ['#b4472b', '#d96a32', '#f0a03e'], gold: ['#a5772a', '#cf9d34', '#efc95c'], plum: ['#5a2a4e', '#8a4a6e', '#b0607a'],
   crimson: ['#7e2626', '#a8352e', '#d0533a'], amber: ['#b0601e', '#de8a2a', '#f6b746'], rust: ['#74361c', '#9e4c26', '#c56e36'],
-  apple: ['#5a7a2a', '#8aa03a', '#c8c050'], hedge: ['#3a5a26', '#557a30', '#8a9a40'], swamp: ['#24402e', '#36583c', '#587a4a'],
+  apple: ['#5a7a2a', '#8aa03a', '#c8c050'], hedge: ['#3a5a26', '#557a30', '#8a9a40'], blossom: ['#c8607e', '#ec94b0', '#fcd0de'], blossom2: ['#d87898', '#f4b0c4', '#fff0f4'], tea: ['#2a4a26', '#3e6a30', '#6a9a48'], swamp: ['#24402e', '#36583c', '#587a4a'],
 };
 const treePal = k => { const c = TREE[k] || TREE.autumn; return [dark(c[0], .55), dark(c[0], .25), c[0], c[1], c[2], lite(c[2], .35)]; };
 // sky: background gradient; fog: haze colour; sun: key light; hemi: sky/ground fill; grade: [shadow tint, light tint]
@@ -149,6 +149,9 @@ const AP = {
   // ---- Sunstone Ruins: late-afternoon amber over pale sandstone
   ruins: { sky: ['#f6d0a0', '#c87a6a'], fog: '#e0b498', sun: '#ffe4b8', hemi: ['#fff0d8', '#6a4a50'], ground: '#cfa872', ground2: '#c0965e', path: '#e4cfa4', trees: ['hedge'], fireflies: 0, rays: .55, grade: [[.78, .68, .96], [1, .86, .7]], mist: '#f4dcc0', rock: '#b8805a', rockSpots: ['#a06a44', '#d0a07a', '#8a5a3a', '#e8c098'], litter: ['#c8a068', '#e8c898', '#a88050', '#d8d0b8'], fall: 'none', tufts: false, heat: .5, sand: 14, backdrop: 'mesa', hemiI: 1.2, sunI: 1.5, noPiles: true },
   ruins2: { sky: ['#f4b88a', '#9a5a6a'], fog: '#d09a8a', sun: '#ffcc98', hemi: ['#ffe4cc', '#5a3a50'], ground: '#c89e6c', ground2: '#b88c5c', path: '#dcc49c', trees: ['hedge'], fireflies: 6, rays: .7, grade: [[.74, .62, .96], [1, .82, .64]], mist: '#f0d0b8', rock: '#b07a58', rockSpots: ['#9a6444', '#c89a76', '#7a5038', '#e0b490'], litter: ['#c8a068', '#e8c898', '#a88050', '#d8d0b8'], fall: 'none', tufts: false, heat: .3, sand: 8, backdrop: 'mesa', sea: ['#2a5a6a', '#4a8a96', '#bce0dc'], hemiI: 1.2, sunI: 1.45, noPiles: true },
+  // ---- Blossom Hills + Kettlebrook: spring light, pink canopies, drifting petals
+  sakura: { sky: ['#f8dce4', '#9aa4cc'], fog: '#ead0dc', sun: '#fff2ea', hemi: ['#fff2f6', '#5a4e6e'], ground: '#7a9a4c', ground2: '#8eac5a', path: '#d8c6a6', trees: ['blossom', 'blossom2', 'blossom', 'hedge'], fireflies: 6, flyC: '#fff0f8', rays: .5, grade: [[.76, .72, 1], [1, .93, .92]], mist: '#fbe6ee', petals: ['#f8c8d8', '#f0a8c0', '#fde6ee', '#e890b0'], litter: ['#f4b8cc', '#fbe0ea', '#8aa850', '#6a8a40'], noPiles: true, fernC: '#5a8a3e', hemiI: 1.25, sunI: 1.4 },
+  teatown: { sky: ['#f8dce4', '#9aa4cc'], fog: '#ead0dc', sun: '#fff2ea', hemi: ['#fff2f6', '#5a4e6e'], ground: '#7a9a4c', ground2: '#8eac5a', path: '#d8c6a6', cobble: '#b8aca0', trees: ['blossom', 'blossom2'], fireflies: 4, flyC: '#fff0f8', rays: .5, grade: [[.76, .72, 1], [1, .93, .92]], mist: '#fbe6ee', petals: ['#f8c8d8', '#f0a8c0', '#fde6ee', '#e890b0'], litter: ['#f4b8cc', '#fbe0ea', '#8aa850', '#6a8a40'], noPiles: true, hemiI: 1.35, sunI: 1.55 },
   glade: { sky: ['#ffe0a0', '#c88a5a'], fog: '#e0b080', sun: '#fff0c0', hemi: ['#fff0c8', '#7a5a6a'], ground: '#a48a3c', ground2: '#b4722e', path: '#dab47e', trees: ['gold', 'amber', 'autumn'], fireflies: 28, rays: 1, grade: [[.76, .66, .98], [1, .86, .6]], mist: '#fff0d6' },
 };
 const AUT = ['#c4542f', '#e08a2a', '#f5b445', '#b23a32', '#a5502a', '#d8583e', '#e9c24a'];
@@ -582,6 +585,32 @@ function paintWisp(f) {               // a will-o'-the-wisp
   const p = new Pix(10, 14); p.ell(5, 8, 4, 4.6, ['#3aa890', '#6ad8c0', '#b8fff0', '#ffffff']); p.poly([[2, 9], [5, 13 + (f ? 0 : -1)], [8, 9]], '#6ad8c0'); p.set(4, 7, '#1a4a4a'); p.set(6, 7, '#1a4a4a');
   return p.done({ outline: false });
 }
+// ---------------------------------------------------------------- Blossom Hills + Kettlebrook (tea village)
+function paintCrane(f, blink) {      // Sumi, the hill poet: a red-crowned crane with a brush and a scroll
+  const p = new Pix(30, 46), W = ['#b8b8c0', '#d8d8e0', '#f0f0f4', '#ffffff'], b = f ? 1 : 0;
+  p.line(12, 46, 12, 33, '#5a5a62'); p.line(17, 46, 17, 33, '#5a5a62'); p.rect(10, 45, 4, 1, '#4a4a52'); p.rect(15, 45, 4, 1, '#4a4a52');
+  p.ell(15, 27 + b * .5, 9, 7, W); p.poly([[6, 26], [1, 30], [5, 31], [9, 29]], ['#1a1a22', '#2a2a34', '#3a3a46']);
+  p.line(19, 22, 21, 10, '#1a1a22'); p.line(20, 22, 22, 10, '#2a2a34'); p.line(21, 22, 22, 13, '#f0f0f4');
+  p.ell(22, 8, 3.4, 3, W); p.rect(21, 5, 3, 2, '#d8302a'); p.line(25, 8, 29, 9, '#a8a070'); p.line(25, 9, 29, 9, '#c8c090');
+  eyes(p, [[23, 7]], blink, '#9a9aa4');
+  p.rect(4, 19 + b, 8, 5, '#f4ecd8'); p.rect(4, 19 + b, 8, 1, '#a8885a'); p.rect(4, 23 + b, 8, 1, '#a8885a'); p.line(6, 21 + b, 10, 21 + b, '#3a3a3a');
+  return p.done();
+}
+function paintTorii() { const p = new Pix(84, 70), V = ['#7a1a12', '#a82a1a', '#d0442a', '#e86a44'], K = ['#1a1a1e', '#2a2a30', '#3e3e46'];
+  p.col_(14, 12, 7, 58, V); p.col_(63, 12, 7, 58, V); p.rect(13, 64, 9, 6, K[1]); p.rect(62, 64, 9, 6, K[1]);
+  for (let x = 0; x < 84; x++) { const u = (x - 42) / 42, y = Math.round(1 - u * u * 3); p.rect(x, 3 + y, 1, 4, V[x % 5 ? 2 : 1]); p.rect(x, y, 1, 3, K[x % 4 ? 1 : 2]); }
+  p.rect(8, 18, 68, 5, V); p.rect(8, 18, 68, 1, V[3]); p.rect(39, 7, 6, 11, V[2]); p.rect(40, 9, 4, 6, '#2a2a30'); p.set(41, 11, '#e8c040'); p.set(42, 12, '#e8c040');
+  return p.done({ ax: 42, ay: 69 }); }
+function paintStoneLantern(o) { const p = new Pix(20, 36), S = ['#5a5a58', '#7a7a76', '#9a9a94', '#bcbcb4'];
+  p.rect(4, 32, 12, 4, S[1]); p.col_(7, 22, 6, 10, S); p.rect(3, 19, 14, 3, S[2]); p.rect(4, 11, 12, 8, S[1]); p.rect(7, 13, 6, 5, '#ffd27a'); p.rect(8, 14, 4, 3, '#fff0b0');
+  p.poly([[1, 11], [10, 4], [19, 11]], S); p.rect(9, 1, 2, 3, S[2]); p.rect(2, 10, 16, 1, S[0]);
+  if (o.moss !== false) for (let i = 0; i < 6; i++) p.set(4 + (i * 5) % 12, 10 - (i % 2), '#6a8a3a');
+  return p.done({ ax: 10, ay: 35 }); }
+function paintBamboo(o) { const r = rng(o.seed || 4), p = new Pix(34, 92), G = ['#3a6a2a', '#5a8a34', '#7aaa44', '#a8c868'];
+  for (let k = 0; k < 4; k++) { const x = 5 + k * 7 + (r() * 3 | 0), top = 4 + (r() * 16 | 0); p.col_(x, top, 3, 92 - top, G); for (let y = top + 8; y < 92; y += 10 + (r() * 4 | 0)) p.rect(x - 1, y, 5, 1, G[0]);
+    for (let j = 0; j < 4; j++) { const y = top + 4 + j * 12 + (r() * 6 | 0), s = r() < .5 ? -1 : 1; p.leaf(x + 1 + s * 4, y, 6, 1.6, s > 0 ? -.4 : 3.5, ['#2e5a26', '#4a8a34', '#8ac05a']); } }
+  return p.done({ ax: 17, ay: 91 }); }
+Object.assign(CRIT, { crane: paintCrane });
 Object.assign(CRIT, { goat: paintGoat, eagle: paintEagle, camel: paintCamel, fennec: paintFennec, lizard: paintLizard, raccoon: paintRaccoon, turtle: paintTurtle, wisp: paintWisp });
 
 Object.assign(CRIT, { otter: paintOtter, heron: paintHeron, seal: paintSeal, gull: paintGull, crab: paintCrab, miner: paintMiner, bat: paintBat, axolotl: paintAxolotl });
@@ -713,7 +742,7 @@ function paintPlanter(o) { const p = new Pix(30, 18), r = rng(o.seed || 5);
   for (let i = 0; i < 12; i++) { const x = 3 + r() * 24 | 0, y = 3 + r() * 6 | 0; p.line(x, y, x, 10, '#4a6a2a'); const c = ['#e04a5a', '#f2b63c', '#fff0d8', '#b07ad0', '#f07a3a'][(r() * 5) | 0]; p.set(x, y, c); p.set(x - 1, y, c); p.set(x + 1, y, c); p.set(x, y - 1, c); p.set(x, y, '#f8e070'); }
   p.rect(2, 10, 26, 7, WOOD[2]); p.rect(2, 10, 26, 1, WOOD[4]); p.rect(2, 16, 26, 1, WOOD[0]); p.rect(9, 10, 1, 7, WOOD[1]); p.rect(20, 10, 1, 7, WOOD[1]);
   return p.done({ ax: 15, ay: 17 }); }
-const STALLS = { baker: ['#c83a2a', '#fff0dc'], apoth: ['#3a7a5a', '#f0e8c8'], produce: ['#d8902a', '#fff0dc'], fish: ['#2e6a8a', '#f0f0e8'], spice: ['#c8501a', '#f8e0b0'], rug: ['#3a6aa8', '#f0e0c0'], pottery: ['#1a7a7a', '#f8ecd8'] };
+const STALLS = { baker: ['#c83a2a', '#fff0dc'], apoth: ['#3a7a5a', '#f0e8c8'], produce: ['#d8902a', '#fff0dc'], fish: ['#2e6a8a', '#f0f0e8'], spice: ['#c8501a', '#f8e0b0'], rug: ['#3a6aa8', '#f0e0c0'], pottery: ['#1a7a7a', '#f8ecd8'], tea: ['#4a7a3a', '#f4ecd8'], dango: ['#d86a8a', '#fff0f4'] };
 function paintStall(o) { const aw = STALLS[o.kind], p = new Pix(70, 58), r = rng(o.kind.length * 7);
   p.col_(4, 14, 3, 43, WOOD); p.col_(63, 14, 3, 43, WOOD);
   // goods on the counter
@@ -730,6 +759,11 @@ function paintStall(o) { const aw = STALLS[o.kind], p = new Pix(70, 58), r = rng
     for (let k = 0; k < 3; k++) { const x0 = 6 + k * 20, c = RC[k]; for (let y = 15; y < 35; y++) for (let x = x0; x < x0 + 17; x++) { const dx = Math.abs(x - x0 - 8), dy = Math.abs(y - 25); p.set(x, y, (dx + dy) % 6 < 2 ? c[1] : (dx + dy) % 6 < 4 ? c[0] : c[2]); } for (let x = x0; x < x0 + 17; x += 2) p.set(x, 35, c[1]); } }
   else if (o.kind === 'pottery') { const T = [['#7a3a1a', '#a85a2a', '#d08040', '#f0a860'], ['#3a5a7a', '#4a7aa0', '#6a9ac0', '#9ac0e0'], ['#6a5a2a', '#9a8a3a', '#c8b858', '#e8d880']];
     for (let i = 0; i < 5; i++) { const x = 10 + i * 12, h = 5 + (i % 3) * 1.5; p.ell(x, 35 - h, 4.6, h, T[i % 3]); p.rect(x - 2, 34 - h * 2, 4, 2, T[i % 3][1]); } }
+  else if (o.kind === 'tea') { for (let i = 0; i < 4; i++) { const x = 12 + i * 9; p.ell(x, 33, 3, 2.2, ['#6a8a6a', '#9ac0a0', '#d8ecd8']); p.rect(x - 1, 31, 3, 1, '#4a7a3a'); }
+    p.ell(52, 31, 6, 4.5, ['#2a2a2e', '#4a4a52', '#6a6a76']); p.rect(50, 25, 4, 2, '#4a4a52'); p.line(57, 30, 61, 27, '#4a4a52'); p.line(46, 27, 48, 24, '#8a6a3a'); p.line(48, 24, 56, 24, '#8a6a3a');
+    for (let i = 0; i < 3; i++) { const x = 18 + i * 16; p.line(x, 15, x, 19, '#6a5a3a'); p.ell(x, 22, 3, 3.4, ['#a8301a', '#e04a2a', '#ff8a5a']); p.rect(x - 2, 19, 5, 1, '#2a2a2e'); } }
+  else if (o.kind === 'dango') { for (let i = 0; i < 6; i++) { const x = 10 + i * 9; p.line(x, 36, x + 3, 22, '#c8a870'); ['#7aaa5a', '#f4f0e8', '#f4a0bc'].forEach((c, k) => p.ell(x + 1 + k * .7, 33 - k * 4, 2.8, 2.6, [c, c, lite(c, .3)])); }
+    for (let i = 0; i < 3; i++) { const x = 18 + i * 16; p.line(x, 15, x, 19, '#6a5a3a'); p.ell(x, 22, 3, 3.4, ['#a8301a', '#e04a2a', '#ff8a5a']); p.rect(x - 2, 19, 5, 1, '#2a2a2e'); } }
   else if (o.kind === 'fish') { for (let i = 0; i < 6; i++) { const x = 9 + i * 10; p.ell(x, 33, 4.6, 2, ['#3a5a6a', '#6a90a0', '#a8c8d4', '#e0f0f4']); p.poly([[x + 4, 33], [x + 7, 31], [x + 7, 35]], '#5a8090'); p.set(x - 3, 32, EYE); }
     for (let i = 0; i < 3; i++) { const x = 16 + i * 18; p.line(x, 15, x, 20, '#6a5a3a'); p.ell(x, 23, 2.4, 3.6, ['#7a3a2a', '#c8603a', '#f09a6a']); }
     p.ell(52, 26, 5, 2.6, ['#8a1a12', '#c8302a', '#f05a3a']); p.line(48, 24, 46, 21, '#c8302a'); p.line(56, 24, 58, 21, '#c8302a'); }
@@ -1006,6 +1040,9 @@ const PROPDEF = {
   column: { paint: paintColumn, solid: [[0, -2, 10]] },
   ruinarch: { paint: paintRuinArch, solid: [[-44, -2, 12], [-34, -2, 10], [34, -2, 10], [44, -2, 12]] },
   statue: { paint: paintStatue, solid: [[0, -3, 14]] },
+  torii: { paint: paintTorii, solid: [[-24, -2, 6], [24, -2, 6]] },
+  stonelantern: { paint: paintStoneLantern, solid: [[0, -1, 6]], emi: true },
+  bamboo: { paint: paintBamboo, solid: [[0, -1, 9]], sway: .012 },
 };
 const pv = (v, p) => typeof v === 'function' ? v(p) : v;
 
@@ -1041,8 +1078,8 @@ const AREADEF = {
   },
   stream: {
     name: 'Stepping Stream', pal: 'river', w: 480, h: 400,
-    exits: [{ e: 'w', a: 226, b: 284, to: 'clearing', sx: 464, sy: 255 }],
-    paths: [[[-10, 255], [150, 256], [streamX(256) - 40, 255]], [[streamX(256) + 40, 255], [380, 250], [440, 200]]],
+    exits: [{ e: 'w', a: 226, b: 284, to: 'clearing', sx: 464, sy: 255 }, { e: 'e', a: 226, b: 284, to: 'blossom', sx: 16, sy: 255 }],
+    paths: [[[-10, 255], [150, 256], [streamX(256) - 40, 255]], [[streamX(256) + 40, 255], [380, 250], [440, 200]], [[380, 250], [490, 255]]],
     water: (x, y) => y > GT - 4 && Math.abs(x - streamX(y)) < STREAM_HW,
     island: { x: 244, y: 140, r: 12 },
     stones: (() => { const s = [], sx = streamX(256); for (let i = 0; i < 4; i++) s.push({ x: sx - 24 + i * 16, y: 255 + [1, -2, 2, -1][i], r: 11, seed: 40 + i });
@@ -1051,9 +1088,9 @@ const AREADEF = {
       ['reeds', streamX(100) - 38, 100, {}], ['reeds', streamX(190) - 39, 190, {}], ['reeds', streamX(330) - 38, 330, {}], ['reeds', streamX(372) - 39, 372, {}],
       ['reeds', streamX(110) + 38, 110, {}], ['reeds', streamX(300) + 38, 300, {}], ['reeds', streamX(360) + 39, 360, {}],
       ['leafpile', 120, 210, {}], ['flowers', 330, 120, {}], ['fern', 450, 230, {}], ['leafpile', 330, 330, {}], ['mush', 176, 330, { s: .5, cap: '#c4542f' }], ['mush', 168, 120, { s: .5, cap: '#f08a3c' }],
-      ['lily', streamX(330) - 15, 336, {}], ['lily', streamX(200) + 10, 200, {}], ['lily', streamX(355) + 14, 355, {}]],
+      ['lily', streamX(330) - 15, 336, {}], ['lily', streamX(200) + 10, 200, {}], ['lily', streamX(355) + 14, 355, {}], ['sign', 452, 214, {}]],
     items: [['a4', 'acorn', 112, 116], ['a5', 'acorn', 424, 124], ['a6', 'acorn', 444, 348], ['g1', 'leaf', 244, 138]],
-    npcs: ['pip'], objs: [],
+    npcs: ['pip'], objs: ['streamsign'],
   },
   grove: {
     name: 'Mushroom Grove', pal: 'grove', w: 480, h: 400,
@@ -1360,6 +1397,31 @@ const AREADEF = {
     items: [], npcs: ['dusty'], objs: ['shrine'],
     critters: [['lizard', 120, 330], ['lizard', 440, 330]],
   },
+  // ================= Blossom Hills (east of the Stepping Stream)
+  blossom: {
+    name: 'Blossom Hills', pal: 'sakura', w: 520, h: 420, cliffH: 48, pond: { x: 150, y: 312, rx: 70, ry: 28 },
+    exits: [{ e: 'w', a: 226, b: 284, to: 'stream', sx: 464, sy: 255 }, { e: 's', a: 250, b: 290, to: 'teavillage', sx: 280, sy: GT + 26 }],
+    paths: [[[-10, 255], [120, 252], [270, 236], [270, 440]], [[270, 236], [380, 200], [440, 160]]],
+    props: [['tree', 410, 300, { pal: 'blossom' }], ['tree', 470, 200, { pal: 'blossom2' }], ['tree', 60, 150, { pal: 'blossom' }], ['tree', 200, 140, { pal: 'blossom2' }], ['tree', 350, 380, { pal: 'blossom' }],
+      ['torii', 270, 330, {}], ['stonelantern', 236, 262, {}], ['stonelantern', 306, 262, {}], ['stonelantern', 236, 360, {}], ['stonelantern', 306, 360, {}],
+      ['bamboo', 500, 110, { seed: 1 }], ['bamboo', 24, 370, { seed: 2 }], ['bamboo', 480, 380, { seed: 3 }],
+      ['lily', 130, 306, {}], ['lily', 170, 320, {}], ['lily', 150, 300, {}], ['reeds', 92, 296, {}], ['reeds', 206, 330, {}], ['bench', 380, 214, {}], ['flowers', 330, 150, {}], ['flowers', 120, 190, {}], ['sign', 40, 212, {}]],
+    items: [], npcs: ['sumi'], objs: ['blossomsign', 'torii'],
+    critters: [['duck', 150, 312], ['duck', 120, 318], ['squirrel', 440, 330]],
+  },
+  teavillage: {
+    name: 'Kettlebrook Tea Village', pal: 'teatown', kind: 'town', back: 'houses', ground: 'grass', w: 560, h: 400, hsty: ['paper', 'cedar', 'paper', 'paper2'], hroof: ['kawara', 'teal', 'kawara'],
+    exits: [{ e: 'n', a: 260, b: 300, to: 'blossom', sx: 270, sy: 392 }],
+    shops: [{ x0: 90, x1: 214, style: 'paper', roof: 'teal', door: .5, h: 50 }, { x0: 350, x1: 474, style: 'cedar', roof: 'kawara', door: .4, h: 48 }],
+    paths: [[[280, 40], [280, 400]], [[40, 250], [520, 250]]],
+    props: [['stall', 150, 190, { kind: 'tea' }], ['stall', 420, 190, { kind: 'dango' }], ['tree', 54, 320, { pal: 'blossom' }], ['tree', 506, 320, { pal: 'blossom2' }], ['stonelantern', 236, 200, {}], ['stonelantern', 326, 200, {}],
+      ['bamboo', 30, 140, { seed: 4 }], ['bamboo', 534, 150, { seed: 5 }], ['bench', 370, 320, {}], ['planter', 230, 96, { seed: 2 }], ['planter', 330, 96, { seed: 3 }],
+      ['bush', 110, 350, { pal: 'tea', berries: false }], ['bush', 140, 352, { pal: 'tea', berries: false }], ['bush', 170, 350, { pal: 'tea', berries: false }], ['bush', 200, 352, { pal: 'tea', berries: false }],
+      ['bush', 380, 352, { pal: 'tea', berries: false }], ['bush', 410, 350, { pal: 'tea', berries: false }], ['bush', 440, 352, { pal: 'tea', berries: false }], ['sign', 312, 96, {}]],
+    strings: [[[150, 40, 190], [420, 40, 190], 14], [[90, 50, 46], [214, 50, 46], 8], [[350, 48, 46], [474, 48, 46], 8]],
+    items: [], npcs: ['mochi', 'kiko'], objs: ['villagesign'],
+    critters: [['cat', 330, 100], ['hen', 480, 260], ['hen', 460, 270]],
+  },
 };
 
 // NPCs and things you can talk to / poke
@@ -1399,6 +1461,9 @@ const NPCS = {
   zahra: { area: 'bazaar', kind: 'fennec', name: 'Zahra', color: '#a83a54', x: 150, y: 212, h: 34, top: 42, range: 34, lines: [['Saffron, cumin, sumac, star anise! Zahra\u2019s spices, the best this side of the pass.', 'Smell that? Cardamom. It makes even mountain tea taste like sunshine.'], ['The rug stall has carpets woven by moonlight. Or so they claim.', 'The well in the square never runs dry. Nobody knows why.'], ['My ears? They hear a bargain three streets away.']] },
   ondine: { area: 'bog', kind: 'turtle', name: 'Ondine', color: '#4a7a3a', x: 136, y: 252, h: 30, top: 36, range: 38, lines: [['Ondine. I pole the ferry when the water\u2019s high, and nap on this boardwalk when it isn\u2019t.', 'Those little lights? Wisps. Harmless. They just like company.'], ['Never follow a wisp off the planks. They\u2019re terrible at directions.', 'The heron and I have an understanding. He takes the frogs\u2019 side.'], ['Slow and steady crosses every bog.']] },
   dusty: { area: 'temple', kind: 'raccoon', name: 'Dusty', color: '#7a6a4a', x: 336, y: 300, h: 36, top: 42, range: 36, lines: [['Dusty, explorer of old stones! Mind the pool. I fell in twice.', 'This court belonged to sun-watchers. Every column casts its shadow on a mark at noon.'], ['I sketch everything. The arch, the statue, that lizard. Mostly the lizard. He poses.', 'Someone left fresh flowers by the statue. Not me. Spooky!'], ['Bring me a story from the mountains sometime.']] },
+  sumi: { area: 'blossom', kind: 'crane', name: 'Sumi', color: '#a8302a', x: 206, y: 268, h: 46, top: 52, range: 36, lines: [['Sumi. I write one poem for every petal that lands on the pond.', 'I am very behind.'], ['"Pink snow on green tea / a frog misses his lily / the duck does not care."', 'Hmm. Still working on it.'], ['The gate marks the way down to Kettlebrook. Mochi pours the best tea in the hills.']] },
+  mochi: { area: 'teavillage', kind: 'rabbit', name: 'Mochi', color: '#5a8a3a', x: 150, y: 224, h: 34, range: 34, lines: [['Welcome to Kettlebrook! Sit, sit. The kettle has opinions about patience.', 'First steep: grassy. Second: sweet. Third: tastes like a nap.'], ['The bushes by the path are our own leaf. Pick the top two leaves and a bud, never more.', 'Kiko\u2019s dango go perfectly with a second cup.'], ['Come back when the blossoms fall. The tea tastes different then.']] },
+  kiko: { area: 'teavillage', kind: 'mouse', name: 'Kiko', color: '#c8508a', x: 420, y: 224, h: 30, range: 32, lines: [['Dango! Three on a stick: pink for spring, white for snow, green for summer.', 'Autumn doesn\u2019t get a dumpling. Autumn has acorns.'], ['I roll a hundred before breakfast. My paws are very sticky.'], ['Sumi up the hill buys one a day and writes a poem about it.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -1457,7 +1522,7 @@ function buildArea(id) {
     if (nearPath(A, x, y, 22) || (A.water && A.water(x, y)) || (A.water && A.water(x + 14, y)) || (A.water && A.water(x - 14, y))) continue;
     if (A.fountain && Math.hypot(x - A.fountain.x, y - A.fountain.y) < A.fountain.r + 30) continue;
     if (A.props.some(p => Math.hypot(p.x - x, p.y - y) < 26) || d.npcs.some(n => Math.hypot(NPCS[n].x - x, NPCS[n].y - y) < 40)) continue;
-    if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
+    if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' && !ap.noPiles ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
     if (A.kind === 'cave') { const q = r(); add(q < .5 ? 'stalag' : 'mush', x, y, q < .5 ? { seed: 1 + (r() * 9 | 0), c: ap.rock } : { s: .35 + r() * .15, cap: ['#2f9e9a', '#8a5cc9', '#c4542f'][(r() * 3) | 0] }); i++; continue; }
     if (A.border === 'desert') { const q = r(); if (A.lush || A.stony) { add(A.stony ? (q < .3 ? 'rock' : q < .55 ? 'bones' : q < .8 ? 'flowers' : 'fern') : q < .12 ? 'cactus' : q < .55 ? 'fern' : q < .8 ? 'flowers' : 'rock', x, y, { seed: 1 + (r() * 9 | 0), c: q < .12 ? undefined : q < .55 ? '#6a9a3e' : q < .8 ? undefined : ap.rock }); i++; continue; } add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
     { const q = r(); add(q < .45 ? (ap.noPiles ? (ap.pines ? 'cairn' : 'rock') : 'leafpile') : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : ap.noPiles && q >= .45 && q < .75 ? { c: ap.fernC || (ap.pines ? '#5e7a48' : '#7a7a4a') } : {}); } i++;
@@ -1650,6 +1715,10 @@ const OBJS = {
   boghut: { area: 'bog', x: 384, y: 148, h: 40, range: 26, use() { say('Stilt Hut', '#5a8a5a', null, ['The hut smells of peat smoke and mint tea. A kettle hums inside.']); } },
   ruinsign: { area: 'ruins', x: 320, y: 92, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['North: Sunscorch Dunes  \u00b7  South: Court of the Sun', 'Older carving underneath, in letters nobody reads anymore.']); } },
   shrine: { area: 'temple', x: 270, y: 330, h: 40, range: 30, use() { say('Old Statue', '#b0905a', null, ['A weathered stone face, wearing a crown of moss.', 'A fresh flower rests at its base. The stone feels warm.']); } },
+  streamsign: { area: 'stream', x: 452, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Blossom Hills  \u00b7  West: Sunny Clearing', 'Someone tucked a pink petal behind the arrow.']); } },
+  blossomsign: { area: 'blossom', x: 40, y: 212, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Stepping Stream  \u00b7  South, through the gate: Kettlebrook', 'Carved small: "Walk slowly. The trees are showing off."']); } },
+  torii: { area: 'blossom', x: 270, y: 334, h: 70, top: 76, range: 22, use() { say('Vermilion Gate', '#c8302a', null, ['A tall red gate stands over the path. Walking through it feels like stepping into a new chapter.']); } },
+  villagesign: { area: 'teavillage', x: 312, y: 96, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['Kettlebrook Tea Village  \u00b7  North: Blossom Hills', '"Mind the kettle. It bites when it whistles."']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
@@ -2154,8 +2223,8 @@ const LEAVES3 = []; { const col = new THREE.Color(); for (let i = 0; i < LEAFN; 
 const dummy = new THREE.Object3D();
 
 // ---------------------------------------------------------------- Hearthvale: 3D buildings (merged boxes + pixel tile textures)
-const WALLST = { cream: ['#ecdcbc', '#5a3622'], ochre: ['#e2b470', '#5a3622'], rose: ['#e6ae9c', '#4a2a22'], sage: ['#c6cca4', '#4a3a26'], sky: ['#b8c8d0', '#3e3446'], salt: ['#ddd6c6', '#3a4656'], teal: ['#9cc4c0', '#2a3a44'], adobe: ['#e0b888', '#7a4a2a'], adobe2: ['#ecc89a', '#6a3a22'], adobe3: ['#d8a070', '#5a3a2a'] };
-const ROOFC = { tile: '#b8482a', slate: '#566282', thatch: '#c8a048', moss: '#8a6a3a', snow: '#dfe6ee' };
+const WALLST = { cream: ['#ecdcbc', '#5a3622'], ochre: ['#e2b470', '#5a3622'], rose: ['#e6ae9c', '#4a2a22'], sage: ['#c6cca4', '#4a3a26'], sky: ['#b8c8d0', '#3e3446'], salt: ['#ddd6c6', '#3a4656'], teal: ['#9cc4c0', '#2a3a44'], adobe: ['#e0b888', '#7a4a2a'], adobe2: ['#ecc89a', '#6a3a22'], adobe3: ['#d8a070', '#5a3a2a'], paper: ['#f2ead6', '#3a2a22'], paper2: ['#ece0c8', '#4a3424'], cedar: ['#c89a72', '#3a2418'] };
+const ROOFC = { kawara: '#4e5462', teal: '#3e7a72', tile: '#b8482a', slate: '#566282', thatch: '#c8a048', moss: '#8a6a3a', snow: '#dfe6ee' };
 const SHUT = ['#3a6a8a', '#4a7a3a', '#a83a2a', '#6a4a8a', '#2e6a6a'];
 const EMIS = [];   // emissive materials driven by time of day: { m, k: 'win' | 'lamp' | 'fire' | 'fest' }
 function wallTiles(style) {   // [colour tile, window-glow mask], 32x32 texels, repeating
