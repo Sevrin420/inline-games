@@ -31,21 +31,24 @@
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #2a1a24; }
   body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-  canvas { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+  /* #stage holds both canvases. Full window by default; the handheld shell (../shared/handheld/) moves it into its screen. */
+  #stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
+  canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
   /* the 3D view renders at a low internal resolution and is upscaled with hard pixel edges */
   #gl { image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; z-index: 0; }
   #c { z-index: 1; }
-  #nogl { position: fixed; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
+  #nogl { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
     background: #2a1a24; color: #f2dfb4; font: 16px/1.5 "Lucida Console", monospace; }
   #nogl b { color: #f0943a; font-size: 20px; }
 
   /* On-screen touch controls. Shown on touch devices (html.touch-ui).
      To hide them (e.g. when a shared handheld overlay supplies the buttons) add
      class "no-touch-ui" to <html>, load with ?notouch, or call Thimblewood.setTouchUI(false).
+     While the shared handheld shell is showing, the game sets html.tw-shell and the shell's buttons are used instead.
      The game is fully playable from keyboard events alone. */
-  #touch { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 5; }
+  #touch { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 15; } /* above the (hidden) handheld root, z 10 */
   html.touch-ui #touch { display: block; }
-  html.no-touch-ui #touch, html.tw-title #touch { display: none !important; }
+  html.no-touch-ui #touch, html.tw-title #touch, html.tw-shell #touch { display: none !important; }
   #stick { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%;
     background: radial-gradient(circle at 50% 40%, #fbf3e1, #e9dbbd); border: 3px solid #fffaf0;
     box-shadow: 0 6px 0 #b39770, 0 10px 18px rgba(0,0,0,.28); opacity: .78; transition: opacity .2s; }
@@ -63,10 +66,17 @@
 <script src="../shared/auth.js" async data-game="thimblewood" data-corner="tr" data-score="mmss"></script>
 </head>
 <body>
+<div id="stage">
 <canvas id="gl" aria-hidden="true"></canvas>
 <canvas id="c" tabindex="0" aria-label="Thimblewood. Arrow keys or WASD walk, Space, Enter or Z talks and reads, X or Escape closes."></canvas>
+</div>
 <div id="touch" aria-hidden="true"><div id="stick"><div id="knob"></div></div><button id="btnA" type="button" tabindex="-1">A</button></div>
 <link rel="preload" href="vendor/PixelifySans.woff2" as="font" type="font/woff2" crossorigin>
 <script type="module" src="game.js"></script>
+<!-- Optional handheld shell (../shared/handheld/, docs/Handheld_Overlay.md). D-pad = arrows (walk), A = Space (talk / read /
+     advance), B = x (close), START = Enter, SELECT = m (sound). The game hides its own stick and A button while the shell
+     shows and brings them back when it is hidden (HIDE or ?handheld=0). ?shot never mounts it. -->
+<script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="4/3" data-name="THIMBLEWOOD"
+        data-keys='{"a":" ","b":"x","start":"Enter","select":"m"}'></script>
 </body>
 </html>

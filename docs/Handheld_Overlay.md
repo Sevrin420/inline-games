@@ -9,7 +9,7 @@ the buttons are real touch controls. The design and branding (MEMBERSONLY *pocke
 - `handheld.css`: all of the styling. Pure CSS (gradients and shadows), no images.
 - `demo.html`: a playground that shows a dot you move with the keys, plus a log of every event the buttons send.
 
-Used by **Lunch Rush**. Coop Sweep does not use it (by choice).
+Used by **Lunch Rush** and **Thimblewood**. Coop Sweep does not use it (by choice).
 
 ## Opting a game in (one line)
 
@@ -150,6 +150,12 @@ as before.
 | Game | D-pad | A | B | START | SELECT |
 |---|---|---|---|---|---|
 | Lunch Rush (`pointer: true`) | moves the cursor | taps at the cursor | Escape (deselect) | Enter (start / try again) | nothing |
+| Thimblewood (`#stage`, 4/3) | arrows (walk) | Space (talk / read / advance) | x (close) | Enter (start / talk) | m (sound on/off) |
+
+Thimblewood mounts its `#stage` (the 3D canvas and the UI canvas together), so tilt-shift, bloom and the
+pixel UI all render inside the screen. While the shell shows, the game sets `html.tw-shell`, hides its own
+stick and A button, and renders the 3D view at a chunkier internal resolution. Hiding the shell (HIDE or
+`?handheld=0`) brings the touch controls back.
 
 Lunch Rush gained a small key handler for this: Enter or Space starts a run from the title or game-over
 screen, and Escape deselects.
