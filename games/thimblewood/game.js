@@ -1321,7 +1321,7 @@ async function boot() {
 // small public surface for wrappers (e.g. a handheld overlay) and tests
 window.Thimblewood = {
   setTouchUI,
-  state: () => ({ mode: S.mode, area: S.area, x: Math.round(S.px), y: Math.round(S.py), acorns: S.acorns, leaves: S.leaves, dialog: S.dlg ? S.dlg.name : null, trans: !!S.trans, tier: Q.tier, internal: IW + 'x' + IH, fps: Math.round(fpsNow * 10) / 10, webgl: R ? (R.capabilities.isWebGL2 ? 2 : 1) : 0 }),
+  state: () => ({ mode: S.mode, t: Math.round(S.t * 1000) / 1000, area: S.area, x: Math.round(S.px), y: Math.round(S.py), acorns: S.acorns, leaves: S.leaves, dialog: S.dlg ? S.dlg.name : null, trans: !!S.trans, tier: Q.tier, internal: IW + 'x' + IH, fps: Math.round(fpsNow * 10) / 10, webgl: R ? (R.capabilities.isWebGL2 ? 2 : 1) : 0 }),
   setQuality: q => { Q.forced = Q.tier = q; applyTier(); },
 };
 if (QS.has('debug')) window.Thimblewood._debug = { S, AREAS, NPCS, OBJS, canStand, clampBounds, GT, PR, scene, cam, hero, W3, R };

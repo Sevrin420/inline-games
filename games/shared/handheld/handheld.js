@@ -15,6 +15,12 @@
  * D-pad cursor; with { pointer: true } the D-pad moves that cursor, which lets
  * tap-only games be played from the buttons.
  *
+ * v2: the screen window is always square; the game element is fitted inside it
+ * at its own aspect (data-aspect, default 1) with a themed fill around it.
+ * A sliding power switch on the top rim turns the screen off (CRT shut-off,
+ * game frozen: requestAnimationFrame callbacks are held, Web Audio suspended,
+ * input blocked) and back on (boot wordmark). Always ON on load.
+ *
  * The game element keeps receiving direct taps/clicks. Games must size their
  * canvas from the element's box (getBoundingClientRect), not window.inner*;
  * the shell fires a window 'resize' whenever the screen changes size.
@@ -25,12 +31,15 @@
   if (window.Handheld) return;
 
   var THEMES = [
-    { id: 'classic', name: 'Classic' },
-    { id: 'grape', name: 'Grape Jelly' },
-    { id: 'clear', name: 'Clear Ice' },
-    { id: 'yolk', name: 'Yolk' },
-    { id: 'midnight', name: 'Midnight' },
+    { id: 'nova', name: 'Nova' },              // default: midnight navy two-tone, coral + teal
+    { id: 'sunset', name: 'Sunset' },
+    { id: 'matcha', name: 'Matcha' },
+    { id: 'smoke', name: 'Clear Smoke' },
+    { id: 'gold', name: 'Gold Edition' },
+    { id: 'vapor', name: 'Vaporwave' },
   ];
+  var DEFAULT_THEME = 'nova';
+  var SQ = { port: 340, land: 420 };           // square screen side, in unscaled body px
   var FX = ['glass', 'lcd', 'off'];
   var FX_NAME = { glass: 'Glass', lcd: 'LCD', off: 'Off' };
   var DIRS = ['up', 'down', 'left', 'right'];
@@ -72,6 +81,43 @@
   }
 
   var current = null;
+
+  // ---------------------------------------------------------------- power plumbing (installed at load,
+  // before the game makes its first frame / audio context, so the switch can freeze and mute any game)
+  var powerOff = false, held_raf = [], rawRAF = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
+  if (rawRAF) {
+    window.requestAnimationFrame = function (cb) { if (!powerOff) return rawRAF(cb); held_raf.push(cb); return 0; };
+  }
+  function thawFrames() {
+    if (!rawRAF || !held_raf.length) return;
+    var q = held_raf; held_raf = [];
+    rawRAF(function (t) { q.forEach(function (cb) { try { cb(t); } catch (e) { setTimeout(function () { throw e; }); } }); });
+  }
+  var audioCtxs = [];
+  ['AudioContext', 'webkitAudioContext'].forEach(function (name) {
+    var Orig = window[name];
+    if (typeof Orig !== 'function') return;
+    try {
+      var Wrapped = function () { var c = Reflect.construct(Orig, arguments, new.target || Wrapped); audioCtxs.push(c); return c; };
+      Wrapped.prototype = Orig.prototype; Object.setPrototypeOf(Wrapped, Orig);
+      window[name] = Wrapped;
+    } catch (e) { /* very old engine: leave audio alone */ }
+  });
+  var mutedByPower = [];
+  function muteAll(off) {
+    if (off) {
+      mutedByPower = [];
+      audioCtxs.forEach(function (c) { if (c.state === 'running') { mutedByPower.push(c); try { c.suspend(); } catch (e) { } } });
+      Array.prototype.forEach.call(document.querySelectorAll('audio,video'), function (m) { if (!m.paused) { mutedByPower.push(m); try { m.pause(); } catch (e) { } } });
+    } else {
+      mutedByPower.forEach(function (m) { try { if (m.resume) m.resume(); else m.play(); } catch (e) { } });
+      mutedByPower = [];
+    }
+  }
+  // While powered off, keyboard input never reaches the game (registered at load = first in line).
+  ['keydown', 'keyup', 'keypress'].forEach(function (t) {
+    window.addEventListener(t, function (e) { if (powerOff && !e.handheldPower) { e.stopImmediatePropagation(); if (e.cancelable) e.preventDefault(); } }, true);
+  });
   // The stylesheet really applied (not blocked or served with the wrong type)?
   function styled() { return !!(current && getComputedStyle(current.root).position === 'fixed'); }
 
@@ -88,7 +134,7 @@
     for (k in DEFAULT_KEYS) keys[k] = DEFAULT_KEYS[k];
     if (opts.keys) for (k in opts.keys) keys[k] = opts.keys[k];
     var pointerMode = !!opts.pointer;
-    var aspect = parseAspect(opts.aspect) || (el.width && el.height ? el.width / el.height : 1);
+    var aspect = parseAspect(opts.aspect) || 1;
     var modalSel = opts.modal === undefined ? '.lb-veil, .mo-veil' : opts.modal;
     var adoptSel = opts.adopt === undefined ? '.mo-chip' : opts.adopt;
     var diagonals = opts.diagonals !== false;
@@ -99,19 +145,30 @@
     var root = h('div', 'hh-root');
     var device = h('div', 'hh-device');
     var screen = h('div', 'hh-screen');
+    var view = h('div', 'hh-view');               // the game element lives here, fitted at its own aspect
     var cursor = h('div', 'hh-cursor');
-    var boot = h('div', 'hh-boot', [h('b', null, ['MEMBERSONLY']), h('i', null, ['pocket'])]);
+    var black = h('div', 'hh-black');
+    var pwrfx = h('div', 'hh-pwrfx', [h('div', 'hh-crtline'), h('div', 'hh-bootmark', [h('b', null, ['MEMBERSONLY']), h('i', null, ['pocket']), h('span', 'hh-bootbar', [h('i')])])]);
+    screen.appendChild(black);
+    screen.appendChild(view);
+    view.appendChild(cursor);
     screen.appendChild(h('div', 'hh-fx'));
     screen.appendChild(h('div', 'hh-glass'));
-    screen.appendChild(cursor);
-    var led = h('i', 'hh-led');
+    screen.appendChild(pwrfx);
+    var led = h('i', 'hh-led hh-led-pwr'), batt = h('i', 'hh-led hh-led-batt');
     var bezel = h('div', 'hh-bezel', [
-      h('div', 'hh-bezel-label', [h('span', 'hh-rule'), h('span', null, ['MEMBERSONLY.CC \u00B7 INLINE PLAY SYSTEM']), h('span', 'hh-rule')]),
-      h('div', 'hh-led-wrap', [led, h('span', null, ['POWER'])]),
       screen,
+      h('div', 'hh-bezel-foot', [
+        h('span', 'hh-leds', [led, h('span', null, ['PWR']), batt, h('span', null, ['BATT'])]),
+        h('span', 'hh-rule'),
+        h('span', 'hh-bezel-label', ['MEMBERSONLY.CC \u00B7 INLINE PLAY SYSTEM']),
+      ]),
     ]);
     var slot = h('div', 'hh-slot');
-    var top = h('div', 'hh-top', [h('span', 'hh-switch', ['\u25C2 OFF \u00B7 ON \u25B8']), h('span', 'hh-groove'), slot]);
+    var knob = h('span', 'hh-pwr-knob', [h('i'), h('i'), h('i')]);
+    var pwr = h('div', 'hh-pwr', [h('span', 'hh-pwr-lbl', ['OFF']), h('span', 'hh-pwr-track', [h('span', 'hh-pwr-lit'), knob]), h('span', 'hh-pwr-lbl', ['ON'])]);
+    pwr.setAttribute('role', 'switch'); pwr.setAttribute('aria-checked', 'true'); pwr.setAttribute('aria-label', 'Power'); pwr.title = 'Power';
+    var top = h('div', 'hh-top', [pwr, h('span', 'hh-cart', [h('i')]), slot]);
     var brand = h('div', 'hh-brand', [h('b', null, ['MEMBERSONLY']), h('i', null, ['pocket']), h('span', 'hh-gamename', [opts.name || document.title || ''])]);
     var cross = h('div', 'hh-cross', [h('i', 'hh-arm hh-arm-v'), h('i', 'hh-arm hh-arm-h'), h('i', 'hh-hub'),
       h('i', 'hh-tri hh-tri-up'), h('i', 'hh-tri hh-tri-down'), h('i', 'hh-tri hh-tri-left'), h('i', 'hh-tri hh-tri-right')]);
@@ -121,8 +178,9 @@
     var ab = h('div', 'hh-ab', [h('div', 'hh-ab-well', [btnB, btnA])]);
     function pill(name, label) { return h('div', 'hh-pillwrap hh-' + name, [h('div', 'hh-pill', [h('i', 'hh-pillcap')]), h('span', 'hh-lbl', [label])]); }
     var sel = pill('select', labels.select || 'SELECT'), start = pill('start', labels.start || 'START');
-    var speaker = h('div', 'hh-speaker');
-    for (var i = 0; i < 6; i++) speaker.appendChild(h('i'));
+    var speaker = h('div', 'hh-speaker', [h('i')]);
+    var model = h('div', 'hh-model', ['MO-26 \u00B7 POCKET \u00B7 SQ']);
+    var screws = ['tl', 'tr', 'bl', 'br'].map(function (p) { return h('i', 'hh-screw hh-screw-' + p); });
     var bTheme = h('button', 'hh-mbtn', ['THEME']), bFx = h('button', 'hh-mbtn', ['FX']), bHide = h('button', 'hh-mbtn', ['HIDE']);
     [bTheme, bFx, bHide].forEach(function (b) { b.type = 'button'; });
     bTheme.title = 'Change shell color'; bFx.title = 'Screen effect'; bHide.title = 'Hide the handheld (play full screen)';
@@ -130,27 +188,29 @@
     var showBtn = h('button', 'hh-show', [h('i')]);
     showBtn.type = 'button'; showBtn.title = 'Show the handheld'; showBtn.setAttribute('aria-label', 'Show the handheld');
     var toast = h('div', 'hh-toast');
-    [top, bezel, brand, dpad, ab, sel, start, menu, speaker].forEach(function (n) { device.appendChild(n); });
+    screws.forEach(function (n) { device.appendChild(n); });
+    [top, bezel, brand, dpad, ab, sel, start, menu, speaker, model].forEach(function (n) { device.appendChild(n); });
     root.appendChild(device); root.appendChild(showBtn); root.appendChild(toast);
 
     var parent = el.parentNode, next = el.nextSibling;
-    screen.insertBefore(el, screen.firstChild);
-    screen.appendChild(boot);
+    view.insertBefore(el, view.firstChild);
     el.classList.add('hh-game');
     document.body.appendChild(root);
     document.documentElement.classList.add('hh-active');
 
 
     // ------------------------------------------------------------ settings
-    var themeId = store.get('theme') || opts.theme || 'classic';
-    if (!THEMES.some(function (t) { return t.id === themeId; })) themeId = 'classic';
+    var themeId = store.get('theme') || opts.theme || DEFAULT_THEME;
+    if (!THEMES.some(function (t) { return t.id === themeId; })) themeId = DEFAULT_THEME; // v1 ids -> new default
     var fx = store.get('fx') || opts.fx || 'glass';
     if (FX.indexOf(fx) < 0) fx = 'glass';
     var shown = qs.get('handheld') === '0' ? false : qs.get('handheld') === '1' ? true : store.get('on') !== 'off';
-    var toastT = 0;
+    var toastT = 0, powered = true, pwrAnim = '';
+    var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     function say(t) { toast.textContent = t; toast.classList.add('hh-toast-on'); clearTimeout(toastT); toastT = setTimeout(function () { toast.classList.remove('hh-toast-on'); }, 1100); }
     function applyClasses() {
-      root.className = 'hh-root hh-theme-' + themeId + ' hh-fx-' + fx + (shown ? '' : ' hh-off') + (layout ? ' hh-' + layout : '') + (pointerMode ? ' hh-pointer' : '');
+      root.className = 'hh-root hh-theme-' + themeId + ' hh-fx-' + fx + (shown ? '' : ' hh-off') + (layout ? ' hh-' + layout : '') + (pointerMode ? ' hh-pointer' : '') +
+        (powered ? '' : ' hh-pwr-off') + (pwrAnim ? ' ' + pwrAnim : '');
     }
     function setTheme(id, quiet) {
       if (!THEMES.some(function (t) { return t.id === id; })) return;
@@ -159,6 +219,7 @@
     }
     function setFx(v, quiet) { if (FX.indexOf(v) < 0) return; fx = v; store.set('fx', v); applyClasses(); if (!quiet) say('Screen: ' + FX_NAME[v]); }
     function setVisible(v) {
+      if (!v && !powered) setPower(true, true); // never leave a hidden, powered-off game behind
       shown = !!v; store.set('on', shown ? 'on' : 'off');
       if (!shown) releaseAll();
       layoutNow();
@@ -172,18 +233,21 @@
 
     // ------------------------------------------------------------ layout
     var dead = false, layout = '', scale = 1, inResize = false, lastW = 0, lastH = 0;
+    // The screen window is a square; the game is fitted inside it at its own aspect, centred.
     function sizeScreenFor(l) {
-      var sw, sh;
-      if (l === 'port') { sw = 240; sh = sw / aspect; if (sh > 340) { sh = 340; sw = sh * aspect; } }
-      else { sh = 300; sw = sh * aspect; if (sw > 400) { sw = 400; sh = sw / aspect; } }
-      screen.style.width = Math.round(sw) + 'px'; screen.style.height = Math.round(sh) + 'px';
-      return sw;
+      var side = SQ[l];
+      screen.style.width = side + 'px'; screen.style.height = side + 'px';
+      var vw = aspect >= 1 ? side : Math.round(side * aspect), vh = aspect >= 1 ? Math.round(side / aspect) : side;
+      view.style.width = vw + 'px'; view.style.height = vh + 'px';
+      view.style.left = Math.round((side - vw) / 2) + 'px'; view.style.top = Math.round((side - vh) / 2) + 'px';
+      root.classList.toggle('hh-letterbox', vw < side - 1 || vh < side - 1);
+      return side;
     }
     function measure(l, vw, vh) {
       layout = l; applyClasses();
       var sw = sizeScreenFor(l);
       var dw = device.offsetWidth, dh = device.offsetHeight;
-      var margin = Math.min(vw, vh) < 560 ? 1 : 0.94;
+      var margin = Math.min(vw, vh) < 560 ? 0.985 : 0.95;
       var s = Math.min(vw * margin / dw, vh * margin / dh);
       return { l: l, s: s, screenPx: sw * s };
     }
@@ -193,9 +257,10 @@
       if (!shown) {
         layout = ''; applyClasses();
         screen.style.width = ''; screen.style.height = '';
+        view.style.width = view.style.height = view.style.left = view.style.top = '';
         root.appendChild(screen); // full-window play, outside the scaled body
       } else {
-        if (screen.parentNode !== bezel) bezel.appendChild(screen);
+        if (screen.parentNode !== bezel) bezel.insertBefore(screen, bezel.firstChild);
         var want = opts.layout === 'portrait' ? 'port' : opts.layout === 'landscape' ? 'land' : '';
         var pick;
         if (want) pick = measure(want, vw, vh);
@@ -235,7 +300,7 @@
     }
     var cur = { x: 0.5, y: 0.5, shown: false }, tapDown = false;
     function cursorClient() {
-      var r = screen.getBoundingClientRect();
+      var r = view.getBoundingClientRect();
       return { x: r.left + cur.x * r.width, y: r.top + cur.y * r.height };
     }
     function pointer(type, buttons) {
@@ -260,7 +325,7 @@
       if (!dx && !dy) { moveRAF = 0; return; }
       var dt = Math.min(0.05, (now - lastMove) / 1000); lastMove = now;
       var sp = (now - moveStart > 450 ? 0.85 : 0.38) * (dx && dy ? 0.7071 : 1);
-      var ar = screen.offsetWidth / Math.max(1, screen.offsetHeight);
+      var ar = view.offsetWidth / Math.max(1, view.offsetHeight);
       cur.x = Math.max(0, Math.min(1, cur.x + dx * sp * dt));
       cur.y = Math.max(0, Math.min(1, cur.y + dy * sp * dt * ar));
       placeCursor();
@@ -268,6 +333,7 @@
       moveRAF = requestAnimationFrame(cursorLoop);
     }
     function doAction(name, down) {
+      if (powerOff && down) return;
       var m = modalOpen();
       if (m) { // a panel (leaderboard / sign-in) is up: B or START closes it, the rest do nothing
         if (down && (name === 'b' || name === 'start')) {
@@ -362,7 +428,7 @@
       names.forEach(function (n) { if (old.indexOf(n) < 0) { counts[n] = (counts[n] || 0) + 1; if (counts[n] === 1) press(n); } });
       if (names.length || pointers[id]) pointers[id] = names;
     }
-    function controlsTarget(t) { return t && device.contains(t) && !screen.contains(t) && !menu.contains(t); }
+    function controlsTarget(t) { return t && device.contains(t) && !screen.contains(t) && !menu.contains(t) && !top.contains(t); }
     device.addEventListener('pointerdown', function (e) {
       if (!controlsTarget(e.target)) return;
       e.preventDefault();
@@ -411,13 +477,66 @@
     if (mo) mo.observe(document.body, { childList: true });
     adopt();
 
+    // ------------------------------------------------------------ power switch
+    var pwrTimers = [];
+    function clearPwr() { pwrTimers.forEach(clearTimeout); pwrTimers = []; }
+    function later(ms, fn) { pwrTimers.push(setTimeout(fn, ms)); }
+    function setAnim(a) { pwrAnim = a; applyClasses(); }
+    function emit(on) {
+      try { window.dispatchEvent(new CustomEvent('handheld:power', { detail: { on: on } })); } catch (e) { /* old browser */ }
+      if (opts.onPower) try { opts.onPower(on); } catch (e) { /* game's problem */ }
+    }
+    // OFF: CRT shut-off, then black; the game is frozen (rAF held), muted and gets no input.
+    // ON: short boot (wordmark), then the picture opens back up and the game resumes where it was.
+    function setPower(on, quick) {
+      on = !!on;
+      if (on === powered && !pwrAnim) return;
+      clearPwr();
+      if (!on) {
+        if (powered) { releaseAll(); try { window.dispatchEvent(new Event('blur')); } catch (e) { } }
+        powered = false; powerOff = true; muteAll(true);
+        pwr.setAttribute('aria-checked', 'false');
+        if (quick || reduced) setAnim(''); else { setAnim('hh-anim-off'); later(560, function () { setAnim(''); }); }
+        emit(false);
+      } else {
+        powered = true; pwr.setAttribute('aria-checked', 'true');
+        var wake = function () { powerOff = false; thawFrames(); muteAll(false); emit(true); };
+        if (quick || reduced) { setAnim(''); wake(); return; }
+        setAnim('hh-anim-boot');
+        later(1250, function () { wake(); setAnim('hh-anim-on'); });
+        later(1700, function () { setAnim(''); });
+      }
+    }
+    // Tap to toggle, or drag the knob; it snaps to whichever side it ends nearer.
+    var drag = null;
+    pwr.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      drag = { id: e.pointerId, x: e.clientX, dx: 0, base: powered ? 1 : 0 };
+      try { pwr.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ }
+      pwr.classList.add('hh-pwr-press');
+    });
+    pwr.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag.dx = (e.clientX - drag.x) / (scale || 1);
+      if (Math.abs(drag.dx) > 3) { pwr.classList.add('hh-pwr-drag'); var p = Math.max(0, Math.min(1, drag.base + drag.dx / 18)); knob.style.setProperty('--k', p.toFixed(3)); }
+    });
+    function pwrUp(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var moved = Math.abs(drag.dx) > 6, p = Math.max(0, Math.min(1, drag.base + drag.dx / 18));
+      var want = moved ? p > 0.5 : !powered;
+      drag = null; pwr.classList.remove('hh-pwr-drag', 'hh-pwr-press'); knob.style.removeProperty('--k');
+      if (e.type !== 'pointercancel') { buzz(); setPower(want); }
+    }
+    pwr.addEventListener('pointerup', pwrUp);
+    pwr.addEventListener('pointercancel', pwrUp);
+    pwr.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+
     // ------------------------------------------------------------ boot
     applyClasses();
     layoutNow();
     var seen = false;
     try { seen = sessionStorage.getItem('handheld.boot') === '1'; sessionStorage.setItem('handheld.boot', '1'); } catch (e) { /* blocked */ }
-    if (!seen && shown && opts.boot !== false) { boot.classList.add('hh-boot-run'); setTimeout(function () { if (boot.parentNode) boot.parentNode.removeChild(boot); }, 1500); }
-    else if (boot.parentNode) boot.parentNode.removeChild(boot);
+    if (!seen && shown && opts.boot !== false && !reduced) { setAnim('hh-anim-flash'); later(1500, function () { setAnim(''); }); }
     // late fonts / CSS: lay out again once everything has loaded
     window.addEventListener('load', function () { if (dead) return; if (current && !styled() && document.querySelector('link[data-handheld-css]').sheet) current.destroy(); else layoutNow(); });
     setTimeout(layoutNow, 60);
@@ -426,15 +545,17 @@
       root: root, screen: screen, element: el,
       press: press, release: release,
       tap: function () { doAction('a', true); doAction('a', false); },
-      setTheme: setTheme, setFx: setFx, setVisible: setVisible,
+      setTheme: setTheme, setFx: setFx, setVisible: setVisible, setPower: setPower,
+      get power() { return powered; },
       get theme() { return themeId; }, get fx() { return fx; }, get visible() { return shown; }, get layout() { return layout || 'off'; },
       get cursor() { return { x: cur.x, y: cur.y, shown: cur.shown }; },
       setCursor: function (x, y) { cur.x = x; cur.y = y; showCursor(); },
       relayout: layoutNow,
       destroy: function () {
         if (dead) return;
-        releaseAll(); dead = true; if (mo) mo.disconnect();
-        if (screen.parentNode !== bezel) bezel.appendChild(screen);
+        if (!powered || powerOff) setPower(true, true);
+        clearPwr(); releaseAll(); dead = true; if (mo) mo.disconnect();
+        if (screen.parentNode !== bezel) bezel.insertBefore(screen, bezel.firstChild);
         el.classList.remove('hh-game');
         if (next && next.parentNode === parent) parent.insertBefore(el, next); else parent.appendChild(el);
         Array.prototype.forEach.call(slot.querySelectorAll('.hh-adopted'), function (n) { n.classList.remove('hh-adopted'); document.body.appendChild(n); });
