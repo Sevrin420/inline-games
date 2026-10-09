@@ -60,6 +60,11 @@
     font: 700 30px "Pixelify Sans","Lucida Console",monospace; pointer-events: auto; touch-action: none;
     box-shadow: 0 7px 0 #a53b25, 0 11px 18px rgba(0,0,0,.3); padding: 0; }
   #btnA.down { transform: translateY(5px); box-shadow: 0 2px 0 #a53b25, 0 4px 8px rgba(0,0,0,.3); }
+  #btnB { position: absolute; right: calc(112px + env(safe-area-inset-right)); bottom: calc(34px + env(safe-area-inset-bottom));
+    width: 64px; height: 64px; border-radius: 50%; border: 3px solid #fffaf0; background: #2c7c74; color: #fffaf0;
+    font: 700 26px "Pixelify Sans","Lucida Console",monospace; pointer-events: auto; touch-action: none;
+    box-shadow: 0 6px 0 #1d5650, 0 10px 16px rgba(0,0,0,.3); padding: 0; }
+  #btnB.down { transform: translateY(4px); box-shadow: 0 2px 0 #1d5650, 0 4px 8px rgba(0,0,0,.3); }
 </style>
 <!-- Optional shared accounts (sign-in chip + play recording). Async and fail-safe:
      if it doesn't load, or the API isn't there, the game plays exactly as a guest. -->
@@ -68,13 +73,13 @@
 <body>
 <div id="stage">
 <canvas id="gl" aria-hidden="true"></canvas>
-<canvas id="c" tabindex="0" aria-label="Thimblewood. Arrow keys or WASD walk, Space, Enter or Z talks and reads, X or Escape closes."></canvas>
+<canvas id="c" tabindex="0" aria-label="Thimblewood. Arrow keys or WASD walk, Space jumps, X, Enter or Z talks and reads, Escape closes."></canvas>
 </div>
-<div id="touch" aria-hidden="true"><div id="stick"><div id="knob"></div></div><button id="btnA" type="button" tabindex="-1">A</button></div>
+<div id="touch" aria-hidden="true"><div id="stick"><div id="knob"></div></div><button id="btnB" type="button" tabindex="-1" aria-label="B: talk">B</button><button id="btnA" type="button" tabindex="-1" aria-label="A: jump">A</button></div>
 <link rel="preload" href="vendor/PixelifySans.woff2" as="font" type="font/woff2" crossorigin>
 <script type="module" src="game.js"></script>
-<!-- Optional handheld shell (../shared/handheld/, docs/Handheld_Overlay.md). D-pad = arrows (walk), A = Space (talk / read /
-     advance), B = x (close), START = Enter, SELECT = m (sound). The game hides its own stick and A button while the shell
+<!-- Optional handheld shell (../shared/handheld/, docs/Handheld_Overlay.md). D-pad = arrows (walk), A = Space (jump; also
+     advances dialogue), B = x (talk / read / advance), START = Enter, SELECT = m (sound). The game hides its own stick and A button while the shell
      shows and brings them back when it is hidden (HIDE or ?handheld=0). ?shot never mounts it. -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="THIMBLEWOOD"
         data-keys='{"a":" ","b":"x","start":"Enter","select":"m"}'></script>
