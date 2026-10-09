@@ -1,6 +1,6 @@
 # Games on membersonly.cc: inline X cards, login and anonymous play
 
-This is the working reference for the series of games. Read `Auth_and_Accounts.md` for the account and wallet design in full.
+This is the working reference for the series of games. Read `Auth_and_Accounts.md` for the account and wallet design in full. The optional shared handheld-console shell (on-screen D-pad/A/B for phones) is documented in `Handheld_Overlay.md`.
 
 ## Status at a glance
 
