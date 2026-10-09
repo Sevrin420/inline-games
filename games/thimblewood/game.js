@@ -1188,7 +1188,7 @@ cv.addEventListener('contextmenu', e => e.preventDefault());
 
 // ---------------------------------------------------------------- simulation
 function enterArea(id, x, y) {
-  S.area = id; S.A = AREAS[id]; S.px = x; S.py = y; const c = camTarget(); S.camX = c[0]; S.camY = c[1];
+  S.area = id; S.A = AREAS[id]; S.px = x; S.py = y; if (!S.trans) { camSnap = true; easeCam(0); } const c = camTarget(); S.camX = c[0]; S.camY = c[1];
   for (const p of S.A.props) p.rustle = 0;
   onEnterArea(S.A);
 }
@@ -1260,7 +1260,7 @@ function update(dt) {
   // music: the festival tune in the square, Puddle's strumming in the tavern
   if (AC && !muted && ((S.flags.fest && S.area === 'market') || S.area === 'tavern')) { S.musT -= dt; if (S.musT <= 0) { const f = TUNE[S.musI++ % TUNE.length], q = S.area === 'tavern' ? .5 : 1; S.musT = S.area === 'tavern' ? .42 : .26; tone(f * q, .3, 'triangle', .035); if (S.musI % 4 === 1) tone(f * q / 2, .5, 'sine', .04); } }
   // camera
-  const c = camTarget(), k = Math.min(1, dt * 6); S.camX += (c[0] - S.camX) * k; S.camY += (c[1] - S.camY) * k;
+  easeCam(dt); const c = camTarget(), k = Math.min(1, dt * 6); S.camX += (c[0] - S.camX) * k; S.camY += (c[1] - S.camY) * k;
   // effects
   S.hud = Math.max(0, S.hud - dt * 2.5);
   if (S.banner) { S.banner.t += dt; if (S.banner.t > 3) S.banner = null; }
@@ -1283,24 +1283,33 @@ if (Q.forced == null && COARSE) Q.tier = 1;
 
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(26, 1, 20, 4000);
-let PITCH = .66, CAMD = 400; const camOff = { zb: 120, zt: -200, hw: 150 };
-function placeCam(x, z) { cam.position.set(x, Math.sin(PITCH) * CAMD, z + Math.cos(PITCH) * CAMD); cam.lookAt(x, 0, z); cam.updateMatrixWorld(); }
-function setupCamera() {
-  const asp = IW / IH, portrait = asp < .8; cam.aspect = asp;
-  PITCH = portrait ? .84 : .62; cam.fov = portrait ? 30 : 26;
-  const tv = Math.tan(cam.fov * Math.PI / 360), wantW = SHOT ? 300 : portrait ? 164 : 300;
-  CAMD = Math.max(wantW / (2 * tv * asp), SHOT ? 0 : 230 * Math.sin(PITCH) / (2 * tv));
-  cam.updateProjectionMatrix(); placeCam(0, 0);
+let PITCH = .66, CAMD = 400, PITCH0 = .66, CAMD0 = 400, camZ = 1, camP = 0, camSnap = true; const camOff = { zb: 120, zt: -200, hw: 150 };
+// town areas pull the camera back and tilt it down a touch so facades, roofs and signs read; interiors a little
+function camWant(A) { const sq = IW < IH * 1.15; if (!A || SHOT) return [1, 0];
+  return A.kind === 'town' ? (sq ? [1.3, .05] : [1.42, .04]) : A.kind === 'inside' ? [sq ? 1.12 : 1.08, .03] : [1, 0]; }
+function frameCam() {
+  PITCH = PITCH0 + camP; CAMD = CAMD0 * camZ; placeCam(0, 0);
   const hit = (nx, ny) => { const v = new THREE.Vector3(nx, ny, .5).unproject(cam).sub(cam.position).normalize(); if (v.y >= -.01) return null; const t = -cam.position.y / v.y; return cam.position.clone().addScaledVector(v, t); };
   const b = hit(0, -1), t = hit(0, 1), m = hit(1, 0);
   camOff.zb = b ? b.z : 150; camOff.zt = t ? t.z : -600; camOff.hw = m ? m.x : 150;
+  if (scene.fog) { scene.fog.near = CAMD * .9; scene.fog.far = CAMD * 2.4; }
+}
+function easeCam(dt) { const [z, p] = camWant(S.A); if (camSnap) { camZ = z; camP = p; camSnap = false; frameCam(); return; }
+  if (Math.abs(z - camZ) < .002 && Math.abs(p - camP) < .0005) return; const k = Math.min(1, dt * 2.2); camZ += (z - camZ) * k; camP += (p - camP) * k; frameCam(); }
+function placeCam(x, z) { cam.position.set(x, Math.sin(PITCH) * CAMD, z + Math.cos(PITCH) * CAMD); cam.lookAt(x, 0, z); cam.updateMatrixWorld(); }
+function setupCamera() {
+  const asp = IW / IH, portrait = asp < .8; cam.aspect = asp;
+  PITCH0 = portrait ? .84 : .62; cam.fov = portrait ? 30 : 26;
+  const tv = Math.tan(cam.fov * Math.PI / 360), wantW = SHOT ? 300 : portrait ? 164 : 300;
+  CAMD0 = Math.max(wantW / (2 * tv * asp), SHOT ? 0 : 230 * Math.sin(PITCH0) / (2 * tv));
+  cam.updateProjectionMatrix(); frameCam();
   FXMAT && (FXMAT.uniforms.uPx.value = IH / (2 * tv));
 }
 function camTarget() {
   const A = S.A, hw = camOff.hw;
   const tx = A.w <= hw * 2 - 30 ? A.w / 2 : clamp(S.px, hw - 15, A.w - hw + 15);
-  const portrait = IW < IH * .8, zmax = A.h + (portrait ? 92 : 30) - camOff.zb, zmin = GT - 150 - camOff.zt;
-  let tz = SHOT ? 178 : clamp(S.py - (portrait ? 30 : 12), zmin, zmax); if (zmin > zmax) tz = zmax;
+  const portrait = IW < IH * .8, zmax = A.h + (portrait ? 92 : 30) - camOff.zb, zmin = GT - 150 - camOff.zt - (A.kind === 'town' ? 260 * Math.min(1, Math.max(0, camZ - 1) / .3) : 0);
+  let tz = SHOT ? 178 : clamp(S.py - (portrait ? 30 : 12) - Math.max(0, camZ - 1) * (IW < IH * 1.15 ? 40 : 110), zmin, zmax); if (zmin > zmax) tz = zmax;
   return [SHOT ? 214 : tx, tz];
 }
 
@@ -1966,7 +1975,7 @@ function litPal(A) { const k = S.dk; if (A.kind === 'inside') return A.ap; const
 let curP = AP.meadow, litK = -9;
 function applyLight(A) {
   const P = curP = litPal(A); litK = S.dk; skyTex(P);
-  if (!scene.fog) scene.fog = new THREE.Fog(P.fog, CAMD * .9, CAMD * 2.4); scene.fog.color.set(P.fog);
+  if (!scene.fog) scene.fog = new THREE.Fog(P.fog, CAMD * .9, CAMD * 2.4); scene.fog.color.set(P.fog); scene.fog.near = CAMD * .9; scene.fog.far = CAMD * 2.4;
   hemi.color.set(P.hemi[0]); hemi.groundColor.set(P.hemi[1]); hemi.intensity = P.hemiI || 1.35; sun.color.set(P.sun); sun.intensity = P.sunI || 1.9;
   for (const c of COMP) { c.uniforms.shTint.value.fromArray(P.grade[0]); c.uniforms.hiTint.value.fromArray(P.grade[1]); }
   if (curW) for (const m of curW.mist) m.m.material.color.set(P.mist);
@@ -1992,9 +2001,19 @@ function skyTex(ap) {   // a vertical gradient behind everything
   if (!skyTx) skyTx = tex(skyCv, false, true); else skyTx.needsUpdate = true; scene.background = skyTx;
 }
 function beamLight(x, z) { let k = 0; if (!curW) return 0; for (const B of curW.beams) { const dx = Math.abs(x - (B.Bp.x + 8)) / (B.w * .5), dz = Math.abs(z - (B.Bp.z - 5)) / 18; if (dx < 1 && dz < 1) k = Math.max(k, (1 - dx) * (1 - dz * .6)); } return k; }
+function fadeOccluders(W, dt) {
+  const tp = Math.tan(PITCH), hx = S.px, hz = S.py;
+  for (const m of W.props) { const p = m.userData.p; if (!p || p.lift) continue; const dz = p.y - hz; let want = 1;
+    if (dz > 1 && dz < 140) { const bb_ = m.userData.bb || (m.geometry.boundingBox || m.geometry.computeBoundingBox(), m.userData.bb = m.geometry.boundingBox);
+      const top = bb_.max.y * (m.scale.y || 1); if (top > 18 && dz * tp < top - 4 && hx > p.x + bb_.min.x - 6 && hx < p.x + bb_.max.x + 6) want = .3; }
+    const mt = m.material, o = mt.userData.fade == null ? 1 : mt.userData.fade; if (o === want) continue;
+    const n = want < o ? Math.max(want, o - dt * 4) : Math.min(want, o + dt * 3); mt.userData.fade = n;
+    const tr = n < .999; if (mt.transparent !== tr) { mt.transparent = tr; mt.depthWrite = !tr; mt.alphaTest = tr ? .05 : .5; mt.needsUpdate = true; }
+    mt.opacity = n; }
+}
 function update3D(dt) {
   const A = S.A, W = curW, t = S.t;
-  placeCam(S.camX, S.camY);
+  placeCam(S.camX, S.camY); fadeOccluders(W, dt);
   // hero
   const f = S.moving ? Math.floor(S.walk * 9) % 4 : 0, blink = (t % 3.9) < .13 ? 1 : 0;
   if (S.flags.ribbon && !heroRib) { heroRib = {}; for (const d of ['down', 'up', 'side']) for (let q = 0; q < 4; q++) for (const b of [0, 1]) heroRib[d + q + b] = paintHero(d, q, b, true); }
@@ -2069,6 +2088,7 @@ function update3D(dt) {
   if (W.lights.length > PL.length - 2 && t - (W.lt || 0) > .3) assignLights();
 }
 // Hearthvale per-frame effects: smoke, embers, fountain spray, critters, gate, bell, lanterns, fireworks, glowing windows
+const fwV = new THREE.Vector3();
 function townFx(A, W, t, dt, lowFx) {
   const dk = S.dk, night = clamp(dk - 1, 0, 1), F = S.flags;
   const winK = smooth((dk - .3) / .8) * 1.15, lampK = .55 + .6 * Math.min(1, dk);
@@ -2095,9 +2115,15 @@ function townFx(A, W, t, dt, lowFx) {
   if (W.bell) W.bell.rotation.z = Math.sin(t * 7) * .45 * Math.min(1, S.bellT);
   for (const b of W.banners) b.rotation.z = Math.sin(t * 1.3 + b.position.x) * .03;
   if (W.lanterns) W.lanterns.visible = !!F.fest;
-  if (F.fest && A.id === 'market' && !lowFx) {   // fireworks over the rooftops
-    if (!S.fw.length || S.fw[S.fw.length - 1].t > 1.1) S.fw.push({ x: 60 + Math.random() * (A.w - 120), z: GT - 60 - Math.random() * 120, h: 150 + Math.random() * 60, t: 0, c: ['#ff7a5a', '#ffd04a', '#7ad0ff', '#c88aff', '#8aff9a'][(Math.random() * 5) | 0] });
-    for (const f of S.fw) { f.t += dt; if (f.t < .8) fxAdd(f.x, f.h * f.t / .8, f.z, '#ffe0a0', 1, 1.6); else { const u = (f.t - .8) / 1.6; for (let k = 0; k < 28; k++) { const a = k / 28 * TAU, rr = u * 46; fxAdd(f.x + Math.cos(a) * rr, f.h + Math.sin(a) * rr * .8 - u * u * 30, f.z, f.c, Math.max(0, 1 - u) * .95, 2); } } }
+  if (F.fest && A.id === 'market') {   // fireworks, placed so they burst inside the current view over the back rooftops
+    const gap = lowFx ? 1.6 : 1.0;
+    if (!S.fw.length || S.fw[S.fw.length - 1].t > gap) {
+      const x = S.camX + (Math.random() * 2 - 1) * camOff.hw * .7, z = GT + 14 + Math.random() * 30, ny = .38 + Math.random() * .4;
+      let lo = 20, hi = 400; for (let k = 0; k < 14; k++) { const h = (lo + hi) / 2; fwV.set(x, h, z).project(cam); if (fwV.y < ny) lo = h; else hi = h; }
+      S.fw.push({ x, z, h: lo, t: 0, c: ['#ff7a5a', '#ffd04a', '#7ad0ff', '#c88aff', '#8aff9a'][(Math.random() * 5) | 0] });
+    }
+    const nP = lowFx ? 14 : 30, sz = lowFx ? 8 : 6.5;
+    for (const f of S.fw) { f.t += dt; if (f.t < .7) fxAdd(f.x, f.h * (.3 + .7 * f.t / .7), f.z, '#ffe0a0', 1, 5); else { const u = (f.t - .7) / 1.6, rr = 10 + Math.sqrt(u) * 52; fxAdd(f.x, f.h, f.z, f.c, .45 * Math.max(0, 1 - u * 1.6), 60); for (let k = 0; k < nP; k++) { const a = k / nP * TAU; fxAdd(f.x + Math.cos(a) * rr, f.h + Math.sin(a) * rr * .8 - u * u * 28, f.z, f.c, Math.max(0, 1 - u) * .95, sz); } } }
     S.fw = S.fw.filter(f => f.t < 2.4);
   }
 }
@@ -2304,7 +2330,7 @@ function resize() {
   IW = Math.max(120, Math.round(w / PS)); IH = Math.max(90, Math.round(h / PS));
   if (!R) return;
   R.setSize(IW, IH, false); sizeTargets(); setupCamera();
-  if (scene.fog) { scene.fog.near = CAMD * .9; scene.fog.far = CAMD * 2.4; }
+  camSnap = true; if (S.A) easeCam(0);
   if (S.A) { const c = camTarget(); S.camX = c[0]; S.camY = c[1]; }
 }
 function noGL() {
