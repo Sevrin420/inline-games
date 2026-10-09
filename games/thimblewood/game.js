@@ -925,7 +925,7 @@ function buildArea(id) {
   A.motes = []; const nm = ap.fireflies || 7;
   for (let i = 0; i < nm; i++) A.motes.push({ x: r() * A.w, y: GT + r() * (A.h - GT), ph: r() * TAU, sp: .3 + r() * .5, glow: true, z: 4 + r() * 30 });
   // god-ray beams pouring through canopy gaps: top point, angle, width, length (+ a few dust motes each)
-  A.beams = []; const nb = id === 'glade' ? 4 : A.kind === 'inside' ? 2 : 3;
+  A.beams = []; const nb = id === 'glade' ? 4 : A.kind === 'inside' ? 2 : A.kind === 'town' ? 2 : 3;
   for (let i = 0; i < nb; i++) {
     const x0 = (i + .5) / nb * A.w + (r() - .5) * 40 + 120, a = .34 + r() * .1, yEnd = A.h * .62 + r() * A.h * .34;
     A.beams.push({ x0, y0: -60, a, w: 70 + r() * 50, L: (yEnd + 60) / Math.cos(a), ph: r() * TAU, dust: Array.from({ length: 7 }, () => ({ u: r(), v: r() - .5, sp: .012 + r() * .02, ph: r() * TAU })) });
@@ -1497,9 +1497,10 @@ void main(){
   // grade: violet in the shadows, warm gold in the highlights, a touch of contrast
   float l = dot(c, vec3(.299, .587, .114));
   c = mix(c * shTint, c, smoothstep(.0, .62, l));
-  c += hiTint * smoothstep(.45, 1.0, l) * .12;
-  c = (c - .5) * 1.06 + .5;
-  c = mix(vec3(l), c, 1.18);
+  c += hiTint * smoothstep(.55, 1.0, l) * .05;
+  c = (c - .5) * 1.03 + .5;
+  c = mix(vec3(l), c, 1.1);
+  vec3 o = max(c - .78, 0.0); c = min(c, .78) + o / (1.0 + o * 4.5);   // soft shoulder: no blown-out whites
   vec2 q = (vUv - .5) * vec2(1.0, 1.15); c *= 1.0 - .45 * pow(clamp(length(q) * 1.25, 0.0, 1.0), 2.6);
   c = mix(c, vec3(.08, .04, .1), uFade);
   gl_FragColor = vec4(c, 1.0); }`;
@@ -1715,9 +1716,13 @@ function buildTown(A, G, out, r) {
   const B = townBuilder(), ZF = GT - 10;
   if (A.kind === 'inside') { buildInside(A, B, G, out, r); flushBuilder(B, G); return; }
   // ground beyond the play area (streets, plazas), slightly below the terrain
-  { const t = tex(tileTex('cob', A.ap), true); t.repeat.set((A.w + 1200) / B.T, 1100 / B.T); const m = new THREE.MeshLambertMaterial({ map: t }); MATS.push(m);
-    const gm = new THREE.Mesh(new THREE.PlaneGeometry(A.w + 1200, 1100).rotateX(-Math.PI / 2).translate(A.w / 2, A.view === 'e' ? -1 : -.6, GT - 24 - 500 + 280), m); gm.receiveShadow = true; G.add(gm);
-    if (A.view === 'e') { const lo = new THREE.Mesh(new THREE.PlaneGeometry(600, 1100).rotateX(-Math.PI / 2).translate(A.w + 330, -70, GT + 100), m); lo.receiveShadow = true; G.add(lo); } }
+  { const t = tex(tileTex('cob', A.ap), true); const m = new THREE.MeshLambertMaterial({ map: t }); MATS.push(m);
+    const slab = (x0, x1, z0, z1, y) => { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2).translate((x0 + x1) / 2, y, (z0 + z1) / 2), uv = g.attributes.uv, ps = g.attributes.position;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, ps.getX(i) / B.T, -ps.getZ(i) / B.T); const q = new THREE.Mesh(g, m); q.receiveShadow = true; G.add(q); };
+    // the terrain mesh covers x -90..w+90, z GT-24..h+110: streets only behind and beside it, never under it
+    slab(-640, A.w + 640, GT - 800, GT - 22, A.view === 'e' ? -1 : -2.5);
+    slab(-640, -88, GT - 22, A.h + 400, -2.5); if (A.view !== 'e') slab(A.w + 88, A.w + 640, GT - 22, A.h + 400, -2.5);
+    if (A.view === 'e') slab(A.w + 30, A.w + 640, GT - 22, A.h + 400, -70); }
   const sty = () => HSTY[(r() * HSTY.length) | 0], rf = () => HROOF[(r() * HROOF.length) | 0];
   const mk = (x0, x1, o = {}) => house(B, G, out, Object.assign({ x0, x1, z0: (o.z1 || ZF) - (o.d || 44 + r() * 16), z1: ZF, h: 44 + Math.round(r() * 5) * 5, style: sty(), roof: rf(), gable: r() < .4, seed: (Math.abs(x0) * 13 + A.w + (o.z1 || 0)) | 0, facade: true, chim: r() < .55 }, o));
   const gaps = A.exits.filter(e => e.e === 'n').map(e => [e.a - 8, e.b + 8]);
@@ -1924,9 +1929,9 @@ function build3D(A) {
     const mk = off => { const g = new THREE.BufferGeometry(), t1 = off.clone().multiplyScalar(1.5);
       g.setAttribute('position', new THREE.Float32BufferAttribute([...Tp.clone().sub(t1).toArray(), ...Tp.clone().add(t1).toArray(), ...Bp.clone().add(off).toArray(), ...Bp.clone().sub(off).toArray()], 3));
       g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2)); g.setIndex([0, 2, 1, 0, 3, 2]); return g; };
-    const mat = new THREE.MeshBasicMaterial({ map: BEAMT, color: ap.sun, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, opacity: .3 });
-    const q1 = new THREE.Mesh(mk(new THREE.Vector3(w / 2, 0, 0)), mat), q2 = new THREE.Mesh(mk(new THREE.Vector3(w * .3, 0, 0)), mat); q2.position.z = -14; q2.position.x = 6;
-    const pm = new THREE.MeshBasicMaterial({ map: POOL, color: ap.sun, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, opacity: .5 });
+    const mat = new THREE.MeshBasicMaterial({ map: BEAMT, color: ap.sun, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, opacity: .3 });
+    const q1 = new THREE.Mesh(mk(new THREE.Vector3(w / 2, 0, 0)), mat), q2 = new THREE.Mesh(mk(new THREE.Vector3(w * .3, 0, 0)), mat); q2.position.z = -14; q2.position.x = 6; q2.visible = A.kind === 'forest';
+    const pm = new THREE.MeshBasicMaterial({ map: POOL, color: ap.sun, transparent: true, depthWrite: false, fog: false, opacity: .5 });
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(w * 2.1, w * 1.1).rotateX(-Math.PI / 2), pm); pool.position.set(ex + 4, Bp.y + .6, ez - 2);
     for (const q of [q1, q2, pool]) { q.renderOrder = 4; G.add(q); }
     out.beams.push({ b, Tp, Bp, w, mat, pm, dust: Array.from({ length: 12 }, () => ({ u: Math.random(), v: Math.random() - .5, s: Math.random() - .5, sp: .02 + Math.random() * .03, ph: Math.random() * TAU })) });
@@ -1951,7 +1956,7 @@ const fsScene = new THREE.Scene(), fsCam = new THREE.OrthographicCamera(-1, 1, 1
 const fsGeo = new THREE.BufferGeometry(); fsGeo.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3)); fsGeo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
 const fsMesh = new THREE.Mesh(fsGeo); fsMesh.frustumCulled = false; fsScene.add(fsMesh);
 const sm = (f, u, defs) => new THREE.ShaderMaterial({ vertexShader: FSV, fragmentShader: f, uniforms: u, defines: defs || {}, depthTest: false, depthWrite: false });
-const brightM = sm(BRIGHT_F, { t: { value: null }, px: { value: new THREE.Vector2() }, th: { value: .74 } });
+const brightM = sm(BRIGHT_F, { t: { value: null }, px: { value: new THREE.Vector2() }, th: { value: .84 } });
 const blurM = sm(BLUR_F, { t: { value: null }, dir: { value: new THREE.Vector2() } });
 const compU = () => ({ tS: { value: rtS.texture }, tB: { value: null }, res: { value: new THREE.Vector2() }, uBloom: { value: 1 }, uDof: { value: 3.2 }, shTint: { value: new THREE.Vector3(.7, .6, 1) }, hiTint: { value: new THREE.Vector3(1, .8, .5) }, uT: { value: 0 }, uFade: { value: 0 } });
 const COMP = [sm(COMP_F, compU()), sm(COMP_F, compU(), { BLOOM: 1, DOF: 1 }), sm(COMP_F, compU(), { BLOOM: 1, DOF: 1 })];
@@ -2021,7 +2026,7 @@ function update3D(dt) {
   const hy = standY(A, S.px, S.py);
   hero.position.set(S.px, hy - .4, S.py); hero.scale.x = S.dir === 'side' && S.facing < 0 ? -1 : 1;
   heroBlob.position.set(S.px, hy + .15, S.py + 1); heroBlob.visible = S.mode !== 'title' || true;
-  const hl = beamLight(S.px, S.py) * curP.rays; hero.material.emissive.setRGB(.3 * hl, .22 * hl, .1 * hl);
+  const hl = beamLight(S.px, S.py) * curP.rays; hero.material.emissive.setRGB(.14 * hl, .1 * hl, .05 * hl);
   // NPCs
   for (const nid in W.npcs) {
     const n = NPCS[nid], o = W.npcs[nid], on = npcOn(n); o.m.visible = o.b.visible = on; if (!on) continue; const fr = o.fr, idle = Math.floor(t * 1.7 + n.x) % 2, bl = ((t + n.x * .37) % 4.3) < .14 ? 1 : 0;
@@ -2029,7 +2034,7 @@ function update3D(dt) {
     const y = n.kind === 'frog' && !n.land ? WATER_Y + .6 : n.kind === 'owl' && !n.land ? 17.5 : hAt(A, n.x, n.y);
     o.m.position.set(n.x, y - .3, n.y + (n.kind === 'owl' && !n.land ? 1.5 : 0)); o.m.scale.x = n.front ? 1 : (n.flip == null || n.flip >= 0 ? 1 : -1);
     o.b.position.set(n.x, y + .2, n.y + 1); o.b.visible = n.kind !== 'owl' || !!n.land;
-    const k = beamLight(n.x, n.y) * curP.rays; o.m.material.emissive.setRGB(.3 * k, .22 * k, .1 * k);
+    const k = beamLight(n.x, n.y) * curP.rays; o.m.material.emissive.setRGB(.14 * k, .1 * k, .05 * k);
   }
   // items
   for (const it of A.items) {
@@ -2047,7 +2052,7 @@ function update3D(dt) {
   // beams breathe; dust drifts inside them
   fxN = 0; const lowFx = Q.tier === 0;
   for (const B of W.beams) {
-    const a = curP.rays * (.13 + .035 * Math.sin(t * .45 + B.b.ph) + .02 * Math.sin(t * 1.7 + B.b.ph * 2)); B.mat.opacity = a; B.pm.opacity = a * 1.8;
+    const a = curP.rays * (A.kind === 'town' ? .55 : .8) * (.13 + .03 * Math.sin(t * .45 + B.b.ph) + .015 * Math.sin(t * 1.7 + B.b.ph * 2)); B.mat.opacity = a; B.pm.opacity = a * .9;
     if (!lowFx || true) for (const d of B.dust) { const u = (d.u + t * d.sp) % 1; if (lowFx && d.ph > 3) continue;
       const x = lerp(B.Tp.x, B.Bp.x, u) + d.v * B.w * .8 + Math.sin(t * .7 + d.ph) * 2, y = lerp(B.Tp.y, B.Bp.y, u), z = lerp(B.Tp.z, B.Bp.z, u) + d.s * 16;
       fxAdd(x, y, z, '#fff0c8', Math.sin(u * Math.PI) * (.45 + .45 * Math.sin(t * 2.2 + d.ph)), 1.3); }
@@ -2080,7 +2085,8 @@ function update3D(dt) {
     if (i >= nL) { dummy.position.set(0, -999, 0); dummy.updateMatrix(); leafMesh.setMatrixAt(i, dummy.matrix); continue; }
     if (l.y < hAt(A, l.x, l.z) - 1 || Math.abs(l.x - S.camX) > hw + 60) { l.x = S.camX + (Math.random() * 2 - 1) * hw; l.z = S.camY + camOff.zt * .7 + Math.random() * (camOff.zb - camOff.zt * .7); l.y = l.y < -500 ? Math.random() * 140 : 120 + Math.random() * 40; l.vx = -6 + Math.random() * 4; l.vy = -(9 + Math.random() * 9); }
     l.y += l.vy * dt; l.x += (l.vx + Math.sin(t * 1.3 + l.ph) * 9) * dt; l.rx += dt * l.sp * 2.2; l.ry += dt * l.sp * 1.6; l.rz += dt * l.sp;
-    dummy.position.set(l.x, l.y, l.z); dummy.rotation.set(l.rx, l.ry, l.rz); dummy.updateMatrix(); leafMesh.setMatrixAt(i, dummy.matrix); }
+    dummy.position.set(l.x, l.y, l.z); dummy.rotation.set(-PITCH, 0, l.rz); dummy.scale.set(Math.cos(l.ry) || .1, 1, 1); dummy.updateMatrix(); leafMesh.setMatrixAt(i, dummy.matrix); }
+  dummy.scale.set(1, 1, 1);
   leafMesh.instanceMatrix.needsUpdate = true;
   for (const w of W.water) w.uniforms.uT.value = t;
   for (const m of W.mist) m.t.offset.x = (t * m.sp) % 1;
@@ -2137,7 +2143,7 @@ function render3D() {
     blurM.uniforms.t.value = rtB[0].texture; blurM.uniforms.dir.value.set(1 / bw, 0); pass(blurM, rtB[1]);
     blurM.uniforms.t.value = rtB[1].texture; blurM.uniforms.dir.value.set(0, 1 / bh); pass(blurM, rtB[0]);
     if (tier === 2) { const w2 = rtB[2].width, h2 = rtB[2].height; blurM.uniforms.t.value = rtB[0].texture; blurM.uniforms.dir.value.set(2 / w2, 0); pass(blurM, rtB[2]); blurM.uniforms.t.value = rtB[2].texture; blurM.uniforms.dir.value.set(0, 2 / h2); pass(blurM, rtB[3]); }
-    comp.uniforms.tB.value = tier === 2 ? rtB[3].texture : rtB[0].texture; comp.uniforms.uBloom.value = tier === 2 ? 1.1 : .9;
+    comp.uniforms.tB.value = tier === 2 ? rtB[3].texture : rtB[0].texture; comp.uniforms.uBloom.value = tier === 2 ? .6 : .5;
   }
   comp.uniforms.res.value.set(IW, IH); comp.uniforms.uT.value = S.t; comp.uniforms.uDof.value = 3.4 * Math.max(1, IH / 380);
   comp.uniforms.uFade.value = fadeV;
