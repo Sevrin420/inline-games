@@ -587,7 +587,7 @@ window.addEventListener('blur', () => { for (const k in held) held[k] = 0; });
 // ---------------------------------------------------------------- input: touch stick + A button
 const touchEl = document.getElementById('touch'), stickEl = document.getElementById('stick'), knobEl = document.getElementById('knob'), btnA = document.getElementById('btnA');
 const stick = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
-const touchOn = () => !ROOT.classList.contains('no-touch-ui');
+const touchOn = () => !ROOT.classList.contains('no-touch-ui') && !ROOT.classList.contains('tw-shell');
 function setTouchUI(on) { ROOT.classList.toggle('no-touch-ui', !on); if (on) ROOT.classList.add('touch-ui'); restStick(); }
 function restStick() { stickEl.style.left = (82) + 'px'; stickEl.style.top = (innerHeight - 118) + 'px'; knobEl.style.transform = ''; stickEl.classList.remove('on'); }
 if (window.matchMedia && matchMedia('(pointer: coarse)').matches) ROOT.classList.add('touch-ui');
@@ -1265,14 +1265,20 @@ function drawUI() {
 }
 
 // ================================================================ boot
+const stageEl = document.getElementById('stage');
+// true while the shared handheld shell is mounted and showing (its own buttons replace the touch UI)
+const inShell = () => { const H = window.Handheld && window.Handheld.current; return !!(H && H.visible); };
 function resize() {
-  const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+  ROOT.classList.toggle('tw-shell', inShell());
+  // size from our own box: the whole window, or the handheld shell's screen
+  const box = (stageEl || cv).getBoundingClientRect();
+  const w = Math.max(1, Math.round(box.width) || window.innerWidth), h = Math.max(1, Math.round(box.height) || window.innerHeight);
   DPR = Math.min(2, window.devicePixelRatio || 1);
   CW = cv.width = Math.round(w * DPR); CH = cv.height = Math.round(h * DPR);
   SC = Math.min(CW, CH) / (SHOT ? 212 : CH > CW * 1.3 ? VIEWMIN_PORTRAIT : VIEWMIN);
   if (Math.max(CW, CH) / SC > 640) SC = Math.max(CW, CH) / 640;
   VW = CW / SC; VH = CH / SC;
-  const base = SHOT ? 315 : h > w * 1.3 ? 300 : 380;
+  const base = SHOT ? 315 : inShell() ? 210 : h > w * 1.3 ? 300 : 380;   // the small shell screen gets chunkier pixels
   PS = Math.max(1, Math.min(w, h) / base) * psBoost;
   IW = Math.max(120, Math.round(w / PS)); IH = Math.max(90, Math.round(h / PS));
   if (!R) return;
