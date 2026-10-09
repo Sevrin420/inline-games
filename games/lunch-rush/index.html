@@ -103,7 +103,9 @@ const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Mat
 
 function resize() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+  // Size from the canvas's own box (the whole window, or the handheld shell's screen).
+  const box = cv.getBoundingClientRect();
+  const w = Math.max(1, box.width || window.innerWidth), h = Math.max(1, box.height || window.innerHeight);
   CW = cv.width = Math.round(w * dpr); CH = cv.height = Math.round(h * dpr);
   // leave room for the paper frame around the stage
   SC = Math.min(CW / (LW + 8), CH / (LH + 8));
@@ -1067,6 +1069,13 @@ cv.addEventListener('pointerdown', e => {
   onTap((px - OX) / SC, (py - OY) / SC);
 });
 window.addEventListener('resize', resize);
+// Keys (also sent by the handheld shell's START / B buttons): Enter/Space starts, Escape deselects.
+window.addEventListener('keydown', e => {
+  if (e.target && /^(INPUT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return; // e.g. the sign-in panel
+  if (e.key === 'Enter' || e.key === ' ') {
+    if (mode === 'title' || (mode === 'over' && G.overT > 1)) { e.preventDefault(); start(); }
+  } else if (e.key === 'Escape') sel = null;
+});
 
 // ---------------------------------------------------------------- rendering
 function drawChar(key, x, y, faceVis, bob, flash, big, redA = 0) {
@@ -1431,5 +1440,9 @@ window.__LR = {
 };
 })();
 </script>
+<!-- Optional handheld shell (../shared/handheld/, docs/Handheld_Overlay.md). Lunch Rush is tap-only, so the
+     D-pad moves an on-screen cursor and A taps there; START starts a run, B deselects. Never shown in ?shot. -->
+<script src="../shared/handheld/handheld.js" data-screen="#c" data-aspect="136/188" data-name="LUNCH RUSH"
+        data-pointer="true" data-keys='{"a":"tap","b":"Escape","start":"Enter","select":null}'></script>
 </body>
 </html>

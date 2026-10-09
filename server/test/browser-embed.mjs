@@ -64,6 +64,8 @@ async function cardFrame(page, url) {
 }
 // Start from the title screen, then run the sim until 3 misses end the run.
 async function playOneRun(frame) {
+  // the game-over screen ignores taps for its first second (fixes a timing flake)
+  await frame.waitForFunction(() => window.__LR.mode !== 'over' || window.__LR.G.overT > 1);
   await frame.evaluate(() => window.__LR.tap(64, 100));
   await frame.waitForFunction(() => window.__LR.mode === 'play');
   await frame.evaluate(() => { for (let i = 0; i < 600 && window.__LR.mode !== 'over'; i++) window.__LR.step(1); });
