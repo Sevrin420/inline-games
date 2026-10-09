@@ -145,6 +145,9 @@ const AP = {
   // ---- Mistmire: green-grey murk, willows, glowing wisps over still water
   swamp: { sky: ['#b4c8a8', '#4a5a50'], fog: '#7a9086', sun: '#f4ecc8', hemi: ['#e0ecd8', '#34443c'], ground: '#56663c', ground2: '#4a5a3e', path: '#958e66', trees: ['swamp', 'hedge', 'swamp'], fireflies: 26, flyC: '#b0ffd4', rays: .45, beams: 0, grade: [[.64, .74, .9], [.96, .98, .86]], mist: '#d4e4d4', rock: '#5e6a5c', litter: ['#5a6a3a', '#7a8a4a', '#3a4a2a', '#8a7a5a'], fall: 'none', willows: true, noPiles: true, fernC: '#4e7a3a', sea: ['#1c3a2e', '#3a5c40', '#a4c494'], hemiI: 1.3, sunI: 1.35 },
   swamp2: { sky: ['#a8bca4', '#3a4a48'], fog: '#6a8078', sun: '#ece4c4', hemi: ['#d8e6d4', '#2e3e38'], ground: '#4e5e3a', ground2: '#46563e', path: '#8a8462', trees: ['swamp', 'swamp', 'hedge'], fireflies: 34, flyC: '#b0ffd4', rays: .35, beams: 0, grade: [[.6, .72, .9], [.94, .98, .88]], mist: '#cfe0d2', rock: '#5a6458', litter: ['#5a6a3a', '#7a8a4a', '#3a4a2a', '#8a7a5a'], fall: 'none', tufts: false, willows: true, noPiles: true, fernC: '#4e7a3a', sea: ['#18342a', '#34563c', '#9cbc8e'], hemiI: 1.25, sunI: 1.25 },
+  // ---- Sunstone Ruins: late-afternoon amber over pale sandstone
+  ruins: { sky: ['#f6d0a0', '#c87a6a'], fog: '#e0b498', sun: '#ffe4b8', hemi: ['#fff0d8', '#6a4a50'], ground: '#cfa872', ground2: '#c0965e', path: '#e4cfa4', trees: ['hedge'], fireflies: 0, rays: .55, grade: [[.78, .68, .96], [1, .86, .7]], mist: '#f4dcc0', rock: '#b8805a', rockSpots: ['#a06a44', '#d0a07a', '#8a5a3a', '#e8c098'], litter: ['#c8a068', '#e8c898', '#a88050', '#d8d0b8'], fall: 'none', tufts: false, heat: .5, sand: 14, backdrop: 'mesa', hemiI: 1.2, sunI: 1.5, noPiles: true },
+  ruins2: { sky: ['#f4b88a', '#9a5a6a'], fog: '#d09a8a', sun: '#ffcc98', hemi: ['#ffe4cc', '#5a3a50'], ground: '#c89e6c', ground2: '#b88c5c', path: '#dcc49c', trees: ['hedge'], fireflies: 6, rays: .7, grade: [[.74, .62, .96], [1, .82, .64]], mist: '#f0d0b8', rock: '#b07a58', rockSpots: ['#9a6444', '#c89a76', '#7a5038', '#e0b490'], litter: ['#c8a068', '#e8c898', '#a88050', '#d8d0b8'], fall: 'none', tufts: false, heat: .3, sand: 8, backdrop: 'mesa', sea: ['#2a5a6a', '#4a8a96', '#bce0dc'], hemiI: 1.2, sunI: 1.45, noPiles: true },
   glade: { sky: ['#ffe0a0', '#c88a5a'], fog: '#e0b080', sun: '#fff0c0', hemi: ['#fff0c8', '#7a5a6a'], ground: '#a48a3c', ground2: '#b4722e', path: '#dab47e', trees: ['gold', 'amber', 'autumn'], fireflies: 28, rays: 1, grade: [[.76, .66, .98], [1, .86, .6]], mist: '#fff0d6' },
 };
 const AUT = ['#c4542f', '#e08a2a', '#f5b445', '#b23a32', '#a5502a', '#d8583e', '#e9c24a'];
@@ -1281,8 +1284,8 @@ const AREADEF = {
   // ================= Sunscorch Desert (down the far side of the pass)
   dunes: {
     name: 'Sunscorch Dunes', pal: 'desert', border: 'desert', w: 540, h: 400, cliffH: 46, dunes: 9,
-    exits: [{ e: 'e', a: 226, b: 284, to: 'pass', sx: 16, sy: 255 }, { e: 'w', a: 226, b: 284, to: 'oasis', sx: 504, sy: 255 }],
-    paths: [[[550, 255], [400, 240], [260, 272], [120, 250], [-10, 255]]],
+    exits: [{ e: 'e', a: 226, b: 284, to: 'pass', sx: 16, sy: 255 }, { e: 'w', a: 226, b: 284, to: 'oasis', sx: 504, sy: 255 }, { e: 's', a: 250, b: 290, to: 'ruins', sx: 270, sy: GT + 26 }],
+    paths: [[[550, 255], [400, 240], [260, 272], [120, 250], [-10, 255]], [[264, 270], [270, 430]]],
     props: [['cactus', 120, 150, { seed: 1 }], ['cactus', 330, 130, { seed: 2 }], ['cactus', 460, 340, { seed: 3 }], ['cactus', 200, 350, { seed: 4 }], ['cactus', 60, 320, { seed: 6 }], ['bones', 300, 330, {}], ['bones', 430, 140, {}],
       ['rock', 220, 180, { c: '#c0784a' }], ['rock', 380, 330, { c: '#b06a3e' }], ['sign', 480, 214, {}], ['claypots', 160, 220, { seed: 2 }]],
     items: [], npcs: [], objs: ['dunesign'],
@@ -1333,6 +1336,28 @@ const AREADEF = {
     items: [], npcs: ['ondine'], objs: ['bogpost', 'boghut'],
     critters: [['wisp', 260, 200], ['wisp', 440, 300], ['wisp', 140, 320], ['wisp', 330, 330], ['frog', 300, 248], ['heron', 470, 310]],
   },
+  // ================= Sunstone Ruins (south of the Sunscorch Dunes)
+  ruins: {
+    name: 'Sunstone Colonnade', pal: 'ruins', border: 'desert', w: 540, h: 420, cliffH: 50,
+    exits: [{ e: 'n', a: 250, b: 290, to: 'dunes', sx: 270, sy: 392 }, { e: 's', a: 250, b: 290, to: 'temple', sx: 270, sy: GT + 26 }],
+    paths: [[[270, 40], [270, 440]]],
+    props: [['column', 200, 120, { seed: 1 }], ['column', 340, 120, { seed: 2, broken: true }], ['column', 200, 180, { seed: 3, broken: true }], ['column', 340, 180, { seed: 4 }],
+      ['column', 200, 300, { seed: 5 }], ['column', 340, 300, { seed: 6, broken: true }], ['column', 200, 360, { seed: 7, broken: true }], ['column', 340, 360, { seed: 8 }],
+      ['ruinarch', 270, 240, {}], ['statue', 450, 300, {}], ['column', 90, 220, { seed: 9, broken: true }], ['column', 460, 160, { seed: 10, broken: true }],
+      ['bones', 120, 360, {}], ['claypots', 430, 380, { seed: 4 }], ['rock', 100, 140, { c: '#b8805a' }], ['cactus', 470, 230, { seed: 5 }], ['cactus', 60, 300, { seed: 9 }], ['sign', 320, 92, {}]],
+    items: [], npcs: [], objs: ['ruinsign'],
+    critters: [['lizard', 150, 250], ['lizard', 400, 330], ['eagle', 270, 230]],
+  },
+  temple: {
+    name: 'Court of the Sun', pal: 'ruins2', border: 'desert', lush: true, w: 540, h: 400, cliffH: 60, pond: { x: 270, y: 244, rx: 84, ry: 30 },
+    exits: [{ e: 'n', a: 250, b: 290, to: 'ruins', sx: 270, sy: 392 }],
+    paths: [[[270, 40], [270, 200]], [[270, 200], [150, 244], [270, 300], [390, 244], [270, 200]]],
+    props: [['ruinarch', 270, 70, {}], ['column', 150, 180, { seed: 11 }], ['column', 390, 180, { seed: 12 }], ['column', 150, 310, { seed: 13, broken: true }], ['column', 390, 310, { seed: 14 }],
+      ['column', 110, 244, { seed: 15, broken: true }], ['column', 430, 244, { seed: 16, broken: true }], ['statue', 270, 344, {}], ['lily', 240, 240, {}], ['lily', 300, 250, {}],
+      ['claypots', 80, 120, { seed: 6 }], ['bones', 470, 360, {}], ['palm', 70, 340, { seed: 10 }], ['palm', 480, 200, { seed: 11 }], ['lantern', 200, 210, {}], ['lantern', 340, 210, {}]],
+    items: [], npcs: ['dusty'], objs: ['shrine'],
+    critters: [['lizard', 120, 330], ['lizard', 440, 330]],
+  },
 };
 
 // NPCs and things you can talk to / poke
@@ -1371,6 +1396,7 @@ const NPCS = {
   humphrey: { area: 'oasis', kind: 'camel', name: 'Humphrey', color: '#a07440', x: 120, y: 322, h: 52, top: 60, range: 40, lines: [['Mmmm. Humphrey. I carry spice to the bazaar, and bring stories back.', 'The palms drink first. Then the camels. Then the travellers. That is the oasis rule.'], ['South is the Mirage Bazaar. Zahra sells spice that makes your ears glow.'], ['Sand in your boots? Sand in your boots forever. Welcome to the desert.']] },
   zahra: { area: 'bazaar', kind: 'fennec', name: 'Zahra', color: '#a83a54', x: 150, y: 212, h: 34, top: 42, range: 34, lines: [['Saffron, cumin, sumac, star anise! Zahra\u2019s spices, the best this side of the pass.', 'Smell that? Cardamom. It makes even mountain tea taste like sunshine.'], ['The rug stall has carpets woven by moonlight. Or so they claim.', 'The well in the square never runs dry. Nobody knows why.'], ['My ears? They hear a bargain three streets away.']] },
   ondine: { area: 'bog', kind: 'turtle', name: 'Ondine', color: '#4a7a3a', x: 136, y: 252, h: 30, top: 36, range: 38, lines: [['Ondine. I pole the ferry when the water\u2019s high, and nap on this boardwalk when it isn\u2019t.', 'Those little lights? Wisps. Harmless. They just like company.'], ['Never follow a wisp off the planks. They\u2019re terrible at directions.', 'The heron and I have an understanding. He takes the frogs\u2019 side.'], ['Slow and steady crosses every bog.']] },
+  dusty: { area: 'temple', kind: 'raccoon', name: 'Dusty', color: '#7a6a4a', x: 336, y: 300, h: 36, top: 42, range: 36, lines: [['Dusty, explorer of old stones! Mind the pool. I fell in twice.', 'This court belonged to sun-watchers. Every column casts its shadow on a mark at noon.'], ['I sketch everything. The arch, the statue, that lizard. Mostly the lizard. He poses.', 'Someone left fresh flowers by the statue. Not me. Spooky!'], ['Bring me a story from the mountains sometime.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -1611,12 +1637,14 @@ const OBJS = {
   bridgesign: { area: 'bridge', x: 300, y: 300, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['CHASM BRIDGE. Hold the ropes. One traveller at a time.', 'Somebody has added: "Don\u2019t look down. (We did. It\u2019s far.)"']); } },
   passsign: { area: 'pass', x: 60, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: down to the Sunscorch Desert  \u00b7  South: Chasm Bridge', 'An icicle hangs off the arrow like a moustache.']); } },
   hutdoor: { area: 'pass', x: 375, y: 148, h: 30, top: 36, range: 28, use() { sfx.door(); say('Waystation', '#7a5a3a', null, ['Warm air and woodsmoke spill out of the hut.', 'A kettle sings on the stove. A sign reads: "Take a cup, leave a story."']); } },
-  dunesign: { area: 'dunes', x: 480, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Frostcap Pass  \u00b7  West: Palm Oasis', 'The paint has been sand-blasted to a whisper.']); } },
+  dunesign: { area: 'dunes', x: 480, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Frostcap Pass  \u00b7  West: Palm Oasis  \u00b7  South: Sunstone Ruins', 'The paint has been sand-blasted to a whisper.']); } },
   bazaarsign: { area: 'bazaar', x: 236, y: 290, h: 44, range: 26, use() { say('Well', '#5a8aa8', null, ['A deep, cool well in the middle of the bazaar.', 'You drop a pebble. A long time later: plink.']); } },
   hollowsign: { area: 'hollow', x: 64, y: 216, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Mistmire  \u00b7  East: Sunny Clearing', 'Someone scratched a little wisp under the arrow.']); } },
   miresign: { area: 'mire', x: 470, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: The Old Hollow  \u00b7  West: Willow Bog', '"Stay on the path. The bog keeps what it finds."']); } },
   bogpost: { area: 'bog', x: 500, y: 254, h: 30, range: 24, use() { say('Ferry Post', '#5a8a5a', null, ['A bell on a post. A sign: "Ferry: ask Ondine. Fare: one good story."']); } },
   boghut: { area: 'bog', x: 384, y: 148, h: 40, range: 26, use() { say('Stilt Hut', '#5a8a5a', null, ['The hut smells of peat smoke and mint tea. A kettle hums inside.']); } },
+  ruinsign: { area: 'ruins', x: 320, y: 92, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['North: Sunscorch Dunes  \u00b7  South: Court of the Sun', 'Older carving underneath, in letters nobody reads anymore.']); } },
+  shrine: { area: 'temple', x: 270, y: 330, h: 40, range: 30, use() { say('Old Statue', '#b0905a', null, ['A weathered stone face, wearing a crown of moss.', 'A fresh flower rests at its base. The stone feels warm.']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
