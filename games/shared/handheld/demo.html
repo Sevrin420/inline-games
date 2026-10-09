@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Handheld shell demo</title>
+<meta name="robots" content="noindex">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #222; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+</style>
+</head>
+<body>
+<!-- Playground for games/shared/handheld (docs/Handheld_Overlay.md): a dot you move with the
+     arrow keys, plus a log of every key event the buttons send. Also used by the browser test. -->
+<canvas id="c" tabindex="0"></canvas>
+<script>
+'use strict';
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const held = new Set(), log = [];
+  const P = { x: 80, y: 72 };
+  window.__HH = { log, held, P, taps: [] };
+  function resize() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(3, devicePixelRatio || 1);
+    cv.width = Math.round((r.width || innerWidth) * dpr); cv.height = Math.round((r.height || innerHeight) * dpr);
+  }
+  addEventListener('resize', resize); resize();
+  addEventListener('keydown', e => { held.add(e.key); log.push(['down', e.key, e.code, e.keyCode, e.repeat]); if (log.length > 400) log.shift(); });
+  addEventListener('keyup', e => { held.delete(e.key); log.push(['up', e.key, e.code, e.keyCode, false]); });
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    window.__HH.taps.push([(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, e.isTrusted]);
+  });
+  let last = performance.now();
+  (function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const sp = 70 * dt;
+    if (held.has('ArrowLeft')) P.x -= sp; if (held.has('ArrowRight')) P.x += sp;
+    if (held.has('ArrowUp')) P.y -= sp; if (held.has('ArrowDown')) P.y += sp;
+    P.x = Math.max(6, Math.min(154, P.x)); P.y = Math.max(6, Math.min(138, P.y));
+    const W = cv.width, H = cv.height, s = Math.min(W / 160, H / 144);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#9bbc0f'; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(s, 0, 0, s, (W - 160 * s) / 2, (H - 144 * s) / 2);
+    ctx.fillStyle = '#8bac0f'; for (let x = 0; x < 160; x += 16) for (let y = 0; y < 144; y += 16) if ((x + y) / 16 % 2) ctx.fillRect(x, y, 16, 16);
+    ctx.fillStyle = held.has(' ') ? '#e02810' : held.has('x') ? '#3870c0' : '#0f380f';
+    ctx.beginPath(); ctx.arc(P.x, P.y, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0f380f'; ctx.font = '700 8px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('HANDHELD DEMO', 80, 14);
+    ctx.fillText('held: ' + ([...held].map(k => k === ' ' ? 'Space' : k).join(' ') || '-'), 80, 134);
+    requestAnimationFrame(loop);
+  })(last);
+})();
+</script>
+<script src="handheld.js" data-screen="#c" data-aspect="160/144" data-name="DEMO"
+        data-keys='{"a":" ","b":"x","start":"Enter","select":"Escape"}'></script>
+</body>
+</html>
