@@ -874,8 +874,8 @@ function paintCactus(o) { const r = rng(o.seed || 3), p = new Pix(34, 50), G = [
   for (let i = 0; i < 30; i++) { const x = 3 + r() * 28 | 0, y = 50 - h + r() * (h - 2) | 0; if (p.on(x, y)) p.set(x, y, '#e8e0b0'); }
   if (r() < .5) { p.ell(17, 50 - h - 1, 2.4, 1.8, ['#c83a6a', '#f07aa0']); p.set(17, 50 - h - 2, '#ffd0e0'); }
   return p.done({ ax: 17, ay: 49 }); }
-function paintPalm(o) { const r = rng(o.seed || 5), p = new Pix(84, 118), K = ['#5a3a1e', '#7a5430', '#9a7044', '#b88a5a'], L = ['#1e4a22', '#2e6a2a', '#4a8a34', '#6aaa44', '#9ac85a'], lean = (r() - .5) * 16;
-  for (let y = 30; y < 118; y++) { const t = (118 - y) / 88, x = 42 + lean * t * t; p.rect(x - 3, y, 7, 1, K[(y >> 2) % 2 ? 2 : 1]); p.set(x - 3, y, K[0]); p.set(x + 3, y, K[3]); }
+function paintPalm(o) { const r = rng(o.seed || 5), p = new Pix(84, 86), K = ['#5a3a1e', '#7a5430', '#9a7044', '#b88a5a'], L = ['#1e4a22', '#2e6a2a', '#4a8a34', '#6aaa44', '#9ac85a'], lean = (r() - .5) * 16;
+  for (let y = 30; y < 86; y++) { const t = (86 - y) / 56, x = 42 + lean * t * t; p.rect(x - 3, y, 7, 1, K[(y >> 2) % 2 ? 2 : 1]); p.set(x - 3, y, K[0]); p.set(x + 3, y, K[3]); }
   const tx = 42 + lean, ty = 30;
   for (let k = 0; k < 7; k++) { const a = -Math.PI + k / 6 * Math.PI + (r() - .5) * .3, len = 30 + r() * 10;
     for (let s = 0; s < len; s++) { const u = s / len, x = tx + Math.cos(a) * s, y = ty + Math.sin(a) * s * .55 + u * u * 22, w = Math.sin(u * Math.PI) * 4.6;
@@ -1265,13 +1265,44 @@ const AREADEF = {
   },
   pass: {
     name: 'Frostcap Pass', pal: 'snow', w: 540, h: 400, cliffH: 104, hut: { x0: 320, x1: 430, z0: 76, z1: 140 },
-    exits: [{ e: 's', a: 250, b: 290, to: 'bridge', sx: 260, sy: GT + 26 }],
+    exits: [{ e: 's', a: 250, b: 290, to: 'bridge', sx: 260, sy: GT + 26 }, { e: 'w', a: 226, b: 284, to: 'dunes', sx: 524, sy: 255 }],
     paths: [[[270, 410], [270, 210], [375, 150]], [[270, 240], [-10, 255]]],
     props: [['cairn', 120, 180, { seed: 4 }], ['cairn', 480, 250, { seed: 9 }], ['snowrock', 200, 120, {}], ['snowrock', 470, 330, {}], ['snowrock', 90, 340, { c: '#6a6a74' }], ['lantern', 310, 150, {}], ['lantern', 440, 150, {}],
       ['crate', 450, 110, { stack: true }], ['barrel', 304, 112, {}], ['bench', 200, 300, {}], ['sign', 60, 214, {}], ['pine', 160, 380, { snow: true }], ['pine', 500, 360, { snow: true }]],
     strings: [[[60, 52, 66], [220, 44, 66], 10]],
     items: [], npcs: ['bryn'], objs: ['passsign', 'hutdoor'],
     critters: [['eagle', 300, 220]],
+  },
+  // ================= Sunscorch Desert (down the far side of the pass)
+  dunes: {
+    name: 'Sunscorch Dunes', pal: 'desert', border: 'desert', w: 540, h: 400, cliffH: 46, dunes: 9,
+    exits: [{ e: 'e', a: 226, b: 284, to: 'pass', sx: 16, sy: 255 }, { e: 'w', a: 226, b: 284, to: 'oasis', sx: 504, sy: 255 }],
+    paths: [[[550, 255], [400, 240], [260, 272], [120, 250], [-10, 255]]],
+    props: [['cactus', 120, 150, { seed: 1 }], ['cactus', 330, 130, { seed: 2 }], ['cactus', 460, 340, { seed: 3 }], ['cactus', 200, 350, { seed: 4 }], ['cactus', 60, 320, { seed: 6 }], ['bones', 300, 330, {}], ['bones', 430, 140, {}],
+      ['rock', 220, 180, { c: '#c0784a' }], ['rock', 380, 330, { c: '#b06a3e' }], ['sign', 480, 214, {}], ['claypots', 160, 220, { seed: 2 }]],
+    items: [], npcs: [], objs: ['dunesign'],
+    critters: [['lizard', 250, 200], ['lizard', 400, 300], ['lizard', 120, 300], ['eagle', 270, 240]],
+  },
+  oasis: {
+    name: 'Palm Oasis', pal: 'desert', border: 'desert', lush: true, w: 520, h: 400, cliffH: 40, pond: { x: 280, y: 196, rx: 110, ry: 46 },
+    exits: [{ e: 'e', a: 226, b: 284, to: 'dunes', sx: 16, sy: 255 }, { e: 's', a: 240, b: 280, to: 'bazaar', sx: 280, sy: GT + 26 }],
+    paths: [[[530, 255], [400, 284], [260, 300], [260, 410]]],
+    props: [['palm', 150, 168, { seed: 1 }], ['palm', 414, 166, { seed: 2 }], ['palm', 178, 264, { seed: 3 }], ['palm', 386, 262, { seed: 4 }], ['palm', 290, 136, { seed: 5 }], ['palm', 60, 140, { seed: 6 }],
+      ['reeds', 186, 226, {}], ['reeds', 372, 228, {}], ['reeds', 230, 160, {}], ['lily', 250, 196, {}], ['lily', 320, 210, {}], ['lily', 290, 180, {}], ['flowers', 200, 290, {}], ['flowers', 360, 300, {}],
+      ['cactus', 470, 340, { seed: 7 }], ['cactus', 50, 330, { seed: 8 }], ['claypots', 90, 250, { seed: 5 }], ['rock', 460, 130, { c: '#c0784a' }]],
+    items: [], npcs: ['humphrey'], objs: [],
+    critters: [['lizard', 440, 300], ['lizard', 100, 360]],
+  },
+  bazaar: {
+    name: 'Mirage Bazaar', pal: 'bazaar', kind: 'town', back: 'houses', ground: 'sand', w: 560, h: 400, hsty: ['adobe', 'adobe2', 'adobe3', 'adobe'], hroof: ['flat'],
+    exits: [{ e: 'n', a: 260, b: 300, to: 'oasis', sx: 260, sy: 392 }],
+    shops: [{ x0: 96, x1: 220, style: 'adobe2', roof: 'flat', sign: 'spice', door: .5, h: 52 }, { x0: 360, x1: 470, style: 'adobe', roof: 'flat', sign: 'rug', door: .4, h: 48 }],
+    paths: [[[280, 40], [280, 400]], [[40, 250], [520, 250]]],
+    props: [['stall', 150, 186, { kind: 'spice' }], ['stall', 420, 186, { kind: 'rug' }], ['stall', 140, 330, { kind: 'pottery' }], ['palm', 40, 150, { seed: 7 }], ['palm', 522, 160, { seed: 8 }], ['palm', 470, 340, { seed: 9 }], ['well', 280, 300, {}],
+      ['claypots', 236, 100, { seed: 1 }], ['claypots', 500, 100, { seed: 3 }], ['crate', 60, 100, { stack: true }], ['barrel', 330, 96, {}], ['lamp', 230, 196, {}], ['lamp', 330, 196, {}], ['bench', 400, 330, {}]],
+    strings: [[[96, 52, 46], [220, 52, 46], 8], [[360, 48, 46], [470, 48, 46], 6], [[150, 40, 186], [420, 40, 186], 14]],
+    items: [], npcs: ['zahra'], objs: ['bazaarsign'],
+    critters: [['cat', 330, 100], ['lizard', 200, 360], ['lizard', 380, 120]],
   },
 };
 
@@ -1308,6 +1339,8 @@ const NPCS = {
   grit: { area: 'tunnels', kind: 'miner', name: 'Grit', color: '#c89a2a', x: 300, y: 246, h: 32, range: 34, lines: [['Grit. Mole. Miner. Born in the dark, love the dark.', 'East of here: the Crystal Caverns. Don\u2019t lick the crystals.'], ['Hear that drip? There\u2019s a lake past the caverns. Lum lives on the jetty.'], ['A lantern every forty paces. Rule of the mine. Keeps the bats honest.']] },
   lum: { area: 'lake', kind: 'axolotl', name: 'Lum', color: '#e08a9a', x: 260, y: 252, h: 24, top: 32, range: 34, lines: [['Oh! A visitor. I\u2019m Lum. I keep the jetty lantern lit.', 'The lake runs on under the mountain. Nobody\u2019s ever found the end.'], ['Those little lights in the water are glowfish. They like humming.', 'Hmmmm... See? They come closer.']] },
   bryn: { area: 'pass', kind: 'goat', name: 'Bryn', color: '#c83a2a', x: 250, y: 172, h: 36, top: 44, range: 34, lines: [['Bryn. I keep the waystation. Tea\u2019s on, boots by the door.', 'The pass is the roof of the world. West, the land falls away to the desert.'], ['The rope bridge? Sturdy as a goat. I check every knot each spring.', 'Hear that wind? Means snow by supper.'], ['Eagles nest on the cliffs. They\u2019ll circle you for a while, then lose interest.']] },
+  humphrey: { area: 'oasis', kind: 'camel', name: 'Humphrey', color: '#a07440', x: 120, y: 322, h: 52, top: 60, range: 40, lines: [['Mmmm. Humphrey. I carry spice to the bazaar, and bring stories back.', 'The palms drink first. Then the camels. Then the travellers. That is the oasis rule.'], ['South is the Mirage Bazaar. Zahra sells spice that makes your ears glow.'], ['Sand in your boots? Sand in your boots forever. Welcome to the desert.']] },
+  zahra: { area: 'bazaar', kind: 'fennec', name: 'Zahra', color: '#a83a54', x: 150, y: 212, h: 34, top: 42, range: 34, lines: [['Saffron, cumin, sumac, star anise! Zahra\u2019s spices, the best this side of the pass.', 'Smell that? Cardamom. It makes even mountain tea taste like sunshine.'], ['The rug stall has carpets woven by moonlight. Or so they claim.', 'The well in the square never runs dry. Nobody knows why.'], ['My ears? They hear a bargain three streets away.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -1367,7 +1400,7 @@ function buildArea(id) {
     if (A.props.some(p => Math.hypot(p.x - x, p.y - y) < 26) || d.npcs.some(n => Math.hypot(NPCS[n].x - x, NPCS[n].y - y) < 40)) continue;
     if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
     if (A.kind === 'cave') { const q = r(); add(q < .5 ? 'stalag' : 'mush', x, y, q < .5 ? { seed: 1 + (r() * 9 | 0), c: ap.rock } : { s: .35 + r() * .15, cap: ['#2f9e9a', '#8a5cc9', '#c4542f'][(r() * 3) | 0] }); i++; continue; }
-    if (A.border === 'desert') { const q = r(); add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
+    if (A.border === 'desert') { const q = r(); if (A.lush) { add(q < .12 ? 'cactus' : q < .55 ? 'fern' : q < .8 ? 'flowers' : 'rock', x, y, { seed: 1 + (r() * 9 | 0), c: q < .12 ? undefined : q < .55 ? '#6a9a3e' : q < .8 ? undefined : ap.rock }); i++; continue; } add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
     { const q = r(); add(q < .45 ? (ap.noPiles ? (ap.pines ? 'cairn' : 'rock') : 'leafpile') : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : ap.noPiles && q >= .45 && q < .75 ? { c: ap.pines ? '#5e7a48' : '#7a7a4a' } : {}); } i++;
   }
   A.solids = [];
@@ -1546,8 +1579,10 @@ const OBJS = {
   minesign: { area: 'minetrail', x: 440, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['North: Emberdeep Mine  \u00b7  East: Hearthvale  \u00b7  West: Frostcap Mountains', 'Scratched beneath: "Mind the carts!"']); } },
   mtnsign: { area: 'switchbacks', x: 480, y: 226, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['North: Chasm Bridge and Frostcap Pass  \u00b7  East: Quarry Trail', 'Carved below: "Mind your step on the bends."']); } },
   bridgesign: { area: 'bridge', x: 300, y: 300, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['CHASM BRIDGE. Hold the ropes. One traveller at a time.', 'Somebody has added: "Don\u2019t look down. (We did. It\u2019s far.)"']); } },
-  passsign: { area: 'pass', x: 60, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: the road down is snowed in for now  \u00b7  South: Chasm Bridge', 'An icicle hangs off the arrow like a moustache.']); } },
+  passsign: { area: 'pass', x: 60, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: down to the Sunscorch Desert  \u00b7  South: Chasm Bridge', 'An icicle hangs off the arrow like a moustache.']); } },
   hutdoor: { area: 'pass', x: 375, y: 148, h: 30, top: 36, range: 28, use() { sfx.door(); say('Waystation', '#7a5a3a', null, ['Warm air and woodsmoke spill out of the hut.', 'A kettle sings on the stove. A sign reads: "Take a cup, leave a story."']); } },
+  dunesign: { area: 'dunes', x: 480, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['East: Frostcap Pass  \u00b7  West: Palm Oasis', 'The paint has been sand-blasted to a whisper.']); } },
+  bazaarsign: { area: 'bazaar', x: 236, y: 290, h: 44, range: 26, use() { say('Well', '#5a8aa8', null, ['A deep, cool well in the middle of the bazaar.', 'You drop a pebble. A long time later: plink.']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
