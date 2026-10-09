@@ -1314,6 +1314,9 @@ function camTarget() {
 }
 
 // ---------------------------------------------------------------- textures, billboards
+// big repeating surfaces (terrain, walls, roofs) get mipmaps for minification: nearest when magnified (chunky pixels),
+// trilinear when minified so the small phone render doesn't alias into noise (1008 = LinearMipmapLinearFilter)
+const mip = t => { t.minFilter = 1008; t.generateMipmaps = true; return t; };
 function tex(c, rep, linear) { const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = linear ? THREE.LinearFilter : THREE.NearestFilter; t.generateMipmaps = false; if (rep) t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; }
 const GEO = new Map();
 function bbGeo(c) {    // upright quad, origin at the foot; normals lean up so sprites catch the sun from above
@@ -1659,8 +1662,8 @@ function paintArchFill(w, h) { const W = Math.round(w / U), H = Math.round(h / U
 // geometry accumulator: quads grouped by material key, flushed into one mesh per material
 const TMAT = new Map();
 function townMat(key) { let m = TMAT.get(key); if (m) return m; const i = key.indexOf('|'), kind = key.slice(0, i), style = key.slice(i + 1);
-  if (kind === 'w') { const [c, e] = wallTiles(style); m = new THREE.MeshLambertMaterial({ map: tex(c, true), side: THREE.DoubleSide }); if (WALLST[style]) { m.emissiveMap = tex(e, true); m.emissive = new THREE.Color('#ffb060'); m.emissiveIntensity = 0; EMIS.push({ m, k: 'win' }); } }
-  else if (kind === 'r') m = new THREE.MeshLambertMaterial({ map: tex(roofTile(style), true), side: THREE.DoubleSide });
+  if (kind === 'w') { const [c, e] = wallTiles(style); m = new THREE.MeshLambertMaterial({ map: mip(tex(c, true)), side: THREE.DoubleSide }); if (WALLST[style]) { m.emissiveMap = tex(e, true); m.emissive = new THREE.Color('#ffb060'); m.emissiveIntensity = 0; EMIS.push({ m, k: 'win' }); } }
+  else if (kind === 'r') m = new THREE.MeshLambertMaterial({ map: mip(tex(roofTile(style), true)), side: THREE.DoubleSide });
   else m = new THREE.MeshLambertMaterial({ color: style, side: THREE.DoubleSide });
   MATS.push(m); TMAT.set(key, m); return m; }
 function townBuilder() {
@@ -1716,7 +1719,7 @@ function buildTown(A, G, out, r) {
   const B = townBuilder(), ZF = GT - 10;
   if (A.kind === 'inside') { buildInside(A, B, G, out, r); flushBuilder(B, G); return; }
   // ground beyond the play area (streets, plazas), slightly below the terrain
-  { const t = tex(tileTex('cob', A.ap), true); const m = new THREE.MeshLambertMaterial({ map: t }); MATS.push(m);
+  { const t = mip(tex(tileTex('cob', A.ap), true)); const m = new THREE.MeshLambertMaterial({ map: t }); MATS.push(m);
     const slab = (x0, x1, z0, z1, y) => { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2).translate((x0 + x1) / 2, y, (z0 + z1) / 2), uv = g.attributes.uv, ps = g.attributes.position;
       for (let i = 0; i < uv.count; i++) uv.setXY(i, ps.getX(i) / B.T, -ps.getZ(i) / B.T); const q = new THREE.Mesh(g, m); q.receiveShadow = true; G.add(q); };
     // the terrain mesh covers x -90..w+90, z GT-24..h+110: streets only behind and beside it, never under it
@@ -1836,7 +1839,7 @@ function build3D(A) {
   const X0 = -90, X1 = A.w + 90, Z0 = GT - 24, Z1 = A.h + 110, TW = Math.round((X1 - X0) / U), TH = Math.round((Z1 - Z0) / U);
   const gg = new THREE.PlaneGeometry(TW * U, TH * U, Math.round(TW * U / 5), Math.round(TH * U / 5)); gg.rotateX(-Math.PI / 2); gg.translate(X0 + TW * U / 2, 0, Z0 + TH * U / 2);
   const gp = gg.attributes.position; for (let i = 0; i < gp.count; i++) gp.setY(i, hAt(A, gp.getX(i), gp.getZ(i))); gg.computeVertexNormals();
-  const ground = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ map: tex(groundTexture(A, X0, Z0, TW, TH)) })); ground.receiveShadow = true; MATS.push(ground.material); G.add(ground);
+  const ground = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ map: mip(tex(groundTexture(A, X0, Z0, TW, TH))) })); ground.receiveShadow = true; MATS.push(ground.material); G.add(ground);
   const CH_ = 34;
   if (A.kind !== 'forest') buildTown(A, G, out, r); else {
   // the back cliff: stepped rock blocks with gaps for north exits and the waterfall, a plateau behind
@@ -1862,10 +1865,10 @@ function build3D(A) {
     quad(tops, uvT, [g[0], .2, CLIFF_Z + 4], [g[1], .2, CLIFF_Z + 4], [g[1], CH_, CLIFF_Z - CLIFF_D], [g[0], CH_, CLIFF_Z - CLIFF_D], [g[0] / T, 0], [g[1] / T, 0], [g[1] / T, 1.4], [g[0] / T, 1.4]);
   }
   const mkGeo = (pos, uv) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals(); return g; };
-  const rockM = new THREE.MeshLambertMaterial({ map: tex(tileTex('rock', ap), true) }), topM = new THREE.MeshLambertMaterial({ map: tex(tileTex('top', ap), true) }); MATS.push(rockM, topM);
+  const rockM = new THREE.MeshLambertMaterial({ map: mip(tex(tileTex('rock', ap), true)) }), topM = new THREE.MeshLambertMaterial({ map: mip(tex(tileTex('top', ap), true)) }); MATS.push(rockM, topM);
   const cliffS = new THREE.Mesh(mkGeo(sides, uvS), rockM), cliffT = new THREE.Mesh(mkGeo(tops, uvT), topM);
   for (const m of [cliffS, cliffT]) { m.castShadow = m.receiveShadow = true; G.add(m); }
-  const ptx = tex(tileTex('top', ap), true); ptx.repeat.set((A.w + 1400) / T, 800 / T); const pM = new THREE.MeshLambertMaterial({ map: ptx }); MATS.push(pM);
+  const ptx = mip(tex(tileTex('top', ap), true)); ptx.repeat.set((A.w + 1400) / T, 800 / T); const pM = new THREE.MeshLambertMaterial({ map: ptx }); MATS.push(pM);
   const plateau = new THREE.Mesh(new THREE.PlaneGeometry(A.w + 1400, 800).rotateX(-Math.PI / 2).translate(A.w / 2, CH_ - 1, CLIFF_Z - CLIFF_D - 398), pM); plateau.receiveShadow = true; G.add(plateau);
   // backdrop forest on the plateau (fog fades it into the haze)
   const bt = []; for (let i = 0; i < 6; i++) bt.push(paintTree({ seed: 900 + i, pal: ap.trees[i % ap.trees.length] }));
