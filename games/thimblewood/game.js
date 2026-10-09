@@ -127,6 +127,14 @@ const AP = {
   dusk: { sky: ['#f4945a', '#5a3a6a'], fog: '#9a6070', sun: '#ffa060', hemi: ['#ffc0a0', '#3a2a5a'], grade: [[.62, .52, 1], [1, .72, .48]], mist: '#ffc8b0', sunI: 1.45, hemiI: 1.15, rays: .7 },
   night: { sky: ['#4a4488', '#16123a'], fog: '#3a3468', sun: '#a0acf0', hemi: ['#b0a8ec', '#3a3060'], grade: [[.66, .62, 1], [1, .84, .6]], mist: '#9a98d8', sunI: 1.05, hemiI: 1.35, rays: .25 },
   inn: { sky: ['#2a1a14', '#140a08'], fog: '#2a1810', sun: '#ffc890', hemi: ['#ffd0a0', '#3a2018'], ground: '#7a5030', ground2: '#6a4028', path: '#8a6040', trees: ['autumn'], fireflies: 0, rays: .5, grade: [[.7, .58, .9], [1, .8, .55]], mist: '#ffd8b0', sunI: .85, hemiI: .95 },
+  // ---- Saltmere Wharf: cool sea light, salt-bleached stone
+  harbor: { sky: ['#d6e6ee', '#7898b0'], fog: '#aec2d0', sun: '#fff2dc', hemi: ['#f0f4ff', '#4a5a6a'], ground: '#8a8a6e', ground2: '#9a8c62', path: '#c8b896', cobble: '#9a9a92', trees: ['gold', 'amber'], fireflies: 0, rays: .45, grade: [[.74, .76, 1], [1, .94, .84]], mist: '#e8f0f8', litter: ['#c8c0a8', '#a89a7a', '#e8e0d0', '#7a8a6a', '#c4542f'], fall: 'none', sea: ['#1a4a66', '#2e7090', '#d8f0f4'], hemiI: 1.3, sunI: 1.7 },
+  coast: { sky: ['#d8eaf0', '#6a90b0'], fog: '#b0c8d4', sun: '#fff4e0', hemi: ['#f4f8ff', '#4a5a5a'], ground: '#7a8a4a', ground2: '#8a8a52', path: '#d0c09a', trees: ['gold', 'amber', 'rust'], fireflies: 0, rays: .45, grade: [[.74, .76, 1], [1, .94, .84]], mist: '#eef4f8', rock: '#8a8a86', litter: ['#e0d8c0', '#a8a07a', '#c8b060', '#f4f0e4'], fall: 'none', sea: ['#1a4a66', '#2e7090', '#d8f0f4'], hemiI: 1.3, sunI: 1.7 },
+  // ---- Emberdeep Mine: dusty quarry, lantern-lit tunnels, crystal caves, a still underground lake
+  quarry: { sky: ['#ecc8a0', '#8a6a5a'], fog: '#bc9c8a', sun: '#ffe0b0', hemi: ['#ffe8c8', '#4a3a3a'], ground: '#8a7a5c', ground2: '#7a6a5a', path: '#b49c7c', trees: ['rust', 'amber', 'gold'], fireflies: 4, rays: .55, grade: [[.72, .64, .96], [1, .86, .66]], mist: '#ecd4c4', rock: '#7e7068', litter: ['#9a8a7a', '#6a5e56', '#b0a090', '#c4542f', '#e08a2a'] },
+  mine: { sky: ['#2a1e1c', '#0e0909'], fog: '#3a2c26', sun: '#ffc890', hemi: ['#f0d0a8', '#3a2a22'], ground: '#76604c', ground2: '#685444', path: '#94785c', trees: ['rust'], fireflies: 0, rays: .3, beams: 1, grade: [[.7, .62, .9], [1, .84, .62]], mist: '#4a3a32', sunI: 1.0, hemiI: 1.5, rock: '#54483f', litter: ['#3a302a', '#6a5a4a', '#8a7a6a', '#a89070'], fall: 'none', tufts: false },
+  crystal: { sky: ['#140f22', '#06040c'], fog: '#2c2448', sun: '#c8b8ff', hemi: ['#c8c0f0', '#2a2448'], ground: '#5a5470', ground2: '#4c4862', path: '#7a7290', trees: ['plum'], fireflies: 18, flyC: '#a8e8ff', rays: .25, beams: 0, grade: [[.68, .64, 1], [.9, .92, 1]], mist: '#3a3060', sunI: .9, hemiI: 1.5, rock: '#423c54', rockSpots: ['#7ad8f0', '#c88aff', '#3a3448', '#5a5470'], litter: ['#7ad8f0', '#c88aff', '#2e2a3a', '#5a5470', '#8affc8'], fall: 'none', tufts: false },
+  lake: { sky: ['#0e1420', '#04060a'], fog: '#22303e', sun: '#b8d0ff', hemi: ['#b8d0f0', '#1e2a3a'], ground: '#56606a', ground2: '#4a525c', path: '#78828c', trees: ['plum'], fireflies: 10, flyC: '#8affd8', rays: .25, beams: 0, grade: [[.66, .7, 1], [.9, .96, 1]], mist: '#2a3a50', sunI: .9, hemiI: 1.5, rock: '#3e4650', rockSpots: ['#7ad8f0', '#8affc8', '#2a3038', '#4a5460'], litter: ['#7ad8f0', '#2a3038', '#5a6470', '#8affc8'], fall: 'none', tufts: false, sea: ['#06182a', '#123a52', '#3a8aa8'] },
   glade: { sky: ['#ffe0a0', '#c88a5a'], fog: '#e0b080', sun: '#fff0c0', hemi: ['#fff0c8', '#7a5a6a'], ground: '#a48a3c', ground2: '#b4722e', path: '#dab47e', trees: ['gold', 'amber', 'autumn'], fireflies: 28, rays: 1, grade: [[.76, .66, .98], [1, .86, .6]], mist: '#fff0d6' },
 };
 const AUT = ['#c4542f', '#e08a2a', '#f5b445', '#b23a32', '#a5502a', '#d8583e', '#e9c24a'];
@@ -400,6 +408,87 @@ function paintHen(f) {
 }
 const CRIT = { hedgehog: paintHedgehog, frog: paintFrog, snail: paintSnail, owl: paintOwl,
   crow: paintCrow, rabbit: paintRabbit, mouse: paintMouse, fox: paintFox, badger: paintBadger, mole: paintMole, duck: paintDuck, toad: paintToad, tortoise: paintTortoise, squirrel: paintSquirrel, cat: paintCat, hen: paintHen };
+// ---- Saltmere Wharf & Emberdeep Mine folk (original designs, same pixel language)
+function paintOtter(f, blink) {       // Marlo, fishmonger: otter in a striped apron, holding the catch of the day
+  const p = new Pix(28, 34), B = ['#3e2616', '#5e3a20', '#7e5230', '#a06c40'], C = ['#c8b090', '#e8d8b8'];
+  p.ell(13, 24, 8, 8.6, B);
+  for (let y = 19; y < 32; y++) for (let x = 8; x < 19; x++) if (p.on(x, y)) p.set(x, y, (y >> 1) % 2 ? '#e8f0f4' : '#3a7aa0');
+  p.rect(8, 19, 11, 1, '#24506a');
+  p.ell(13, 10, 7, 6.2, B); p.ell(13, 13, 4.2, 2.8, C); p.rect(12, 11, 3, 2, '#2a1a14'); p.set(13, 13, '#2a1a14');
+  p.ell(7, 5, 1.8, 1.8, B); p.ell(19, 5, 1.8, 1.8, B); p.set(7, 5, B[0]); p.set(19, 5, B[0]);
+  eyes(p, [[10, 9], [16, 9]], blink, B[1]);
+  for (const [x, y] of [[7, 13], [6, 14], [19, 13], [20, 14]]) p.set(x, y, '#fff4dc');
+  const fy = 22 + (f ? 1 : 0); p.ell(22, fy, 4.4, 1.9, ['#4a6a7a', '#7aa0b0', '#bcdce8']); p.poly([[25, fy], [28, fy - 2.5], [28, fy + 2.5]], '#7aa0b0'); p.set(20, fy - 1, EYE);
+  p.ell(18, fy + 1, 2.2, 2.6, B);
+  p.rect(9, 32, 4, 2, B[0]); p.rect(14, 32, 4, 2, B[0]); p.line(4, 30, 1, 33, B[1]); p.line(5, 30, 2, 33, B[2]);
+  return p.done();
+}
+function paintHeron(f, blink) {       // Harbormaster Dorrit: a tall heron in a captain's cap
+  const p = new Pix(28, 50), G = ['#4a5a6a', '#6a7a8a', '#8a9aaa', '#b0bcc8', '#d8e0e8'], by = f ? 1 : 0;
+  p.rect(12, 37, 1, 12, '#b88a2a'); p.rect(16, 37, 1, 12, '#b88a2a'); p.rect(10, 48, 4, 1, '#b88a2a'); p.rect(15, 48, 4, 1, '#b88a2a');
+  p.ell(14, 30 + by, 8.5, 7.5, G); p.ell(11, 31 + by, 5, 4.5, G.slice(0, 3)); p.line(6, 34 + by, 3, 39 + by, G[0]);
+  for (let y = 12; y < 26; y++) { const x = 15 + Math.round(Math.sin(y * .35) * 1.2); p.rect(x, y + by, 3, 1, G[3]); p.set(x, y + by, G[2]); }
+  p.ell(16.5, 10 + by, 4.6, 3.8, G.slice(1)); p.line(20, 10 + by, 27, 12 + by, '#d8a030'); p.line(20, 11 + by, 26, 12 + by, '#a87820');
+  p.line(14, 12 + by, 10, 16 + by, '#24303a'); eyes(p, [[18, 9 + by]], blink, G[2]);
+  p.ell(16, 6.5 + by, 5.4, 2.2, ['#1a2436', '#2a3a56', '#3e5478'], { only: (x, y) => y <= 7 + by }); p.rect(11, 7 + by, 12, 1, '#121a28'); p.rect(19, 8 + by, 5, 1, '#121a28');
+  p.rect(15, 5 + by, 2, 1, '#f0c040');
+  p.rect(13, 27 + by, 2, 6, '#d8b048'); p.set(13, 28 + by, '#fff0a0');
+  return p.done();
+}
+function paintSeal(f, blink) {        // Bluff: a big, sleepy grey seal who sunbathes on the point
+  const p = new Pix(36, 24), S = ['#3a4048', '#56606a', '#76808a', '#9aa4ae', '#c0c8d0'];
+  p.ell(15, 16, 13.5, 7, S); for (const [x, y] of [[8, 14], [12, 18], [18, 13], [22, 17], [10, 11]]) p.set(x, y, S[1]);
+  p.ell(27, 10, 6.6, 6, S); p.ell(31, 12.5, 3.4, 2.4, S.slice(2)); p.rect(32, 11, 2, 1, '#1a1c20');
+  for (const [x, y, dx] of [[30, 13, 4], [30, 14, 4], [29, 13, -1]]) p.line(x, y, x + dx, y + (dx > 0 ? 1 : 0), '#e8eef4');
+  eyes(p, [[27, 8]], blink, S[2]);
+  p.poly([[19, 20], [24, 23 - (f ? 2 : 0)], [16, 23]], S.slice(0, 2)); p.poly([[2, 15], [0, 11 - (f ? 1 : 0)], [0, 19]], S.slice(1, 3));
+  return p.done();
+}
+function paintGull(f) {               // seagull, wings up/down
+  const p = new Pix(22, 14), W = ['#7a8490', '#a8b2bc', '#d8dee4'];
+  if (f) p.poly([[7, 7], [1, 1], [4, 1], [11, 6]], W); else p.poly([[7, 8], [1, 12], [4, 12], [11, 9]], W);
+  if (f) p.poly([[13, 6], [20, 1], [17, 1], [11, 7]], W); else p.poly([[13, 8], [20, 12], [17, 12], [11, 8]], W);
+  p.ell(11, 8, 5, 2.6, ['#c8d0d8', '#f0f4f8', '#ffffff']); p.ell(16, 7, 2.4, 2.1, ['#e8eef4', '#ffffff']); p.rect(18, 7, 3, 1, '#f0b030'); p.set(16, 6, EYE);
+  p.set(2, 1, '#2a2a30'); p.set(19, 1, '#2a2a30');
+  return p.done();
+}
+function paintCrab(f) {               // a little red crab, scuttling
+  const p = new Pix(18, 11), R = ['#7a1a12', '#b8302a', '#e05a3a', '#f8906a'];
+  for (let k = 0; k < 3; k++) { p.line(5 - k, 7, 2 - k + (f ? 1 : 0), 10, R[0]); p.line(12 + k, 7, 15 + k - (f ? 1 : 0), 10, R[0]); }
+  p.ell(9, 6.5, 6, 3.4, R); p.line(6, 4, 6, 1, R[0]); p.line(12, 4, 12, 1, R[0]); p.set(6, 1, EYE); p.set(12, 1, EYE);
+  p.ell(2, 4 - (f ? 1 : 0), 2, 1.6, R); p.ell(16, 4 - (f ? 0 : 1), 2, 1.6, R);
+  return p.done();
+}
+function paintMiner(f, blink) {       // Grit, the mole miner: helmet lamp, pick, a coat of good honest dust
+  const p = new Pix(30, 32), V = ['#221c22', '#362e36', '#4a4048', '#5e5460'], by = f ? 1 : 0;
+  p.ell(14, 23, 9, 8, V); p.rect(8, 21, 12, 9, '#3a5a7a'); p.rect(8, 21, 12, 1, '#5a7a9a'); p.rect(10, 18, 2, 4, '#3a5a7a'); p.rect(16, 18, 2, 4, '#3a5a7a'); p.set(11, 23, '#e8c04a'); p.set(16, 23, '#e8c04a');
+  p.ell(14, 12 + by, 7, 6, V); p.ell(14, 15 + by, 2.8, 2, ['#c86a7a', '#f0a0aa']); p.set(13, 14 + by, '#5a2a30');
+  eyes(p, [[11, 11 + by], [17, 11 + by]], 1, V[0]);
+  p.ell(14, 7 + by, 7.6, 3.8, ['#8a6a1a', '#c89a2a', '#f0c84a'], { only: (x, y) => y <= 8 + by }); p.rect(5, 8 + by, 18, 1, '#6a4a10');
+  p.rect(12, 3 + by, 4, 3, '#fff4c0'); p.rect(12, 3 + by, 4, 1, '#ffffff'); p.set(11, 4 + by, '#6a4a10'); p.set(16, 4 + by, '#6a4a10');
+  p.line(22, 12, 25, 29, WOOD[2]); p.line(23, 12, 26, 29, WOOD[3]); p.poly([[17, 13], [24, 10], [30, 13], [24, 12]], ['#6a6a72', '#9a9aa2', '#c8c8d0']);
+  p.ell(21, 21 + by, 2.4, 2.2, ['#c86a7a', '#f0a0aa']); p.ell(7, 22 - by, 2.4, 2.2, ['#c86a7a', '#f0a0aa']);
+  p.rect(9, 30, 5, 2, V[0]); p.rect(15, 30, 5, 2, V[0]);
+  return p.done();
+}
+function paintBat(f) {                // cave bat
+  const p = new Pix(22, 12), W = ['#2a1a2a', '#4a2e4a', '#6a466a'];
+  if (f) { p.poly([[9, 6], [1, 1], [3, 5], [1, 8]], W); p.poly([[13, 6], [21, 1], [19, 5], [21, 8]], W); }
+  else { p.poly([[9, 6], [2, 10], [4, 7], [0, 6]], W); p.poly([[13, 6], [20, 10], [18, 7], [22, 6]], W); }
+  p.ell(11, 6, 3, 3.2, W); p.set(9, 3, W[0]); p.set(13, 3, W[0]); p.set(10, 5, '#ffd06a'); p.set(12, 5, '#ffd06a');
+  return p.done();
+}
+function paintAxolotl(f, blink) {     // Lum: a pale-pink axolotl who keeps the lantern on the underground jetty
+  const p = new Pix(30, 22), P = ['#b8687a', '#e08a9a', '#f8b4c0', '#ffd8e0'], by = f ? 1 : 0;
+  p.ell(17, 15, 9, 4.6, P); p.poly([[25, 14], [30, 11 + by], [29, 17]], P.slice(1));
+  p.ell(10, 10, 7, 5.6, P); for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { const y = 6 + k * 3; const x0 = s < 0 ? 4 : 16; p.line(x0, y, x0 + s * 3, y - 2 + by, ['#c8304a', '#e0485a', '#f06a7a'][k]); p.set(x0 + s * 3, y - 2 + by, '#ff8a9a'); }
+  eyes(p, [[8, 9], [12, 9]], blink, P[1]); p.line(8, 12, 12, 12, '#8a3a4a');
+  p.rect(12, 19, 3, 2, P[1]); p.rect(20, 19, 3, 2, P[1]);
+  p.rect(22, 3, 1, 9, WOOD[1]); p.rect(20, 1, 5, 3, '#ffd06a'); p.rect(20, 1, 5, 1, '#fff4c0'); p.rect(21, 4, 3, 1, WOOD[0]);
+  return p.done();
+}
+Object.assign(CRIT, { otter: paintOtter, heron: paintHeron, seal: paintSeal, gull: paintGull, crab: paintCrab, miner: paintMiner, bat: paintBat, axolotl: paintAxolotl });
+
 
 // ---------------------------------------------------------------- props
 function paintTree(o) {
@@ -524,7 +613,7 @@ function paintPlanter(o) { const p = new Pix(30, 18), r = rng(o.seed || 5);
   for (let i = 0; i < 12; i++) { const x = 3 + r() * 24 | 0, y = 3 + r() * 6 | 0; p.line(x, y, x, 10, '#4a6a2a'); const c = ['#e04a5a', '#f2b63c', '#fff0d8', '#b07ad0', '#f07a3a'][(r() * 5) | 0]; p.set(x, y, c); p.set(x - 1, y, c); p.set(x + 1, y, c); p.set(x, y - 1, c); p.set(x, y, '#f8e070'); }
   p.rect(2, 10, 26, 7, WOOD[2]); p.rect(2, 10, 26, 1, WOOD[4]); p.rect(2, 16, 26, 1, WOOD[0]); p.rect(9, 10, 1, 7, WOOD[1]); p.rect(20, 10, 1, 7, WOOD[1]);
   return p.done({ ax: 15, ay: 17 }); }
-const STALLS = { baker: ['#c83a2a', '#fff0dc'], apoth: ['#3a7a5a', '#f0e8c8'], produce: ['#d8902a', '#fff0dc'] };
+const STALLS = { baker: ['#c83a2a', '#fff0dc'], apoth: ['#3a7a5a', '#f0e8c8'], produce: ['#d8902a', '#fff0dc'], fish: ['#2e6a8a', '#f0f0e8'] };
 function paintStall(o) { const aw = STALLS[o.kind], p = new Pix(70, 58), r = rng(o.kind.length * 7);
   p.col_(4, 14, 3, 43, WOOD); p.col_(63, 14, 3, 43, WOOD);
   // goods on the counter
@@ -534,6 +623,9 @@ function paintStall(o) { const aw = STALLS[o.kind], p = new Pix(70, 58), r = rng
   else if (o.kind === 'apoth') { const C = ['#7ad0c0', '#e07ab0', '#f0c040', '#9a7ad8', '#e85a4a', '#8ad87a'];
     for (let i = 0; i < 9; i++) { const x = 9 + i * 6, h = 4 + (i * 5) % 4, c = C[i % 6]; p.rect(x, 36 - h, 4, h, c); p.rect(x, 36 - h, 4, 1, lite(c, .4)); p.rect(x + 1, 34 - h, 2, 2, '#c8b898'); p.set(x + 1, 33 - h, '#8a5a34'); }
     for (let i = 0; i < 5; i++) { const x = 12 + i * 11; p.line(x, 16, x, 21, '#6a5a3a'); p.leaf(x, 21, 4, 1.4, 1.57, ['#4a6a2a', '#6a8a3a', '#9aaa5a']); } }
+  else if (o.kind === 'fish') { for (let i = 0; i < 6; i++) { const x = 9 + i * 10; p.ell(x, 33, 4.6, 2, ['#3a5a6a', '#6a90a0', '#a8c8d4', '#e0f0f4']); p.poly([[x + 4, 33], [x + 7, 31], [x + 7, 35]], '#5a8090'); p.set(x - 3, 32, EYE); }
+    for (let i = 0; i < 3; i++) { const x = 16 + i * 18; p.line(x, 15, x, 20, '#6a5a3a'); p.ell(x, 23, 2.4, 3.6, ['#7a3a2a', '#c8603a', '#f09a6a']); }
+    p.ell(52, 26, 5, 2.6, ['#8a1a12', '#c8302a', '#f05a3a']); p.line(48, 24, 46, 21, '#c8302a'); p.line(56, 24, 58, 21, '#c8302a'); }
   else { for (let i = 0; i < 6; i++) p.ell(10 + i * 10, 32, 5, 4, pal(['#e07a22', '#c83a2a', '#e9a43a', '#7a9a3a', '#d06a1e', '#b8302a'][i], 4, .5, .35)); for (let i = 0; i < 4; i++) p.ell(16 + i * 12, 27, 4, 3, pal(['#c83a2a', '#e8c040', '#9ab040', '#c83a2a'][i], 4, .5, .35)); }
   p.rect(2, 36, 66, 4, WOOD[4]); p.rect(2, 36, 66, 1, lite(WOOD[4], .3)); p.rect(2, 40, 66, 17, WOOD[2]); for (let x = 2; x < 68; x += 6) p.rect(x, 40, 1, 17, WOOD[1]); p.rect(2, 56, 66, 1, WOOD[0]);
   p.poly([[0, 5], [70, 5], [64, 0], [6, 0]], pal(aw[0], 4, .5, .3));
@@ -614,6 +706,68 @@ function paintPaperLantern(o) { const c = o.c || '#ff8a3a', p = new Pix(8, 10); 
 function paintBell() { const p = new Pix(18, 18); p.ell(9, 9, 7, 8, ['#6a4a10', '#a8781a', '#e8b84a', '#fff0a0'], { only: (x, y) => y >= 2 }); p.rect(1, 15, 16, 2, '#a8781a'); p.rect(8, 0, 2, 3, IRON[2]); p.ell(9, 17, 1.6, 1.4, IRON[1]); return p.done({ ax: 9, ay: 0 }); }
 function paintRope() { const p = new Pix(6, 40); for (let y = 0; y < 34; y++) p.set(2 + ((y >> 1) % 2), y, y % 2 ? '#c8a870' : '#a88850'); p.ell(3, 36, 2.6, 3.4, ['#8a1a1a', '#c83a2a', '#e85a4a']); return p.done({ ax: 3, ay: 39 }); }
 
+// ---- wharf & mine props
+const HULL = { blue: '#3a6a9a', red: '#a83a2a', green: '#3a7a5a', yellow: '#d8a830', white: '#e8e4d8' };
+function hull(p, x0, x1, y0, y1, c) {   // a wooden hull seen from the side, painted stripe along the gunwale
+  const W_ = WOOD.slice(0, 5), sh = (y1 - y0);
+  p.poly([[x0, y0], [x1, y0], [x1 - sh * .45, y1], [x0 + sh * .4, y1]], W_, { vert: true });
+  for (let x = x0 + 2; x < x1 - 2; x += 5) for (let y = y0 + 3; y < y1 - 1; y++) if (p.on(x, y)) p.set(x, y, dark(p.col(x, y), .18));
+  p.rect(x0, y0, x1 - x0, 2, c); p.rect(x0, y0, x1 - x0, 1, lite(c, .35)); p.rect(x0 + 1, y0 + 2, x1 - x0 - 2, 1, dark(c, .35));
+}
+function paintBoat(o) { const p = new Pix(58, 26), c = HULL[o.c || 'blue'];
+  hull(p, 2, 56, 10, 24, c);
+  p.line(10, 12, 2, 2, WOOD[1]); p.line(11, 12, 3, 2, WOOD[3]); p.rect(0, 0, 4, 3, WOOD[2]);
+  if (o.load === 'fish') { for (let i = 0; i < 4; i++) p.ell(28 + i * 5, 9, 2.6, 1.4, ['#4a6a7a', '#7aa0b0', '#bcdce8']); crateAt(p, 38, 3, 10, 7); }
+  else { p.ell(36, 8, 5, 2.4, ['#8a6a3a', '#c89a5a', '#e8c48a']); p.ell(36, 8, 2.6, 1, '#5a3a1a'); }
+  return p.done({ ax: 29, ay: 19 }); }
+function paintSailboat(o) { const p = new Pix(76, 96), c = HULL[o.c || 'red'];
+  hull(p, 4, 72, 72, 92, c);
+  p.col_(36, 6, 3, 68, WOOD); p.rect(30, 20, 18, 2, WOOD[1]);
+  p.poly([[40, 8], [40, 66], [70, 64]], ['#c8c0a8', '#e8e0cc', '#fffaf0'], { vert: true });
+  for (let y = 18; y < 64; y += 12) for (let x = 40; x < 70; x++) if (p.on(x, y)) p.set(x, y, '#c8b898');
+  p.poly([[35, 12], [35, 64], [12, 62]], ['#b8b098', '#d8d0bc', '#f0ead8'], { vert: true });
+  p.rect(37, 0, 1, 7, WOOD[0]); p.poly([[38, 1], [48, 3], [38, 5]], o.flag || '#d84a3a');
+  for (let k = 0; k < 4; k++) p.ell(14 + k * 14, 79, 2, 2, ['#2a3a4a', '#4a6a8a', '#8ab0d0']);
+  return p.done({ ax: 38, ay: 86 }); }
+function paintNet(o) { const p = new Pix(52, 40), r = rng(o.seed || 4);
+  p.col_(2, 2, 3, 38, WOOD); p.col_(47, 2, 3, 38, WOOD);
+  for (let x = 5; x < 47; x++) { const sag = 4 + Math.sin((x - 5) / 42 * Math.PI) * 6; for (let y = Math.round(sag); y < 30 + sag * .4; y++) { if ((x + y) % 4 === 0 || (x - y + 64) % 4 === 0) p.set(x, y, (x + y) % 8 ? '#8a7a5a' : '#6a5a3e'); } p.set(x, Math.round(sag), '#5a4a30'); }
+  for (let k = 0; k < 6; k++) p.ell(8 + k * 7, 6 + Math.sin((k * 7 + 3) / 42 * Math.PI) * 6, 1.6, 1.3, ['#a8401a', '#e06a2a']);
+  if (r() < .7) p.ell(26, 26, 3.2, 1.4, ['#4a6a7a', '#7aa0b0', '#bcdce8']);
+  return p.done({ ax: 26, ay: 39 }); }
+function paintPots() { const p = new Pix(30, 26), K = ['#5a3a1a', '#8a6030', '#b88a48', '#d8b070'];
+  for (const [x, y] of [[9, 18], [21, 18], [15, 8]]) { p.ell(x, y, 7, 6.5, K, { only: (xx, yy) => yy <= y + 3 }); p.rect(x - 7, y + 3, 14, 3, K[1]);
+    for (let a = -6; a <= 6; a += 3) p.line(x + a, y - 5 + Math.abs(a) * .4, x + a, y + 5, K[0]); p.ell(x, y - 1, 2.2, 1.6, '#2a1a10'); }
+  p.line(4, 22, 26, 22, '#c8a868'); return p.done({ ax: 15, ay: 25 }); }
+function paintBollard() { const p = new Pix(12, 16); p.col_(3, 3, 6, 12, IRON); p.ell(6, 3, 4.4, 1.8, IRON.slice(1)); p.rect(2, 7, 8, 2, '#c8a868'); p.rect(2, 7, 8, 1, '#e8d098'); return p.done({ ax: 6, ay: 15 }); }
+function paintBuoy() { const p = new Pix(14, 20); p.ell(7, 13, 6, 5.5, ['#7a1a12', '#c8302a', '#f05a3a']); p.rect(1, 12, 12, 2, '#f8f4ec'); p.rect(6, 2, 2, 7, IRON[1]); p.ell(7, 2, 2, 2, '#ffd86a'); return p.done({ ax: 7, ay: 17 }); }
+function paintAnchor() { const p = new Pix(22, 26), I = IRON.slice(0, 4); p.rect(10, 4, 3, 18, I[1]); p.rect(10, 4, 1, 18, I[3]); p.rect(5, 8, 13, 2, I[1]); ring(p, 11, 3, 2.4, I[2]);
+  for (let a = 0; a <= Math.PI; a += .08) p.rect(Math.round(11 - Math.cos(a) * 9), Math.round(16 + Math.sin(a) * 6), 2, 2, I[a < .3 || a > 2.8 ? 2 : 1]); p.poly([[1, 15], [4, 12], [5, 17]], I[2]); p.poly([[21, 15], [18, 12], [17, 17]], I[2]);
+  p.line(13, 6, 20, 24, '#c8a868'); return p.done({ ax: 11, ay: 24 }); }
+function paintMinecart(o) { const p = new Pix(34, 28), I = ['#3a3438', '#5a5258', '#7a7278', '#a09aa0'];
+  p.poly([[1, 6], [33, 6], [30, 22], [4, 22]], I, { vert: true }); p.rect(1, 6, 32, 2, I[3]); for (const x of [6, 17, 28]) for (let y = 9; y < 21; y += 4) p.set(x, y, I[3]);
+  const L = o.load === 'crystal' ? ['#3a6a8a', '#7ad8f0', '#d8f8ff'] : o.load === 'gold' ? ['#8a6a1a', '#e8b84a', '#fff0a0'] : ['#3a3030', '#5a4e48', '#7a6e66'];
+  for (let i = 0; i < 6; i++) p.ell(5 + i * 5, 5 - (i % 2), 3.4, 2.6, L); if (o.load !== 'crystal') for (let i = 0; i < 4; i++) p.set(6 + i * 7, 4, o.load === 'gold' ? '#ffffff' : '#e8b84a');
+  for (const x of [8, 26]) { p.ell(x, 23, 4, 4, ['#1a1618', '#3a3438', '#5a5258']); p.rect(x - 1, 22, 2, 2, '#8a8288'); }
+  return p.done({ ax: 17, ay: 27 }); }
+function paintSupport() { const p = new Pix(64, 74); p.col_(2, 4, 6, 70, WOOD); p.col_(56, 4, 6, 70, WOOD);
+  p.rect(0, 2, 64, 6, WOOD[2]); p.rect(0, 2, 64, 1, WOOD[4]); p.rect(0, 7, 64, 1, WOOD[0]); p.line(8, 8, 18, 18, WOOD[1]); p.line(9, 8, 19, 18, WOOD[2]); p.line(55, 8, 45, 18, WOOD[1]); p.line(54, 8, 44, 18, WOOD[2]);
+  for (const x of [5, 59]) for (const y of [5, 40]) p.set(x, y, IRON[3]);
+  return p.done({ ax: 32, ay: 73 }); }
+function paintOre(o) { const p = new Pix(32, 18), r = rng(o.seed || 3), R = ['#2e2828', '#4a4040', '#6a5e5a', '#8a7e78'];
+  for (let i = 0; i < 9; i++) p.ell(5 + r() * 22, 8 + r() * 6, 3 + r() * 3, 2.4 + r() * 2, R);
+  for (let i = 0; i < 7; i++) { const x = 4 + r() * 24 | 0, y = 6 + r() * 9 | 0; if (p.on(x, y)) p.set(x, y, o.c || ['#e8b84a', '#7ad8f0', '#f0d070'][i % 3]); }
+  return p.done({ ax: 16, ay: 17 }); }
+function paintCrystal(o) { const p = new Pix(28, 36), r = rng(o.seed || 5), C = pal(o.c || '#7ad8f0', 5, .55, .5);
+  const sp = [[14, 2, 4.5], [8, 10, 3.4], [20, 9, 3.6], [4, 20, 2.6], [24, 18, 2.8]];
+  for (const [x, top, w] of sp) { const lean = (x - 14) * .25; p.poly([[x - w + lean, 35], [x + lean * 2, top], [x + w + lean, 35]], C); p.line(Math.round(x + lean * 2), top + 1, Math.round(x + lean), 34, lite(C[3], .4)); }
+  for (let i = 0; i < 6; i++) { const x = 3 + r() * 22 | 0, y = 10 + r() * 22 | 0; if (p.on(x, y)) p.set(x, y, '#ffffff'); }
+  return p.done({ ax: 14, ay: 35 }); }
+function paintStalag(o) { const p = new Pix(16, 34), r = rng(o.seed || 7), R = pal(o.c || '#6a5e58', 5, .5, .3), h = 18 + r() * 14 | 0;
+  p.poly([[1, 33], [8 + (r() - .5) * 3, 33 - h], [15, 33]], R); for (let y = 33 - h + 4; y < 33; y += 4) p.line(4, y, 12, y, R[1]);
+  if (r() < .5) p.poly([[10, 33], [13, 22], [16, 33]], R);
+  return p.done({ ax: 8, ay: 33 }); }
+
 // prop table: painter, collision (in game units, foot-relative), sway, low = lies flat
 const PROPDEF = {
   tree: { paint: paintTree, solid: [[0, 0, 9]], sway: .012 },
@@ -667,6 +821,19 @@ const PROPDEF = {
   rack: { paint: paintRack, solid: [[0, -2, 12]] },
   notice: { paint: paintNotice, solid: [[-14, -1, 4], [14, -1, 4]] },
   rope: { paint: paintRope },
+  // Saltmere & Emberdeep ('float': bobs on the water)
+  boat: { paint: paintBoat, float: true },
+  sailboat: { paint: paintSailboat, float: true },
+  buoy: { paint: paintBuoy, float: true },
+  net: { paint: paintNet, solid: [[-22, -1, 4], [22, -1, 4]], sway: .006 },
+  pots: { paint: paintPots, solid: [[0, -2, 10]], inst: true },
+  bollard: { paint: paintBollard, solid: [[0, -1, 4]], inst: true },
+  anchor: { paint: paintAnchor, solid: [[0, -1, 6]] },
+  minecart: { paint: paintMinecart, solid: [[-8, -3, 10], [8, -3, 10]] },
+  support: { paint: paintSupport },
+  ore: { paint: paintOre, solid: [[0, -2, 10]], inst: true, seeded: true },
+  crystal: { paint: paintCrystal, solid: [[0, -2, 9]] },
+  stalag: { paint: paintStalag, solid: [[0, -2, 6]], inst: true, seeded: true },
 };
 const pv = (v, p) => typeof v === 'function' ? v(p) : v;
 
@@ -789,8 +956,8 @@ const AREADEF = {
   },
   lanes: {
     name: 'Lantern Lane', pal: 'town', kind: 'town', back: 'houses', ground: 'cobble', w: 520, h: 400,
-    exits: [{ e: 'w', a: 226, b: 284, to: 'market', sx: 544, sy: 255 }, { e: 'n', a: 300, b: 336, to: 'chapel', sx: 240, sy: 386 }],
-    paths: [[[-10, 255], [200, 250], [318, 200], [318, 40]], [[160, 60], [166, 140], [200, 250]]],
+    exits: [{ e: 'w', a: 226, b: 284, to: 'market', sx: 544, sy: 255 }, { e: 'n', a: 300, b: 336, to: 'chapel', sx: 240, sy: 386 }, { e: 'e', a: 226, b: 284, to: 'harborst', sx: 16, sy: 255 }],
+    paths: [[[-10, 255], [200, 250], [318, 200], [318, 40]], [[160, 60], [166, 140], [200, 250]], [[318, 200], [400, 246], [530, 255]]],
     shops: [{ x0: 96, x1: 224, style: 'ochre', roof: 'thatch', sign: 'mug', door: .5, big: true, gable: true, h: 58, chim: true }, { x0: 384, x1: 468, style: 'rose', roof: 'tile', sign: 'needle', door: .35, h: 50 }],
     props: [['keg', 84, 86, {}], ['barrel', 238, 88, {}], ['barrel', 252, 96, {}], ['crate', 62, 100, { stack: true }], ['lamp', 128, 82, {}], ['lamp', 278, 186, {}], ['lamp', 470, 240, {}],
       ['laundry', 420, 300, { seed: 4 }], ['well', 90, 330, {}], ['bench', 200, 330, {}], ['planter', 360, 86, { seed: 2 }], ['planter', 490, 100, { seed: 3 }], ['cart', 460, 150, { load: 'hay' }], ['crate', 380, 360, { fill: '#c83a2a' }]],
@@ -801,8 +968,8 @@ const AREADEF = {
   },
   forge: {
     name: "Hob's Forge", pal: 'town', kind: 'town', back: 'forge', ground: 'cobble', w: 420, h: 400, reserve: [[100, 320]],
-    exits: [{ e: 'e', a: 226, b: 284, to: 'market', sx: 16, sy: 255 }],
-    paths: [[[430, 255], [300, 250], [212, 150]]],
+    exits: [{ e: 'e', a: 226, b: 284, to: 'market', sx: 16, sy: 255 }, { e: 'w', a: 226, b: 284, to: 'minetrail', sx: 504, sy: 255 }],
+    paths: [[[430, 255], [300, 250], [212, 150]], [[300, 250], [-10, 255]]],
     props: [['hearth', 210, GT - 40, {}], ['bellows', 156, 90, {}], ['anvil', 252, 120, {}], ['trough', 330, 118, {}], ['coal', 108, 112, {}], ['rack', 70, 150, {}], ['barrel', 360, 90, {}], ['barrel', 376, 98, {}],
       ['crate', 60, 300, { stack: true }], ['hay', 340, 330, {}], ['lamp', 300, 200, {}], ['cart', 120, 340, { load: 'hay' }]],
     items: [['c5', 'coin', 54, 220]],
@@ -842,6 +1009,78 @@ const AREADEF = {
     strings: [[[120, 120, 38], [362, 120, 38], 18]],
     critters: [['hen', 200, 330], ['hen', 230, 350], ['hen', 330, 210]],
   },
+  // ================= Saltmere Wharf (east of Lantern Lane)
+  harborst: {
+    name: 'Harbor Street', pal: 'harbor', kind: 'town', back: 'houses', ground: 'cobble', w: 520, h: 400, hsty: ['salt', 'teal', 'sky', 'salt', 'sage'], hroof: ['slate', 'slate', 'tile', 'slate'],
+    exits: [{ e: 'w', a: 226, b: 284, to: 'lanes', sx: 504, sy: 255 }, { e: 'e', a: 200, b: 260, to: 'docks', sx: 16, sy: 222 }],
+    shops: [{ x0: 110, x1: 230, style: 'teal', roof: 'slate', sign: 'fish', door: .5, gable: true, chim: true, h: 52 }, { x0: 330, x1: 430, style: 'salt', roof: 'tile', sign: 'anchor', door: .4, h: 50 }],
+    paths: [[[-10, 255], [200, 250], [400, 236], [530, 230]], [[170, 60], [176, 150], [220, 248]]],
+    props: [['stall', 300, 170, { kind: 'fish' }], ['stall', 96, 196, { kind: 'fish' }], ['barrel', 380, 110, {}], ['barrel', 396, 118, {}], ['crate', 440, 104, { stack: true, fill: '#7aa0b0' }], ['crate', 60, 112, { fill: '#7aa0b0' }],
+      ['pots', 470, 300, {}], ['net', 450, 168, {}], ['lamp', 130, 290, {}], ['lamp', 360, 290, {}], ['bench', 250, 330, {}], ['anchor', 60, 330, {}], ['planter', 280, 92, { seed: 3 }], ['planter', 64, 92, { seed: 1 }], ['sign', 40, 214, {}], ['pots', 480, 370, {}], ['bollard', 420, 360, {}]],
+    items: [], npcs: ['marlo'], objs: ['harborsign'],
+    critters: [['gull', 200, 200], ['gull', 380, 240], ['cat', 470, 120], ['crab', 120, 360]],
+  },
+  docks: {
+    name: 'Saltmere Docks', pal: 'harbor', kind: 'town', back: 'houses', ground: 'cobble', w: 560, h: 420, sea: 262, hsty: ['salt', 'teal', 'sky', 'salt', 'sage'], hroof: ['slate', 'slate', 'tile'],
+    decks: [[-20, 254, 580, 286], [120, 286, 164, 404], [372, 286, 416, 396]],
+    exits: [{ e: 'w', a: 196, b: 246, to: 'harborst', sx: 504, sy: 232 }, { e: 'e', a: 196, b: 246, to: 'point', sx: 16, sy: 224 }],
+    paths: [[[-10, 222], [280, 214], [570, 222]], [[142, 214], [142, 262]], [[394, 214], [394, 262]]],
+    props: [['boat', 200, 334, { c: 'blue', load: 'fish' }], ['boat', 84, 370, { c: 'red' }], ['sailboat', 290, 372, { c: 'red', flag: '#e8c040' }], ['boat', 470, 330, { c: 'green' }], ['sailboat', 520, 410, { c: 'yellow', flag: '#3a7aa0' }],
+      ['buoy', 250, 400, {}], ['buoy', 40, 300, {}], ['bollard', 122, 300, {}], ['bollard', 162, 300, {}], ['bollard', 122, 392, {}], ['bollard', 162, 392, {}], ['bollard', 374, 300, {}], ['bollard', 414, 384, {}],
+      ['pots', 156, 346, {}], ['crate', 404, 386, { fill: '#7aa0b0' }], ['net', 60, 150, {}], ['net', 230, 130, {}], ['barrel', 300, 110, {}], ['barrel', 316, 118, {}], ['crate', 470, 120, { stack: true }], ['crate', 490, 136, {}],
+      ['anchor', 520, 180, {}], ['lamp', 100, 236, {}], ['lamp', 440, 236, {}], ['sign', 40, 196, {}], ['pots', 340, 150, {}]],
+    items: [], npcs: ['dorrit'], objs: ['dockssign'],
+    critters: [['gull', 150, 300], ['gull', 400, 330], ['gull', 280, 200], ['crab', 60, 244], ['crab', 500, 246]],
+  },
+  point: {
+    name: 'Lighthouse Point', pal: 'coast', w: 480, h: 400, sea: 300, cliffH: 30, lighthouse: { x: 330, y: 140 },
+    exits: [{ e: 'w', a: 196, b: 246, to: 'docks', sx: 544, sy: 222 }],
+    paths: [[[-10, 222], [200, 222], [300, 186], [330, 170]]],
+    props: [['rock', 140, 140, { c: '#9a9a96' }], ['rock', 400, 260, { c: '#8a8a86' }], ['rock', 60, 300, { c: '#9a9a96' }], ['rock', 380, 300, { c: '#7a7a76' }], ['bush', 90, 120, { pal: 'gold', berries: false }],
+      ['bush', 200, 110, { pal: 'amber', berries: false }], ['flowers', 160, 260, {}], ['flowers', 260, 140, {}], ['bench', 200, 160, {}], ['anchor', 100, 250, {}], ['buoy', 330, 360, {}], ['buoy', 170, 380, {}], ['boat', 440, 330, { c: 'white' }], ['pine', 40, 130, {}], ['pots', 280, 270, {}]],
+    items: [], npcs: ['bluff'], objs: ['lhdoor'],
+    critters: [['gull', 330, 160], ['gull', 200, 260], ['gull', 420, 280], ['crab', 300, 290], ['crab', 150, 292]],
+  },
+  // ================= Emberdeep Mine (west of Hob's Forge)
+  minetrail: {
+    name: 'Quarry Trail', pal: 'quarry', w: 520, h: 400, cliffH: 62,
+    exits: [{ e: 'e', a: 226, b: 284, to: 'forge', sx: 16, sy: 255 }, { e: 'n', a: 300, b: 340, to: 'tunnels', sx: 240, sy: 330, tunnel: true }],
+    paths: [[[530, 255], [400, 252], [320, 200], [320, 40]]],
+    rails: [[320, 0, 320, 206], [150, 206, 323, 206]],
+    props: [['minecart', 320, 140, { load: 'ore' }], ['minecart', 200, 206, { load: 'gold' }], ['ore', 390, 120, { seed: 3 }], ['ore', 110, 160, { seed: 5 }], ['ore', 440, 330, { seed: 8 }], ['pine', 60, 250, {}], ['pine', 470, 140, {}],
+      ['rock', 150, 300, {}], ['rock', 380, 320, {}], ['lantern', 280, 90, {}], ['lantern', 364, 90, {}], ['sign', 440, 214, {}], ['crate', 240, 110, { stack: true }], ['barrel', 216, 104, {}], ['barrel', 230, 330, {}], ['fern', 90, 360, {}], ['mush', 120, 330, { s: .5, cap: '#c4542f' }]],
+    items: [], npcs: ['flint'], objs: ['minesign'],
+  },
+  tunnels: {
+    name: 'Lantern Tunnels', pal: 'mine', kind: 'cave', w: 480, h: 360, cliffH: 90,
+    exits: [{ e: 's', a: 220, b: 260, to: 'minetrail', sx: 320, sy: GT + 26 }, { e: 'e', a: 196, b: 250, to: 'caverns', sx: 16, sy: 224 }],
+    paths: [[[240, 370], [240, 230], [490, 224]]],
+    rails: [[-30, 150, 510, 150]],
+    props: [['support', 60, GT + 4, {}], ['support', 180, GT + 4, {}], ['support', 300, GT + 4, {}], ['support', 420, GT + 4, {}], ['lantern', 120, 120, {}], ['lantern', 360, 120, {}], ['lantern', 120, 280, {}], ['lantern', 380, 300, {}],
+      ['minecart', 100, 150, { load: 'ore' }], ['minecart', 390, 150, { load: 'crystal' }], ['ore', 60, 220, { seed: 2 }], ['ore', 420, 220, { seed: 9 }], ['crate', 180, 300, { stack: true }], ['barrel', 160, 300, {}], ['stalag', 40, 320, { seed: 1 }], ['stalag', 450, 330, { seed: 2 }], ['stalag', 300, 330, { seed: 3 }]],
+    items: [], npcs: ['grit'], objs: [],
+    critters: [['bat', 200, 180], ['bat', 380, 200]],
+  },
+  caverns: {
+    name: 'Crystal Caverns', pal: 'crystal', kind: 'cave', w: 520, h: 380, cliffH: 96,
+    exits: [{ e: 'w', a: 196, b: 250, to: 'tunnels', sx: 464, sy: 224 }, { e: 'n', a: 240, b: 280, to: 'lake', sx: 260, sy: 372 }],
+    paths: [[[-10, 224], [200, 228], [260, 160], [260, 40]]],
+    props: [['crystal', 90, 120, { c: '#7ad8f0', glow: '#7ad8f0' }], ['crystal', 400, 110, { c: '#c88aff', glow: '#c88aff', seed: 7 }], ['crystal', 160, 300, { c: '#8affc8', glow: '#8affc8', seed: 3 }], ['crystal', 440, 290, { c: '#7ad8f0', glow: '#7ad8f0', seed: 11 }],
+      ['crystal', 340, 200, { c: '#ffb0e0', glow: '#ffb0e0', seed: 4 }], ['crystal', 60, 330, { c: '#c88aff', glow: '#c88aff', seed: 9 }], ['crystal', 200, 110, { c: '#8affc8', seed: 6 }], ['crystal', 480, 180, { c: '#c88aff', seed: 8 }],
+      ['stalag', 130, 200, { seed: 4, c: '#5a5470' }], ['stalag', 380, 330, { seed: 5, c: '#5a5470' }], ['stalag', 300, 110, { seed: 6, c: '#5a5470' }], ['mush', 230, 330, { s: .5, cap: '#2f9e9a', glow: '#8fffe3' }], ['mush', 470, 340, { s: .45, cap: '#8a5cc9', glow: '#c9a8ff' }], ['ore', 320, 300, { seed: 4, c: '#7ad8f0' }]],
+    items: [], npcs: [], objs: [],
+    critters: [['bat', 260, 200], ['bat', 140, 240], ['bat', 400, 160]],
+  },
+  lake: {
+    name: 'Underground Lake', pal: 'lake', kind: 'cave', w: 520, h: 400, cliffH: 100, pond: { x: 260, y: 196, rx: 175, ry: 82 },
+    exits: [{ e: 's', a: 240, b: 280, to: 'caverns', sx: 260, sy: GT + 26 }],
+    decks: [[244, 238, 276, 334]],
+    paths: [[[260, 410], [260, 334]]],
+    props: [['boat', 350, 210, { c: 'white' }], ['crystal', 60, 320, { c: '#7ad8f0', glow: '#7ad8f0', seed: 2 }], ['crystal', 470, 320, { c: '#8affc8', glow: '#8affc8', seed: 5 }], ['crystal', 40, 120, { c: '#7ad8f0', seed: 6 }], ['crystal', 486, 110, { c: '#c88aff', seed: 3 }],
+      ['stalag', 120, 340, { seed: 8, c: '#4a5460' }], ['stalag', 400, 350, { seed: 9, c: '#4a5460' }], ['lantern', 226, 336, {}], ['bollard', 248, 244, {}], ['mush', 170, 350, { s: .5, cap: '#2f9e9a', glow: '#8fffe3' }], ['ore', 340, 360, { seed: 6, c: '#7ad8f0' }]],
+    items: [], npcs: ['lum'], objs: [],
+    critters: [['bat', 260, 160], ['bat', 120, 200]],
+  },
 };
 
 // NPCs and things you can talk to / poke
@@ -869,6 +1108,13 @@ const NPCS = {
   fhob: { area: 'market', kind: 'badger', name: 'Hob', color: '#5a5a66', x: 392, y: 206, h: 36, top: 42, range: 32, fest: true },
   frusset: { area: 'market', kind: 'fox', name: 'Russet', color: '#c8642a', x: 222, y: 150, h: 36, top: 44, range: 32, fest: true },
   fpuddle: { area: 'market', kind: 'duck', name: 'Puddle', color: '#2e7a7a', x: 340, y: 330, h: 34, top: 40, range: 32, fest: true },
+  // ---- Saltmere & Emberdeep folk (flavour only: they cycle through their lines)
+  marlo: { area: 'harborst', kind: 'otter', name: 'Marlo', color: '#3a7aa0', x: 300, y: 196, h: 32, range: 34, lines: [['Fresh off the boats! Mackerel, sprats, and one very grumpy crab.', 'Saltmere was landing fish before Hearthvale had a wall.'], ['Mind the gulls. They\u2019ll have the cap off your head.', 'The docks are east. Dorrit keeps the tide tables.'], ['Ever see the lighthouse at night? Turns the whole bay to gold.']] },
+  dorrit: { area: 'docks', kind: 'heron', name: 'Harbormaster Dorrit', color: '#4a6a8a', x: 394, y: 322, h: 46, top: 54, range: 36, lines: [['Harbormaster Dorrit. Tides, ropes and manners: I keep them all in order.', 'The piers stand on stilts, so the high tide runs right under us.'], ['The red sloop is the Marigold Rose. Fastest boat in the bay.', 'East of here the path runs out to Lighthouse Point.'], ['Never trust a gull. Or a crab. Or a gull riding a crab.']] },
+  bluff: { area: 'point', kind: 'seal', name: 'Bluff', color: '#6a7a8a', x: 236, y: 286, h: 22, top: 30, range: 38, lines: [['Hhhuff. Sun\u2019s warm. Rocks are warm. Bluff is warm.', 'The keeper\u2019s gone fishing. Bluff keeps an eye on the light. One eye.'], ['The light turns all night. Bluff counts the turns. Gets to about nine.']] },
+  flint: { area: 'minetrail', kind: 'badger', name: 'Flint', color: '#7a6a5a', x: 250, y: 262, h: 32, range: 34, lines: [['Flint. Hob\u2019s cousin, from the quarry side of the family.', 'Those rails run straight into the mountain: Emberdeep Mine. Mind your head.'], ['Old miners say the deep caves glow. Crystals, blue and violet.', 'I say it\u2019s Grit\u2019s helmet lamp. Grit says otherwise.']] },
+  grit: { area: 'tunnels', kind: 'miner', name: 'Grit', color: '#c89a2a', x: 300, y: 246, h: 32, range: 34, lines: [['Grit. Mole. Miner. Born in the dark, love the dark.', 'East of here: the Crystal Caverns. Don\u2019t lick the crystals.'], ['Hear that drip? There\u2019s a lake past the caverns. Lum lives on the jetty.'], ['A lantern every forty paces. Rule of the mine. Keeps the bats honest.']] },
+  lum: { area: 'lake', kind: 'axolotl', name: 'Lum', color: '#e08a9a', x: 260, y: 252, h: 24, top: 32, range: 34, lines: [['Oh! A visitor. I\u2019m Lum. I keep the jetty lantern lit.', 'The lake runs on under the mountain. Nobody\u2019s ever found the end.'], ['Those little lights in the water are glowfish. They like humming.', 'Hmmmm... See? They come closer.']] },
 };
 
 // ---------------------------------------------------------------- state
@@ -885,7 +1131,9 @@ function nearPath(A, x, y, d) { return A.paths.some(pl => pl.some((q, i) => i &&
 function buildArea(id) {
   const d = AREADEF[id], ap = AP[d.pal], r = rng(id.length * 977 + d.w);
   const A = Object.assign({ id, ap, stones: [], kind: 'forest' }, d); A.props = [];
+  if (!A.water && (A.sea != null || A.seaE != null || A.pond)) { const P = A.pond; A.water = (x, z) => (A.sea != null && z > A.sea) || (A.seaE != null && x > A.seaE) || (!!P && ((x - P.x) / P.rx) ** 2 + ((z - P.y) / P.ry) ** 2 < 1); }
   A.border = d.border || (A.kind === 'forest' ? 'forest' : A.kind);
+  const addB = (k, x, y, o) => { if (!A.water || !A.water(x, y)) add(k, x, y, o); };
   const add = (k, x, y, o) => A.props.push(Object.assign({ k, x, y, seed: (x * 7 + y * 13) | 0, ph: r() * TAU }, o || {}));
   const inExit = (e, v, m) => A.exits.some(x => x.e === e && v > x.a - m && v < x.b + m) || (id === 'stream' && e === 'n' && Math.abs(v - streamX(GT)) < 34 + m);
   const treePal = () => (ap.trees || AP.meadow.trees)[(r() * (ap.trees || AP.meadow.trees).length) | 0];
@@ -897,14 +1145,18 @@ function buildArea(id) {
   if (A.border === 'forest') {
     for (const side of ['w', 'e']) for (let y = GT + 52 + r() * 10; y < A.h - 14; y += 38 + r() * 14) {
       if (inExit(side, y, 26)) continue;
-      const x = side === 'w' ? 6 + r() * 8 : A.w - 6 - r() * 8; add(r() < .3 ? 'bush' : r() < .5 ? 'pine' : 'tree', x, y, { pal: treePal() });
+      const x = side === 'w' ? 6 + r() * 8 : A.w - 6 - r() * 8; addB(r() < .3 ? 'bush' : r() < .5 ? 'pine' : 'tree', x, y, { pal: treePal() });
     }
-    for (let x = 10 + r() * 10; x < A.w; x += 30 + r() * 14) if (!inExit('s', x, 22)) add(r() < .7 ? 'bush' : 'fern', x, A.h - 2 - r() * 4, { pal: treePal(), berries: r() < .4 });
+    for (let x = 10 + r() * 10; x < A.w; x += 30 + r() * 14) if (!inExit('s', x, 22)) addB(r() < .7 ? 'bush' : 'fern', x, A.h - 2 - r() * 4, { pal: treePal(), berries: r() < .4 });
   } else if (A.border === 'town') {   // crates, barrels, flower boxes and hedges where the square meets the houses
     const pick = () => { const q = r(); return q < .28 ? ['barrel', {}] : q < .5 ? ['crate', { stack: r() < .4 }] : q < .75 ? ['planter', { seed: 1 + (r() * 4 | 0) }] : ['bush', { pal: 'hedge', berries: false }]; };
     for (const side of ['w', 'e']) { if (side === 'e' && A.view === 'e') continue; for (let y = GT + 44 + r() * 10; y < A.h - 14; y += 36 + r() * 18) {
-      if (inExit(side, y, 26)) continue; const [k, o] = pick(); add(k, side === 'w' ? 4 + r() * 5 : A.w - 4 - r() * 5, y, o); } }
-    for (let x = 14 + r() * 10; x < A.w; x += 32 + r() * 18) { if (inExit('s', x, 24) || (A.view === 'e' && x > A.w - 30)) continue; const [k, o] = pick(); add(k, x, A.h - 1 - r() * 3, o); }
+      if (inExit(side, y, 26)) continue; const [k, o] = pick(); addB(k, side === 'w' ? 4 + r() * 5 : A.w - 4 - r() * 5, y, o); } }
+    for (let x = 14 + r() * 10; x < A.w; x += 32 + r() * 18) { if (inExit('s', x, 24) || (A.view === 'e' && x > A.w - 30)) continue; const [k, o] = pick(); addB(k, x, A.h - 1 - r() * 3, o); }
+  } else if (A.border === 'cave') {   // rubble, stalagmites and ore along the cave edges
+    const pick = () => { const q = r(); return q < .45 ? ['stalag', { seed: 1 + (r() * 9 | 0), c: ap.rock }] : q < .75 ? ['rock', { c: ap.rock }] : ['ore', { seed: 1 + (r() * 9 | 0) }]; };
+    for (const side of ['w', 'e']) for (let y = GT + 40 + r() * 10; y < A.h - 14; y += 30 + r() * 16) { if (inExit(side, y, 26)) continue; const [k, o] = pick(); addB(k, side === 'w' ? 4 + r() * 6 : A.w - 4 - r() * 6, y, o); }
+    for (let x = 12 + r() * 10; x < A.w; x += 28 + r() * 16) { if (inExit('s', x, 24)) continue; const [k, o] = pick(); addB(k, x, A.h - 1 - r() * 3, o); }
   }
   d.props.forEach(q => add(q[0], q[1], q[2], q[3]));
   // a sprinkle of low decoration away from paths and water
@@ -914,18 +1166,20 @@ function buildArea(id) {
     if (nearPath(A, x, y, 22) || (A.water && A.water(x, y)) || (A.water && A.water(x + 14, y)) || (A.water && A.water(x - 14, y))) continue;
     if (A.fountain && Math.hypot(x - A.fountain.x, y - A.fountain.y) < A.fountain.r + 30) continue;
     if (A.props.some(p => Math.hypot(p.x - x, p.y - y) < 26) || d.npcs.some(n => Math.hypot(NPCS[n].x - x, NPCS[n].y - y) < 40)) continue;
-    if (A.kind === 'town') { add(r() < .6 ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
+    if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
+    if (A.kind === 'cave') { const q = r(); add(q < .5 ? 'stalag' : 'mush', x, y, q < .5 ? { seed: 1 + (r() * 9 | 0), c: ap.rock } : { s: .35 + r() * .15, cap: ['#2f9e9a', '#8a5cc9', '#c4542f'][(r() * 3) | 0] }); i++; continue; }
     { const q = r(); add(q < .45 ? 'leafpile' : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : {}); } i++;
   }
   A.solids = [];
   for (const p of A.props) { const sd = pv(PROPDEF[p.k].solid, p); if (sd && p.id !== 'fakebush' && p.id !== 'fakehedge') sd.forEach(s => A.solids.push({ x: p.x + s[0], y: p.y + s[1], r: s[2] })); }
   if (A.fountain) A.solids.push({ x: A.fountain.x, y: A.fountain.y, r: A.fountain.r + 1 });
+  if (A.lighthouse) A.solids.push({ x: A.lighthouse.x, y: A.lighthouse.y, r: 24 });
   for (const nid of d.npcs) { const n = NPCS[nid]; A.solids.push({ x: n.x, y: n.y, r: n.kind === 'frog' && !n.land ? 1 : n.kind === 'tortoise' ? 12 : 8, fest: n.fest, hideFest: n.hideFest }); }
   A.items = d.items.map(q => ({ id: q[0], type: q[1], x: q[2], y: q[3], ph: r() * TAU }));
   A.motes = []; const nm = ap.fireflies || 7;
   for (let i = 0; i < nm; i++) A.motes.push({ x: r() * A.w, y: GT + r() * (A.h - GT), ph: r() * TAU, sp: .3 + r() * .5, glow: true, z: 4 + r() * 30 });
   // god-ray beams pouring through canopy gaps: top point, angle, width, length (+ a few dust motes each)
-  A.beams = []; const nb = id === 'glade' ? 4 : A.kind === 'inside' ? 2 : A.kind === 'town' ? 2 : 3;
+  A.beams = []; const nb = ap.beams != null ? ap.beams : id === 'glade' ? 4 : A.kind === 'inside' ? 2 : A.kind === 'town' ? 2 : 3;
   for (let i = 0; i < nb; i++) {
     const x0 = (i + .5) / nb * A.w + (r() - .5) * 40 + 120, a = .34 + r() * .1, yEnd = A.h * .62 + r() * A.h * .34;
     A.beams.push({ x0, y0: -60, a, w: 70 + r() * 50, L: (yEnd + 60) / Math.cos(a), ph: r() * TAU, dust: Array.from({ length: 7 }, () => ({ u: r(), v: r() - .5, sp: .012 + r() * .02, ph: r() * TAU })) });
@@ -1032,6 +1286,7 @@ function talkTo(nid) {
     if (F.fest) lines = ['Lovely ringing, that! You\'ve a knack.'];
     else if (festReady()) lines = ['Pie baked AND the wood\'s supper ready? Then it\'s time!', 'Pull the bell rope by the tower door. Hard as you can!'];
     else lines = ['Nutmeg, bell-ringer! I ring the chapel bell to start the Harvest Festival.', 'But not until Clover\'s pie is baked and Bramble\'s supper is ready. Tradition!', hint('nutmeg', ['Have a look through my telescope while you\'re up here.', 'From up here you can see the whole town, and the wood beyond.'])];
+  } else if (n.lines) { lines = hint(nid, n.lines);
   } else if (n.fest) {
     lines = { fbramble: ['Acorn cakes AND Clover\'s pie! Best supper ever.', 'You brought the whole wood and the whole town together.'], fpip: ['Ribbit! The fountain\'s nice. Not as nice as the stream.'], fsorrel: ['Sloooow dance, everyone...'], fwick: ['Hoo. I haven\'t seen lanterns like these in a hundred autumns.'], fhob: ['Made the lantern hooks myself. Good iron.'], frusset: ['Look at all the bunting! I stitched every flag.'] }[nid] || ['What a night!'];
   }
@@ -1084,6 +1339,10 @@ const OBJS = {
   bellrope: { area: 'chapel', x: 108, y: GT + 22, h: 40, top: 44, range: 28, use: ringBell },
   scope: { area: 'chapel', x: 440, y: 230, h: 40, top: 40, range: 28, use() { say('Telescope', '#a8781a', null, ['You peer through the brass telescope...', 'Rooftops, chimney smoke, and the wood beyond, all gold and red.', 'Down in the keep courtyard, something glints behind the north-west hedge.']); } },
   appletree: { area: 'keep', x: 380, y: 182, h: 80, top: 70, range: 32, use: shakeTree },
+  harborsign: { area: 'harborst', x: 40, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Hearthvale  \u00b7  East: Saltmere Docks', 'Painted underneath: a fish wearing a crown.']); } },
+  dockssign: { area: 'docks', x: 40, y: 196, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['West: Harbor Street  \u00b7  East: Lighthouse Point', '"No swimming off the piers. Signed, the Harbormaster."']); } },
+  lhdoor: { area: 'point', x: 330, y: 168, h: 30, top: 36, range: 28, use() { say('Lighthouse', '#c83a2a', null, ['The lighthouse door is locked. A note is pinned to it:', '"Gone fishing. Back at dusk. Do NOT feed the seal. - the Keeper"']); } },
+  minesign: { area: 'minetrail', x: 440, y: 214, h: 44, range: 26, use() { say('Signpost', '#a2724a', null, ['North: Emberdeep Mine  \u00b7  East: Hearthvale', 'Scratched beneath: "Mind the carts!"']); } },
 };
 function collect(it) {
   if (S.got.has(it.id)) return; S.got.add(it.id);
@@ -1192,9 +1451,11 @@ function enterArea(id, x, y) {
   for (const p of S.A.props) p.rustle = 0;
   onEnterArea(S.A);
 }
+const onDeck = (A, x, z, m) => A.decks.some(d => x > d[0] - m && x < d[2] + m && z > d[1] - m && z < d[3] + m);
 function onSafe(A, x, y) {
   for (const s of A.stones) if (Math.hypot(x - s.x, (y - s.y) * 1.15) < s.r) return true;
   if (A.island && Math.hypot(x - A.island.x, (y - A.island.y) * 1.3) < A.island.r) return true;
+  if (A.decks && onDeck(A, x, y, 0)) return true;
   return false;
 }
 const canStand = (A, x, y) => !A.water || !A.water(x, y) || onSafe(A, x, y);
@@ -1369,7 +1630,12 @@ function vnoise(x, y, s = 0) { const xi = Math.floor(x), yi = Math.floor(y), xf 
   return lerp(lerp(hash2(xi, yi, s), hash2(xi + 1, yi, s), u), lerp(hash2(xi, yi + 1, s), hash2(xi + 1, yi + 1, s), u), v); }
 const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const WATER_Y = -3, CLIFF_Z = GT - 8, CLIFF_D = 40;
-function hAt(A, x, z) {
+function hAt(A, x, z) { let h = hAt0(A, x, z);
+  if (A.sea != null && z > A.sea - 8) h -= 10 * smooth((z - A.sea + 8) / 16);
+  if (A.seaE != null && x > A.seaE - 8) h -= 10 * smooth((x - A.seaE + 8) / 16);
+  if (A.pond) { const P = A.pond, e = Math.hypot((x - P.x) / P.rx, (z - P.y) / P.ry); if (e < 1.15) h -= 9 * (1 - smooth((e - .82) / .3)); }
+  return h; }
+function hAt0(A, x, z) {
   if (A.kind === 'inside') return 0;
   if (A.kind === 'town') { if (A.view === 'e' && x > A.w - 2) return -70 * smooth((x - A.w + 2) / 24); return A.ground === 'grass' ? (vnoise(x * .025, z * .025, 3) - .5) * 2 : (vnoise(x * .05, z * .05, 3) - .5) * .5; }
   if (A.id === 'stream' && z > GT - 30) { const d = Math.abs(x - streamX(z)); if (d < STREAM_HW + 3) return -9 * (1 - smooth((d - (STREAM_HW - 5)) / 8)); }
@@ -1379,6 +1645,7 @@ function hAt(A, x, z) {
 function standY(A, x, z) {   // height of whatever the hero stands on
   for (const s of A.stones) if (Math.hypot(x - s.x, (z - s.y) * 1.15) < s.r + 2) return s.hidden ? WATER_Y - .8 : WATER_Y + 1.6;
   if (A.island && Math.hypot(x - A.island.x, (z - A.island.y) * 1.3) < A.island.r + 3) return .6;
+  if (A.decks && onDeck(A, x, z, 1)) return DECK_Y;
   return hAt(A, x, z);
 }
 function pathDist(A, x, z) { let d = 1e9; for (const pl of A.paths) for (let i = 1; i < pl.length; i++) d = Math.min(d, distSeg(x, z, pl[i - 1], pl[i])); return d; }
@@ -1396,24 +1663,25 @@ function groundTexture(A, X0, Z0, TW, TH) {
     if (pd < 13.5) c = pd > 11.5 ? p.shadeOf(PP, .15, i, j) : p.shadeOf(PP, clamp(.55 + n2 * .35 - pd / 40, 0, 1), i, j);
     if (A.water) { const wat = A.water(x, z) || (A.id === 'glade' && Math.hypot((x - 128) / 1.25, z - 168) < 36); const near = !wat && (A.water(x + 5, z) || A.water(x - 5, z) || A.water(x, z + 5) || A.water(x, z - 5));
       if (wat) c = p.shadeOf(BED, clamp(.3 + n2 * .6, 0, 1), i, j); else if (near) c = p.shadeOf(BANK, n2, i, j); }
-    if (A.kind !== 'forest') c = townGround(A, p, x, z, i, j, c, pd, n2, COB, FLAG);
+    if ((A.kind === 'town' || A.kind === 'inside') && !(A.water && A.water(x, z))) c = townGround(A, p, x, z, i, j, c, pd, n2, COB, FLAG);
     p.set(i, j, c);
   }
   const toT = (x, z) => [Math.floor((x - X0) / U), Math.floor((z - Z0) / U)];
   if (A.ground === 'wood') return p.done({ outline: false });
-  const paved = A.kind === 'town' && A.ground !== 'grass';
+  const paved = A.kind === 'town' && A.ground !== 'grass', LIT = ap.litter || AUT, noFall = ap.fall === 'none';
   const wet = (x, z) => A.water && A.water(x, z);
   // grass tufts
-  for (let k = 0; k < (paved ? 0 : TW * TH / 60); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (pathDist(A, x, z) < 13 || wet(x, z)) continue; const [i, j] = toT(x, z), base = p.col(clamp(i, 0, TW - 1), clamp(j, 0, TH - 1));
+  for (let k = 0; k < (paved || ap.tufts === false ? 0 : TW * TH / 60); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (pathDist(A, x, z) < 13 || wet(x, z)) continue; const [i, j] = toT(x, z), base = p.col(clamp(i, 0, TW - 1), clamp(j, 0, TH - 1));
     const d = dark(base, .35), l = lite(base, .25); p.set(i, j, d); p.set(i - 1, j - 1, d); p.set(i + 1, j - 1, d); p.set(i, j - 1, l); p.set(i, j - 2, l); }
   // fallen leaves: drifts + scatter, a few asters
-  for (let k = 0; k < (paved ? 6 : 16); k++) { const cx = X0 + r() * TW * U, cz = GT + 10 + r() * (A.h - GT); for (let q = 0; q < 40; q++) { const a = r() * TAU, d = Math.sqrt(r()) * 24, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d * .55; if (wet(x, z)) continue; const [i, j] = toT(x, z), c = AUT[(r() * AUT.length) | 0]; p.set(i, j, c); p.set(i + 1, j, dark(c, .2)); if (r() < .5) p.set(i, j - 1, lite(c, .2)); } }
-  for (let k = 0; k < TW * TH / (paved ? 160 : 50); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (wet(x, z)) continue; const [i, j] = toT(x, z), c = AUT[(r() * AUT.length) | 0]; p.set(i, j, c); if (r() < .6) p.set(i + 1, j, dark(c, .25)); }
-  for (let k = 0; k < (paved ? 0 : TW * TH / 900); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (wet(x, z) || pathDist(A, x, z) < 14) continue; const [i, j] = toT(x, z), c = ['#9a6fc0', '#f2b63c', '#fff0d8'][k % 3]; p.set(i, j, c); p.set(i - 1, j, c); p.set(i + 1, j, c); p.set(i, j - 1, c); p.set(i, j + 1, '#6e7a34'); }
+  for (let k = 0; k < (paved || noFall ? 6 : 16); k++) { const cx = X0 + r() * TW * U, cz = GT + 10 + r() * (A.h - GT); for (let q = 0; q < 40; q++) { const a = r() * TAU, d = Math.sqrt(r()) * 24, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d * .55; if (wet(x, z)) continue; const [i, j] = toT(x, z), c = LIT[(r() * LIT.length) | 0]; p.set(i, j, c); p.set(i + 1, j, dark(c, .2)); if (r() < .5) p.set(i, j - 1, lite(c, .2)); } }
+  for (let k = 0; k < TW * TH / (paved ? 160 : 50); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (wet(x, z)) continue; const [i, j] = toT(x, z), c = LIT[(r() * LIT.length) | 0]; p.set(i, j, c); if (r() < .6) p.set(i + 1, j, dark(c, .25)); }
+  for (let k = 0; k < (paved || noFall ? 0 : TW * TH / 900); k++) { const x = X0 + r() * TW * U, z = Z0 + r() * TH * U; if (wet(x, z) || pathDist(A, x, z) < 14) continue; const [i, j] = toT(x, z), c = ['#9a6fc0', '#f2b63c', '#fff0d8'][k % 3]; p.set(i, j, c); p.set(i - 1, j, c); p.set(i + 1, j, c); p.set(i, j - 1, c); p.set(i, j + 1, '#6e7a34'); }
   return p.done({ outline: false });
 }
 function tileTex(kind, ap) {   // 32x32 repeating pixel tiles for the cliffs
-  return cached('tile|' + kind + '|' + ap.ground, () => {
+  if (kind === 'rock') return rockTile(ap.rock || '#7a6a62', ap.rockSpots);
+  return cached('tile|' + kind + '|' + ap.ground + '|' + (ap.litter ? 1 : 0), () => {
     const p = new Pix(32, 32), r = rng(kind === 'rock' ? 5 : 9);
     if (kind === 'cob') { const C = pal('#988a76', 6, .55, .3); for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) p.set(i, j, cobble(p, i * U, j * U, i, j, C, null, 6.25, 5)); return p.done({ outline: false }); }
     if (kind === 'rock') { const RK = pal('#7a6a62', 6, .55, .3);
@@ -1421,7 +1689,7 @@ function tileTex(kind, ap) {   // 32x32 repeating pixel tiles for the cliffs
       for (let k = 0; k < 14; k++) { const i = r() * 32 | 0, j = r() * 32 | 0; p.set(i, j, ['#7a8a34', '#5a6a2a', '#c4542f', '#e08a2a'][k % 4]); }
     } else { const G1 = pal(ap.ground, 5, .5, .2);
       for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) p.set(i, j, p.shadeOf(G1, clamp(.25 + vnoise(i * .3, j * .3, 8) * .5, 0, 1), i, j));
-      for (let k = 0; k < 40; k++) { const i = r() * 32 | 0, j = r() * 32 | 0; p.set(i, j, AUT[k % AUT.length]); }
+      const LIT = ap.litter || AUT; for (let k = 0; k < 40; k++) { const i = r() * 32 | 0, j = r() * 32 | 0; p.set(i, j, LIT[k % LIT.length]); }
     }
     return p.done({ outline: false });
   });
@@ -1543,7 +1811,7 @@ const LEAVES3 = []; { const col = new THREE.Color(); for (let i = 0; i < LEAFN; 
 const dummy = new THREE.Object3D();
 
 // ---------------------------------------------------------------- Hearthvale: 3D buildings (merged boxes + pixel tile textures)
-const WALLST = { cream: ['#ecdcbc', '#5a3622'], ochre: ['#e2b470', '#5a3622'], rose: ['#e6ae9c', '#4a2a22'], sage: ['#c6cca4', '#4a3a26'], sky: ['#b8c8d0', '#3e3446'] };
+const WALLST = { cream: ['#ecdcbc', '#5a3622'], ochre: ['#e2b470', '#5a3622'], rose: ['#e6ae9c', '#4a2a22'], sage: ['#c6cca4', '#4a3a26'], sky: ['#b8c8d0', '#3e3446'], salt: ['#ddd6c6', '#3a4656'], teal: ['#9cc4c0', '#2a3a44'] };
 const ROOFC = { tile: '#b8482a', slate: '#566282', thatch: '#c8a048', moss: '#8a6a3a' };
 const SHUT = ['#3a6a8a', '#4a7a3a', '#a83a2a', '#6a4a8a', '#2e6a6a'];
 const EMIS = [];   // emissive materials driven by time of day: { m, k: 'win' | 'lamp' | 'fire' | 'fest' }
@@ -1584,6 +1852,8 @@ const SIGNS = {
   mug: (p, x, y) => { p.rect(x + 2, y + 2, 5, 5, '#c8a040'); p.rect(x + 2, y + 1, 5, 2, '#fff8e8'); p.rect(x + 7, y + 3, 1, 3, '#a8781a'); },
   needle: (p, x, y) => { p.line(x + 1, y + 6, x + 8, y + 1, '#8a96a4'); p.set(x + 8, y + 1, '#ffffff'); p.line(x + 2, y + 2, x + 7, y + 6, '#d83a3a'); },
   herb: (p, x, y) => { p.rect(x + 3, y + 2, 4, 5, '#4aa090'); p.rect(x + 4, y + 1, 2, 1, '#a08a68'); p.set(x + 1, y + 6, '#4a7a2a'); p.set(x + 2, y + 5, '#6a9a3a'); },
+  fish: (p, x, y) => { p.ell(x + 4, y + 4, 3.4, 1.8, ['#3a5a6a', '#6a90a0', '#bcdce8']); p.poly([[x + 7, y + 4], [x + 9, y + 2], [x + 9, y + 6]], '#5a8090'); p.set(x + 2, y + 3, '#1a1a1a'); },
+  anchor: (p, x, y) => { p.rect(x + 4, y + 1, 1, 6, IRON[1]); p.rect(x + 2, y + 2, 5, 1, IRON[1]); p.line(x + 1, y + 5, x + 4, y + 7, IRON[1]); p.line(x + 7, y + 5, x + 4, y + 7, IRON[1]); p.set(x + 4, y, IRON[2]); },
   hammer: (p, x, y) => { p.line(x + 2, y + 7, x + 7, y + 2, WOOD[2]); p.rect(x + 5, y + 1, 4, 3, IRON[2]); },
 };
 function window_(p, e, x, y, w, h, sc, TM, shop) {
@@ -1664,6 +1934,7 @@ const TMAT = new Map();
 function townMat(key) { let m = TMAT.get(key); if (m) return m; const i = key.indexOf('|'), kind = key.slice(0, i), style = key.slice(i + 1);
   if (kind === 'w') { const [c, e] = wallTiles(style); m = new THREE.MeshLambertMaterial({ map: mip(tex(c, true)), side: THREE.DoubleSide }); if (WALLST[style]) { m.emissiveMap = tex(e, true); m.emissive = new THREE.Color('#ffb060'); m.emissiveIntensity = 0; EMIS.push({ m, k: 'win' }); } }
   else if (kind === 'r') m = new THREE.MeshLambertMaterial({ map: mip(tex(roofTile(style), true)), side: THREE.DoubleSide });
+  else if (kind === 'k') { const [base, sp] = style.split('|'); m = new THREE.MeshLambertMaterial({ map: mip(tex(rockTile(base, sp ? sp.split(',') : null), true)), side: THREE.DoubleSide }); }
   else m = new THREE.MeshLambertMaterial({ color: style, side: THREE.DoubleSide });
   MATS.push(m); TMAT.set(key, m); return m; }
 function townBuilder() {
@@ -1724,9 +1995,9 @@ function buildTown(A, G, out, r) {
       for (let i = 0; i < uv.count; i++) uv.setXY(i, ps.getX(i) / B.T, -ps.getZ(i) / B.T); const q = new THREE.Mesh(g, m); q.receiveShadow = true; G.add(q); };
     // the terrain mesh covers x -90..w+90, z GT-24..h+110: streets only behind and beside it, never under it
     slab(-640, A.w + 640, GT - 800, GT - 22, A.view === 'e' ? -1 : -2.5);
-    slab(-640, -88, GT - 22, A.h + 400, -2.5); if (A.view !== 'e') slab(A.w + 88, A.w + 640, GT - 22, A.h + 400, -2.5);
+    const zS = A.sea != null ? A.sea - 6 : A.h + 400; slab(-640, -88, GT - 22, zS, -2.5); if (A.view !== 'e') slab(A.w + 88, A.w + 640, GT - 22, zS, -2.5);
     if (A.view === 'e') slab(A.w + 30, A.w + 640, GT - 22, A.h + 400, -70); }
-  const sty = () => HSTY[(r() * HSTY.length) | 0], rf = () => HROOF[(r() * HROOF.length) | 0];
+  const HS = A.hsty || HSTY, HR = A.hroof || HROOF, sty = () => HS[(r() * HS.length) | 0], rf = () => HR[(r() * HR.length) | 0];
   const mk = (x0, x1, o = {}) => house(B, G, out, Object.assign({ x0, x1, z0: (o.z1 || ZF) - (o.d || 44 + r() * 16), z1: ZF, h: 44 + Math.round(r() * 5) * 5, style: sty(), roof: rf(), gable: r() < .4, seed: (Math.abs(x0) * 13 + A.w + (o.z1 || 0)) | 0, facade: true, chim: r() < .55 }, o));
   const gaps = A.exits.filter(e => e.e === 'n').map(e => [e.a - 8, e.b + 8]);
   const blocks = gaps.concat(A.reserve || [], (A.shops || []).map(s => [s.x0, s.x1])).sort((a, b) => a[0] - b[0]);
@@ -1784,7 +2055,7 @@ function buildTown(A, G, out, r) {
   // side rows of houses (the playable area is a little square or lane between them)
   if (A.border === 'town' || !A.border) for (const side of ['w', 'e']) {
     const ex = A.exits.filter(e => e.e === side).map(e => [e.a - 16, e.b + 16]), low = A.view === 'e' && side === 'e';
-    for (let z = ZF - 30; z < A.h + 120;) { const d = 60 + r() * 30, g = ex.find(q => z + d > q[0] && z < q[1]);
+    for (let z = ZF - 30; z < (A.sea != null ? A.sea - 24 : A.h + 120);) { const d = 60 + r() * 30, g = ex.find(q => z + d > q[0] && z < q[1]);
       if (g) { const zz = g[0]; if (zz - z > 30) house(B, G, out, { x0: side === 'w' ? -100 : A.w + 16, x1: side === 'w' ? -16 : A.w + 100, z0: z, z1: zz, h: 44 + r() * 20, style: sty(), roof: rf(), seed: z | 0, chim: r() < .5, base: 0 }); z = g[1]; continue; }
       const x0 = side === 'w' ? -100 - r() * 20 : A.w + 16 + (low ? 30 : 0), x1 = side === 'w' ? -16 : A.w + 100 + r() * 20 + (low ? 30 : 0);
       house(B, G, out, { x0, x1, z0: z, z1: z + d, h: 44 + r() * 22, style: sty(), roof: rf(), seed: z | 0, chim: r() < .5, base: low ? -70 : 0 }); z += d; }
@@ -1830,20 +2101,102 @@ function buildStrings(A, G, out) {
 
 // ---------------------------------------------------------------- area dioramas (built on first visit)
 const W3 = {};
+// ---------------------------------------------------------------- world regions: seas, decks, rails, caves, lighthouse
+const DECK_Y = 2.2;
+function rockTile(base, spots) { return cached('rk|' + base + '|' + (spots || []).join(','), () => {
+  const p = new Pix(32, 32), r = rng(5), RK = pal(base, 6, .55, .3), SP = spots || ['#7a8a34', '#5a6a2a', '#c4542f', '#e08a2a'];
+  for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) { const band = Math.floor((j + Math.floor(vnoise(i * .2, 0, 4) * 4)) / 8), v = .35 + vnoise(i * .25 + band * 7, j * .25, 6) * .45 - ((j % 8) === 7 ? .3 : 0) + ((j % 8) === 0 ? .15 : 0); p.set(i, j, p.shadeOf(RK, clamp(v, 0, 1), i, j)); }
+  for (let k = 0; k < 14; k++) { const i = r() * 32 | 0, j = r() * 32 | 0; p.set(i, j, SP[k % SP.length]); }
+  return p.done({ outline: false }); }); }
+const seaMat = ap => { const m = waterMat(0); if (ap.sea) { m.uniforms.cDeep.value.set(ap.sea[0]); m.uniforms.cMid.value.set(ap.sea[1]); m.uniforms.cHi.value.set(ap.sea[2]); } return m; };
+// a dark tunnel mouth in a rock wall: lintel above, black opening, timber frame
+function mouthN(B, rk, g0, g1, Z0, ZB, H) {
+  B.box(rk, g0, g1, 30, H, Z0, ZB, { noBack: true });
+  B.q('c|#070405', [g0, 0, Z0 + 2], [g1, 0, Z0 + 2], [g1, 30, Z0 + 2], [g0, 30, Z0 + 2], [0, 0], [1, 0], [1, 1], [0, 1]);
+  B.q('c|#0e0a0a', [g0, .15, GT - 26], [g1, .15, GT - 26], [g1, .15, Z0 + 2], [g0, .15, Z0 + 2], [0, 0], [1, 0], [1, 1], [0, 1]);
+  B.box('w|wood', g0, g0 + 5, 0, 30, ZB - 3, ZB + 2); B.box('w|wood', g1 - 5, g1, 0, 30, ZB - 3, ZB + 2); B.box('w|wood', g0 - 4, g1 + 4, 28, 33, ZB - 3, ZB + 3);
+}
+function mouthSide(B, rk, side, A, z0, z1, H) {
+  const xo = side === 'w' ? -4 : A.w + 4, xf = side === 'w' ? -70 : A.w + 70, xa = Math.min(xo, xf), xb = Math.max(xo, xf);
+  B.box(rk, xa, xb, 30, H, z0, z1);
+  B.q('c|#070405', [xf, 0, z1], [xf, 0, z0], [xf, 30, z0], [xf, 30, z1], [0, 0], [1, 0], [1, 1], [0, 1]);
+  B.q('c|#0e0a0a', [xa, .2, z1], [xb, .2, z1], [xb, .2, z0], [xa, .2, z0], [0, 0], [1, 0], [1, 1], [0, 1]);
+  const xp = side === 'w' ? xo - 5 : xo; B.box('w|wood', xp, xp + 5, 0, 30, z0 - 3, z0 + 2); B.box('w|wood', xp, xp + 5, 0, 30, z1 - 2, z1 + 3); B.box('w|wood', xp - 1, xp + 6, 28, 33, z0 - 4, z1 + 4);
+}
+function buildCave(A, G, out, r) {   // rock all around: back wall, side walls, tunnel mouths for the exits
+  const B = townBuilder(), H = A.cliffH || 86, rk = 'k|' + (A.ap.rock || '#4e4440') + '|' + (A.ap.rockSpots || []).join(','), Z0 = CLIFF_Z - CLIFF_D, ZB = CLIFF_Z;
+  const gapsN = A.exits.filter(e => e.e === 'n').map(e => [e.a - 4, e.b + 4]);
+  for (let x = -240; x < A.w + 240;) { const w = 16 + r() * 18, x1 = Math.min(x + w, A.w + 240), g = gapsN.find(q => x1 > q[0] && x < q[1]);
+    if (g) { if (x < g[0]) B.box(rk, x, g[0], 0, H - 6 + r() * 12, Z0, ZB); x = g[1]; continue; }
+    B.box(rk, x, x1, 0, H - 12 + r() * 24, Z0 - r() * 12, ZB + r() * 5); if (r() < .5) B.box(rk, x + 2, x1 - 2, 0, 8 + r() * 18, ZB - 2, ZB + 7 + r() * 6); x = x1; }
+  for (const g of gapsN) mouthN(B, rk, g[0], g[1], Z0, ZB, H);
+  for (const side of ['w', 'e']) { const ex = A.exits.filter(e => e.e === side).map(e => [e.a - 6, e.b + 6]);
+    for (let z = Z0; z < A.h + 160;) { const d = 22 + r() * 22, z1 = z + d, g = ex.find(q => z1 > q[0] && z < q[1]);
+      const xa = side === 'w' ? -110 : A.w + 3 + r() * 8, xb = side === 'w' ? -3 - r() * 8 : A.w + 110, hh = H * (.6 + r() * .35) * (z > A.h - 30 ? .35 : 1);
+      if (g) { if (z < g[0]) B.box(rk, xa, xb, 0, hh, z, g[0]); mouthSide(B, rk, side, A, g[0], g[1], H * .85); z = g[1]; continue; }
+      B.box(rk, xa, xb, 0, hh, z, z1); if (r() < .4) B.box(rk, side === 'w' ? xb - 2 : xa - 6, side === 'w' ? xb + 6 : xa + 2, 0, 6 + r() * 14, z + 3, z1 - 3); z = z1; } }
+  flushBuilder(B, G);
+}
+function buildExtras(A, G, out, r) {
+  const B = townBuilder();
+  // open water (sea along the front and/or the east, a pond in a cave): one shader, palette per region
+  if (A.sea != null || A.seaE != null) { const wm = seaMat(A.ap); out.water.push(wm);
+    const xe = A.seaE != null ? A.seaE - 4 : A.w + 760;
+    if (A.sea != null) { const m = new THREE.Mesh(new THREE.PlaneGeometry(xe + 760, A.h + 640 - (A.sea - 4)).rotateX(-Math.PI / 2).translate((xe - 760) / 2, WATER_Y, (A.sea - 4 + A.h + 640) / 2), wm); m.renderOrder = 2; G.add(m); }
+    if (A.seaE != null) { const z0 = GT - 70, m = new THREE.Mesh(new THREE.PlaneGeometry(A.w + 760 - xe, A.h + 640 - z0).rotateX(-Math.PI / 2).translate((xe + A.w + 760) / 2, WATER_Y, (z0 + A.h + 640) / 2), wm); m.renderOrder = 2; G.add(m); } }
+  if (A.pond) { const P = A.pond, wm = seaMat(A.ap); out.water.push(wm); const m = new THREE.Mesh(new THREE.CircleGeometry(1.04, 40).rotateX(-Math.PI / 2), wm); m.scale.set(P.rx, 1, P.ry); m.position.set(P.x, -2.6, P.y); m.renderOrder = 2; G.add(m); }
+  // plank decks on stilts (boardwalk, piers, jetty)
+  for (const d of A.decks || []) { const [x0, z0, x1, z1] = d;
+    B.box('w|wood', x0, x1, DECK_Y - 1.6, DECK_Y, z0, z1, { top: 'w|wood' });
+    for (let x = x0 + 2; x <= x1 - 2; x += Math.max(10, (x1 - x0 - 4) / Math.max(1, Math.round((x1 - x0) / 26)))) for (let z = z0 + 2; z <= z1 - 2; z += Math.max(10, (z1 - z0 - 4) / Math.max(1, Math.round((z1 - z0) / 26)))) {
+      if (A.water && !A.water(x, z) && !A.water(x, z + 8)) continue; B.box('w|wood', x - 1.7, x + 1.7, -16, DECK_Y + .4, z - 1.7, z + 1.7); } }
+  // mine rails: iron rails on wooden ties (axis-aligned runs)
+  for (const [x0, z0, x1, z1] of A.rails || []) { const hz = z0 === z1, L = hz ? Math.abs(x1 - x0) : Math.abs(z1 - z0), s = Math.sign(hz ? x1 - x0 : z1 - z0) || 1;
+    for (let u = 0; u <= L; u += 7) { const x = hz ? x0 + u * s : x0, z = hz ? z0 : z0 + u * s, y = hAt(A, x, z); if (hz) B.box('c|#4a3020', x - 1.3, x + 1.3, y - .6, y + .5, z - 5.5, z + 5.5); else B.box('c|#4a3020', x - 5.5, x + 5.5, y - .6, y + .5, z - 1.3, z + 1.3); }
+    for (const o of [-3.4, 3.4]) { const y = hAt(A, (x0 + x1) / 2, (z0 + z1) / 2); if (hz) B.box('c|#7a7680', Math.min(x0, x1), Math.max(x0, x1), y + .2, y + 1.3, z0 + o - .45, z0 + o + .45, { noFront: false }); else B.box('c|#7a7680', x0 + o - .45, x0 + o + .45, y + .2, y + 1.3, Math.min(z0, z1), Math.max(z0, z1)); } }
+  // tunnel mouths cut into a forest-style cliff
+  if (A.kind === 'forest') for (const e of A.exits) if (e.e === 'n' && e.tunnel) mouthN(B, 'k|' + (A.ap.rock || '#7a6a62') + '|', e.a - 4, e.b + 4, CLIFF_Z - CLIFF_D, CLIFF_Z, A.cliffH || 34);
+  // a striped lighthouse with a turning beam
+  if (A.lighthouse) { const L = A.lighthouse, x = L.x, z = L.y;
+    const st = cached('lhstripe', () => { const p = new Pix(32, 32), RD = pal('#c83a2a', 4, .4, .3), WH = pal('#ece6da', 4, .3, .2); for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) p.set(i, j, p.shadeOf(j < 16 ? RD : WH, clamp(.55 + (vnoise(i * .3, j * .3, 3) - .5) * .4, 0, 1), i, j)); return p.done({ outline: false }); });
+    const sm = new THREE.MeshLambertMaterial({ map: mip(tex(st, true)) }); MATS.push(sm);
+    const base = new THREE.Mesh(cylUV(new THREE.CylinderGeometry(22, 25, 8, 18), 23, 8), townMat('w|stone')); base.position.set(x, 3, z); base.castShadow = base.receiveShadow = true; G.add(base);
+    const tower = new THREE.Mesh(cylUV(new THREE.CylinderGeometry(11, 16, 104, 16, 1, true), 13.5, 104), sm); tower.position.set(x, 58, z); tower.castShadow = tower.receiveShadow = true; G.add(tower);
+    const gal = new THREE.Mesh(new THREE.CylinderGeometry(16, 16, 3, 16), townMat('c|#2a2a34')); gal.position.set(x, 111, z); gal.castShadow = true; G.add(gal);
+    const lm = new THREE.MeshLambertMaterial({ color: '#fff4c8', emissive: new THREE.Color('#ffd870'), emissiveIntensity: .8 }); MATS.push(lm); EMIS.push({ m: lm, k: 'lamp' });
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 8.5, 13, 12), lm); lamp.position.set(x, 119, z); G.add(lamp);
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(0, 12, 12, 12), townMat('c|#a8302a')); roof.position.set(x, 131.5, z); roof.castShadow = true; G.add(roof);
+    B.box('c|#3a2a20', x - 5, x + 5, 0, 14, z + 13, z + 17);
+    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 260, -16, -22, 260, -16, 22, 0, 0, 0, 260, -30, 0, 260, 4, 0], 3));
+    const bm = new THREE.MeshBasicMaterial({ color: '#fff2c0', transparent: true, opacity: .1, depthWrite: false, side: THREE.DoubleSide, fog: false }); MATS.push(bm);
+    const beam = new THREE.Mesh(bg, bm); beam.position.set(x, 119, z); beam.renderOrder = 4; G.add(beam); out.lh = { beam, bm };
+    out.lights.push({ x, y: 118, z: z + 12, c: '#ffd870', i: 420, flick: .04, lamp: true }); }
+  flushBuilder(B, G);
+}
+// per-frame bits for the new regions: bobbing boats, gulls/bats/crabs, the lighthouse beam, glowfish
+function worldFx(A, W, t, dt, lowFx) {
+  for (const m of W.floats || []) { const p = m.userData.p; m.position.y = WATER_Y - .7 + Math.sin(t * 1.3 + p.ph) * .55; m.rotation.z = Math.sin(t * 1.05 + p.ph * 2) * .035; }
+  if (W.lh) { W.lh.beam.rotation.y = t * .55; W.lh.bm.opacity = .05 + .12 * Math.min(1, S.dk); }
+  if (A.pond && A.kind === 'cave') { const P = A.pond, n = lowFx ? 8 : 16;
+    for (let k = 0; k < n; k++) { const a = t * (.12 + (k % 5) * .03) * (k % 2 ? 1 : -1) + k * 2.4, rr = .25 + (k * .37 % .65); let x = P.x + Math.cos(a) * P.rx * rr, z = P.y + Math.sin(a) * P.ry * rr;
+      const d = Math.hypot(S.px - x, S.py - z); if (d < 70) { x += (S.px - x) * .15; z += (S.py - z) * .15; }
+      fxAdd(x, -2.2, z, k % 3 ? '#8affd8' : '#7ad8f0', .55 + .35 * Math.sin(t * 3 + k), 1.8); } }
+}
+
 function waterMat(flow) { return new THREE.ShaderMaterial({ vertexShader: WATER_V, fragmentShader: WATER_F, transparent: true, depthWrite: false, uniforms: { uT: { value: 0 }, uFlow: { value: flow }, cDeep: { value: new THREE.Color('#1e4a66') }, cMid: { value: new THREE.Color('#2e6e88') }, cHi: { value: new THREE.Color('#9ad0d8') } } }); }
 function itemMesh(W, it) { const sp = ITEMSPR[it.type] || ITEMSPR.acorn, m = bb(sp[0], { glow: sp[1] || null, gi: sp[2] || .6 }), b = blob(10, 5); W.G.add(m, b); W.items[it.id] = { m, b }; return W.items[it.id]; }
 function build3D(A) {
-  const G = new THREE.Group(), ap = A.ap, out = { G, props: [], items: {}, npcs: {}, beams: [], lights: [], water: [], mist: [], smoke: [], banners: [], crit: [], embers: [] };
+  const G = new THREE.Group(), ap = A.ap, out = { G, props: [], items: {}, npcs: {}, beams: [], lights: [], water: [], mist: [], smoke: [], banners: [], crit: [], embers: [], floats: [] };
   const r = rng(A.w + A.id.charCodeAt(1) * 31);
   // terrain heightfield with a painted pixel texture
   const X0 = -90, X1 = A.w + 90, Z0 = GT - 24, Z1 = A.h + 110, TW = Math.round((X1 - X0) / U), TH = Math.round((Z1 - Z0) / U);
   const gg = new THREE.PlaneGeometry(TW * U, TH * U, Math.round(TW * U / 5), Math.round(TH * U / 5)); gg.rotateX(-Math.PI / 2); gg.translate(X0 + TW * U / 2, 0, Z0 + TH * U / 2);
   const gp = gg.attributes.position; for (let i = 0; i < gp.count; i++) gp.setY(i, hAt(A, gp.getX(i), gp.getZ(i))); gg.computeVertexNormals();
   const ground = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ map: mip(tex(groundTexture(A, X0, Z0, TW, TH))) })); ground.receiveShadow = true; MATS.push(ground.material); G.add(ground);
-  const CH_ = 34;
-  if (A.kind !== 'forest') buildTown(A, G, out, r); else {
+  const CH_ = A.cliffH || 34;
+  if (A.kind === 'cave') buildCave(A, G, out, r); else if (A.kind !== 'forest') buildTown(A, G, out, r); else {
   // the back cliff: stepped rock blocks with gaps for north exits and the waterfall, a plateau behind
-  const gaps = A.exits.filter(e => e.e === 'n').map(e => [e.a - 4, e.b + 4, true]); if (A.id === 'stream') gaps.push([streamX(GT) - STREAM_HW - 2, streamX(GT) + STREAM_HW + 2, false]);
+  const gaps = A.exits.filter(e => e.e === 'n').map(e => [e.a - 4, e.b + 4, !e.tunnel]); if (A.id === 'stream') gaps.push([streamX(GT) - STREAM_HW - 2, streamX(GT) + STREAM_HW + 2, false]);
   const sides = [], tops = [], uvS = [], uvT = [];
   const quad = (arr, uv, a, b, c, d, ua, ub, uc, ud) => { arr.push(...a, ...b, ...c, ...a, ...c, ...d); uv.push(...ua, ...ub, ...uc, ...ua, ...uc, ...ud); };
   const T = 32 * U;
@@ -1887,6 +2240,7 @@ function build3D(A) {
     const I = A.island, isl = new THREE.Mesh(new THREE.CylinderGeometry(I.r + 1, I.r + 4, 10, 12), new THREE.MeshLambertMaterial({ color: '#8a7a3a', flatShading: true })); isl.position.set(I.x, -4.4, I.y); isl.scale.z = .8; isl.receiveShadow = true; MATS.push(isl.material); G.add(isl);
   }
   if (A.id === 'glade') { const wm = waterMat(0); out.water.push(wm); const pond = new THREE.Mesh(new THREE.CircleGeometry(36, 28).rotateX(-Math.PI / 2), wm); pond.scale.x = 1.25; pond.position.set(128, -2.5, 168); pond.renderOrder = 2; G.add(pond); }
+  buildExtras(A, G, out, r);
   // props (repeated static props share one instanced draw per sprite)
   const inst = new Map();
   for (const p of A.props) {
@@ -1897,7 +2251,7 @@ function build3D(A) {
     if (d.inst && !p.id && !p.glow) { let L = inst.get(key); if (!L) inst.set(key, L = { c, list: [] }); L.list.push(p); continue; }
     let m;
     if (d.low) { m = new THREE.Mesh(new THREE.PlaneGeometry(c.width * U, c.height * U).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: c.tex || (c.tex = tex(c)), alphaTest: .5 })); MATS.push(m.material); m.position.set(p.x, WATER_Y + .25, p.y); m.receiveShadow = true; }
-    else { m = bb(c, { glow: p.glow, gi: .32, emi: d.emi ? cached(key + '|emi', () => glowMask(c, (r_, g_, b_) => r_ > 225 && g_ > 120 && b_ < 215 && r_ - b_ > 40)) : null, ek: d.emi }); m.position.set(p.x, hAt(A, p.x, p.y) - .5 + (p.lift || 0), p.y); if (p.k === 'leafpile' || p.k === 'flowers' || p.lift) m.castShadow = false; }
+    else { m = bb(c, { glow: p.glow, gi: .32, emi: d.emi ? cached(key + '|emi', () => glowMask(c, (r_, g_, b_) => r_ > 225 && g_ > 120 && b_ < 215 && r_ - b_ > 40)) : null, ek: d.emi }); m.position.set(p.x, d.float ? WATER_Y - .7 : standY(A, p.x, p.y) - .5 + (p.lift || 0), p.y); if (d.float) { out.floats.push(m); m.castShadow = false; } if (p.k === 'leafpile' || p.k === 'flowers' || p.lift) m.castShadow = false; }
     m.userData.p = p; G.add(m); out.props.push(m);
     if (p.glow) out.lights.push({ x: p.x, y: 14 * (p.s || 1), z: p.y + 4, c: p.glow, i: 260 * (p.s || 1), flick: .1 });
     if (d.light) out.lights.push({ x: p.x, y: d.light[1], z: p.y + 3, c: d.light[0], i: 300 * d.light[2], flick: d.emi === 'fire' ? .35 : .2, lamp: d.emi === 'lamp', fire: d.emi === 'fire' });
@@ -1905,7 +2259,7 @@ function build3D(A) {
   }
   for (const [, L] of inst) { const t = L.c.tex || (L.c.tex = tex(L.c)), im = new THREE.InstancedMesh(bbGeo(L.c), spriteMat(t), L.list.length);
     im.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: t, alphaTest: .5 });
-    L.list.forEach((p, i) => { dummy.position.set(p.x, hAt(A, p.x, p.y) - .5, p.y); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); });
+    L.list.forEach((p, i) => { dummy.position.set(p.x, standY(A, p.x, p.y) - .5, p.y); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); });
     im.castShadow = im.receiveShadow = true; im.frustumCulled = false; G.add(im); }
   if (A.id === 'hollow') out.lights.push({ x: 240, y: 14, z: 186, c: '#ff9a3a', i: 650, flick: .2 });
   if (A.id === 'glade') out.lights.push({ x: 268, y: 22, z: 160, c: '#ffd86a', i: 420, flick: .05 });
@@ -1914,7 +2268,7 @@ function build3D(A) {
   // NPCs
   for (const nid of A.npcs) { const n = NPCS[nid], fr = critFrames(n.kind), m = bb(fr[0]), b = blob(n.kind === 'owl' ? 18 : n.kind === 'tortoise' ? 30 : 22, 9); G.add(m, b); out.npcs[nid] = { m, b, fr }; }
   // ambient critters: hens that wander (and scatter when you run at them), cats that doze
-  for (const [k, x, y] of A.critters || []) { const fr = critFrames(k), m = bb(fr[0]), b = blob(k === 'cat' ? 18 : 12, 6); G.add(m, b); out.crit.push({ k, x, y, hx: x, hy: y, tx: x, ty: y, wait: Math.random() * 3, m, b, fr, flip: 1, mv: 0, ph: Math.random() * 9 }); }
+  for (const [k, x, y] of A.critters || []) { const fr = critFrames(k), m = bb(fr[0], { cast: k !== 'gull' && k !== 'bat' }), b = blob(k === 'cat' ? 18 : 12, 6); G.add(m, b); out.crit.push({ k, x, y, hx: x, hy: y, tx: x, ty: y, wait: Math.random() * 3, m, b, fr, flip: 1, mv: 0, ph: Math.random() * 9 }); }
   // the market fountain: stone basin, a pillar with a bowl, water in both, a carved acorn on top
   if (A.fountain) { const F = A.fountain, stoneM = townMat('w|stone');
     const bas = new THREE.Mesh(cylUV(new THREE.CylinderGeometry(F.r, F.r + 2, 9, 22), F.r, 9), stoneM); bas.position.set(F.x, 4.5, F.y); bas.castShadow = bas.receiveShadow = true; G.add(bas);
@@ -1978,7 +2332,7 @@ const hx = c => '#' + rgb(c).map(v => Math.round(clamp(v, 0, 255)).toString(16).
 function mixPal(a, b, t) { if (t <= 0) return a; const m = (x, y) => hx(mix(x, y, t));
   return Object.assign({}, a, { sky: [m(a.sky[0], b.sky[0]), m(a.sky[1], b.sky[1])], fog: m(a.fog, b.fog), sun: m(a.sun, b.sun), hemi: [m(a.hemi[0], b.hemi[0]), m(a.hemi[1], b.hemi[1])],
     grade: [0, 1].map(k => a.grade[k].map((v, i) => lerp(v, b.grade[k][i], t))), mist: m(a.mist, b.mist), sunI: lerp(a.sunI || 1.9, b.sunI || 1.9, t), hemiI: lerp(a.hemiI || 1.35, b.hemiI || 1.35, t), rays: lerp(a.rays, b.rays == null ? a.rays : b.rays, t) }); }
-function litPal(A) { const k = S.dk; if (A.kind === 'inside') return A.ap; const town = A.kind === 'town';
+function litPal(A) { const k = S.dk; if (A.kind === 'inside' || A.kind === 'cave') return A.ap; const town = A.kind === 'town';
   let P = mixPal(A.ap, AP.dusk, Math.min(1, k) * (town ? 1 : .5)); if (k > 1) P = mixPal(P, AP.night, (k - 1) * (town ? 1 : .7)); return P; }
 let curP = AP.meadow, litK = -9;
 function applyLight(A) {
@@ -2034,7 +2388,7 @@ function update3D(dt) {
   for (const nid in W.npcs) {
     const n = NPCS[nid], o = W.npcs[nid], on = npcOn(n); o.m.visible = o.b.visible = on; if (!on) continue; const fr = o.fr, idle = Math.floor(t * 1.7 + n.x) % 2, bl = ((t + n.x * .37) % 4.3) < .14 ? 1 : 0;
     setFrame(o.m, fr[idle * 2 + bl]);
-    const y = n.kind === 'frog' && !n.land ? WATER_Y + .6 : n.kind === 'owl' && !n.land ? 17.5 : hAt(A, n.x, n.y);
+    const y = n.kind === 'frog' && !n.land ? WATER_Y + .6 : n.kind === 'owl' && !n.land ? 17.5 : standY(A, n.x, n.y);
     o.m.position.set(n.x, y - .3, n.y + (n.kind === 'owl' && !n.land ? 1.5 : 0)); o.m.scale.x = n.front ? 1 : (n.flip == null || n.flip >= 0 ? 1 : -1);
     o.b.position.set(n.x, y + .2, n.y + 1); o.b.visible = n.kind !== 'owl' || !!n.land;
     const k = beamLight(n.x, n.y) * curP.rays; o.m.material.emissive.setRGB(.14 * k, .1 * k, .05 * k);
@@ -2061,8 +2415,8 @@ function update3D(dt) {
       fxAdd(x, y, z, '#fff0c8', Math.sin(u * Math.PI) * (.45 + .45 * Math.sin(t * 2.2 + d.ph)), 1.3); }
   }
   // fireflies (+2 wandering point lights)
-  const fc = A.id === 'grove' ? '#a8ffd8' : '#ffd88a';
-  townFx(A, W, t, dt, lowFx);
+  const fc = A.ap.flyC || (A.id === 'grove' ? '#a8ffd8' : '#ffd88a');
+  townFx(A, W, t, dt, lowFx); worldFx(A, W, t, dt, lowFx);
   W.flies.forEach((m, i) => { if (lowFx && i % 2) return; const x = m.x + Math.sin(t * m.sp + m.ph) * 26, z = m.z + Math.cos(t * m.sp * 1.3 + m.ph) * 16, y = m.y + Math.sin(t * m.sp * 2 + m.ph) * 6, a = .5 + .5 * Math.sin(t * 3 + m.ph);
     fxAdd(x, y, z, fc, a, 1.5); fxAdd(x, y, z, fc, a * .22, 4.5); });
   PL.forEach((l, i) => { const q = l.userData;
@@ -2083,7 +2437,7 @@ function update3D(dt) {
   for (const s of S.sparks) fxAdd(s.x, s.y, s.z, '#ffe27a', 1 - s.t, 1.8);
   fxGeo.attributes.position.needsUpdate = fxGeo.attributes.aCol.needsUpdate = fxGeo.attributes.aSize.needsUpdate = true; fxGeo.setDrawRange(0, fxN);
   // falling leaves (tumbling, around the view)
-  const nL = A.kind === 'inside' ? 0 : lowFx || A.kind === 'town' ? LEAFN / 2 : LEAFN, hw = camOff.hw * 1.3;
+  const nL = A.kind === 'inside' || A.ap.fall === 'none' ? 0 : lowFx || A.kind === 'town' ? LEAFN / 2 : LEAFN, hw = camOff.hw * 1.3;
   for (let i = 0; i < LEAFN; i++) { const l = LEAVES3[i];
     if (i >= nL) { dummy.position.set(0, -999, 0); dummy.updateMatrix(); leafMesh.setMatrixAt(i, dummy.matrix); continue; }
     if (l.y < hAt(A, l.x, l.z) - 1 || Math.abs(l.x - S.camX) > hw + 60) { l.x = S.camX + (Math.random() * 2 - 1) * hw; l.z = S.camY + camOff.zt * .7 + Math.random() * (camOff.zb - camOff.zt * .7); l.y = l.y < -500 ? Math.random() * 140 : 120 + Math.random() * 40; l.vx = -6 + Math.random() * 4; l.vy = -(9 + Math.random() * 9); }
@@ -2118,8 +2472,19 @@ function townFx(A, W, t, dt, lowFx) {
       const dx = c.tx - c.x, dy = c.ty - c.y, L = Math.hypot(dx, dy), sp = (c.fast ? 70 : 20) * dt; c.mv = L > 1.5 && c.wait <= 0;
       if (c.mv) { c.x += dx / L * Math.min(sp, L); c.y += dy / L * Math.min(sp, L); if (Math.abs(dx) > .5) c.flip = dx > 0 ? 1 : -1; }
       setFrame(c.m, fr[(c.mv ? Math.floor(t * 8) % 2 : Math.sin(t * 2 + c.ph) > .6 ? 1 : 0) * 2]);
+    } else if (c.k === 'gull' || c.k === 'bat') {   // fliers: gulls wheel overhead, bats loop in figure-eights
+      const g = c.k === 'gull', u = t * (g ? .45 : .9) + c.ph, ox = c.x;
+      c.x = c.hx + (g ? Math.cos(u) * 70 : Math.sin(u) * 80); c.y = c.hy + (g ? Math.sin(u) * 34 : Math.sin(u * 2) * 26);
+      const fy = g ? 62 + Math.sin(u * 2.3) * 8 : 36 + Math.sin(t * 3 + c.ph) * 5; if (Math.abs(c.x - ox) > .01) c.flip = c.x > ox ? 1 : -1;
+      setFrame(c.m, fr[(Math.floor(t * (g ? 3 + (Math.sin(u) > .3 ? 0 : 3) : 11) + c.ph) % 2) * 2]);
+      c.m.position.set(c.x, fy, c.y); c.m.scale.x = c.flip; const gy = standY(A, c.x, c.y); c.b.position.set(c.x, Math.max(gy, WATER_Y) + .25, c.y + 1); c.b.scale.set(g ? 8 : 6, 1, 3); continue;
+    } else if (c.k === 'crab') {   // crabs scuttle sideways between short pauses
+      if (c.wait > 0) c.wait -= dt; else if (Math.hypot(c.tx - c.x, c.ty - c.y) < 1.5) { c.tx = c.hx + (Math.random() - .5) * 60; c.ty = c.hy + (Math.random() - .5) * 20; if (!canStand(A, c.tx, c.ty)) { c.tx = c.hx; c.ty = c.hy; } c.wait = .6 + Math.random() * 2.5; }
+      const dx = c.tx - c.x, dy = c.ty - c.y, L = Math.hypot(dx, dy), sp = 26 * dt; c.mv = L > 1 && c.wait <= 0;
+      if (c.mv) { c.x += dx / L * Math.min(sp, L); c.y += dy / L * Math.min(sp, L); }
+      setFrame(c.m, fr[(c.mv ? Math.floor(t * 10) % 2 : 0) * 2]);
     } else setFrame(c.m, fr[(Math.floor(t * .8 + c.ph) % 2) * 2 + 1]);
-    const y = hAt(A, c.x, c.y); c.m.position.set(c.x, y - .3, c.y); c.m.scale.x = c.flip; c.b.position.set(c.x, y + .2, c.y + 1); }
+    const y = standY(A, c.x, c.y); c.m.position.set(c.x, y - .3, c.y); c.m.scale.x = c.flip; c.b.position.set(c.x, y + .2, c.y + 1); }
   if (W.portcullis) { const k = F.gateOpen ? ease(clamp(S.gateT / 2.4, 0, 1)) : 0; W.portcullis.position.y = W.portcullis.geometry.parameters.height / 2 + k * 42; }
   if (W.bell) W.bell.rotation.z = Math.sin(t * 7) * .45 * Math.min(1, S.bellT);
   for (const b of W.banners) b.rotation.z = Math.sin(t * 1.3 + b.position.x) * .03;
