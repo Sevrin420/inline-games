@@ -16,8 +16,9 @@
  * World units: one game unit = one three.js unit. x = east, z = south (the
  * old top-down "y"), y = up. Sprites use a fixed texel size (U units/texel).
  *
- * Controls: arrows/WASD walk; Space/Enter/Z/E talk, read, advance; X/Escape
- * closes; M mutes. Touch: drag on the left side (stick), tap A or the right side.
+ * Controls: arrows/WASD walk; Space (A) jumps; X (B)/Enter/Z/E talk, read, advance
+ * (A also advances dialogue); Escape closes; M mutes. Touch: drag on the left side
+ * (stick), A jumps, B or a tap on the right side talks.
  * Quality: adapts automatically (?q=high|med|low forces a tier).
  */
 import * as THREE from './vendor/three.module.min.js';
@@ -126,7 +127,7 @@ const AP = {
   town: { sky: ['#f8d49a', '#a8786a'], fog: '#d4a888', sun: '#ffe2b4', hemi: ['#fff0d0', '#6a5068'], ground: '#8a7a40', ground2: '#9a6a34', path: '#c8b08a', cobble: '#a49680', trees: ['amber', 'autumn', 'gold', 'crimson'], fireflies: 8, rays: .85, grade: [[.74, .64, 1], [1, .82, .58]], mist: '#ffe8d0' },
   dusk: { sky: ['#f4945a', '#5a3a6a'], fog: '#9a6070', sun: '#ffa060', hemi: ['#ffc0a0', '#3a2a5a'], grade: [[.62, .52, 1], [1, .72, .48]], mist: '#ffc8b0', sunI: 1.45, hemiI: 1.15, rays: .7 },
   night: { sky: ['#4a4488', '#16123a'], fog: '#3a3468', sun: '#a0acf0', hemi: ['#b0a8ec', '#3a3060'], grade: [[.66, .62, 1], [1, .84, .6]], mist: '#9a98d8', sunI: 1.05, hemiI: 1.35, rays: .25 },
-  inn: { sky: ['#2a1a14', '#140a08'], fog: '#2a1810', sun: '#ffc890', hemi: ['#ffd0a0', '#3a2018'], ground: '#7a5030', ground2: '#6a4028', path: '#8a6040', trees: ['autumn'], fireflies: 0, rays: .5, grade: [[.7, .58, .9], [1, .8, .55]], mist: '#ffd8b0', sunI: .85, hemiI: .95 },
+  inn: { sky: ['#2a1a14', '#140a08'], fog: '#2a1810', sun: '#ffc890', hemi: ['#ffd0a0', '#3a2018'], ground: '#7a5030', ground2: '#6a4028', path: '#8a6040', trees: ['autumn'], fireflies: 0, rays: .5, grade: [[.7, .58, .9], [1, .8, .55]], mist: '#ffd8b0', sunI: 1.05, hemiI: 1.25 },
   // ---- Saltmere Wharf: cool sea light, salt-bleached stone
   harbor: { sky: ['#d6e6ee', '#7898b0'], fog: '#aec2d0', sun: '#fff2dc', hemi: ['#f0f4ff', '#4a5a6a'], ground: '#8a8a6e', ground2: '#9a8c62', path: '#c8b896', cobble: '#9a9a92', trees: ['gold', 'amber'], fireflies: 0, rays: .45, grade: [[.74, .76, 1], [1, .94, .84]], mist: '#e8f0f8', litter: ['#c8c0a8', '#a89a7a', '#e8e0d0', '#7a8a6a', '#c4542f'], fall: 'none', sea: ['#1a4a66', '#2e7090', '#d8f0f4'], hemiI: 1.3, sunI: 1.7 },
   coast: { sky: ['#d8eaf0', '#6a90b0'], fog: '#b0c8d4', sun: '#fff4e0', hemi: ['#f4f8ff', '#4a5a5a'], ground: '#7a8a4a', ground2: '#8a8a52', path: '#d0c09a', trees: ['gold', 'amber', 'rust'], fireflies: 0, rays: .45, grade: [[.74, .76, 1], [1, .94, .84]], mist: '#eef4f8', rock: '#8a8a86', litter: ['#e0d8c0', '#a8a07a', '#c8b060', '#f4f0e4'], fall: 'none', sea: ['#1a4a66', '#2e7090', '#d8f0f4'], hemiI: 1.3, sunI: 1.7 },
@@ -914,13 +915,14 @@ function paintColumn(o) { const r = rng(o.seed || 3), p = new Pix(26, 70), S = [
   else { p.rect(2, 2, 22, 5, S[2]); p.rect(2, 2, 22, 1, S[3]); }
   for (let i = 0; i < 12; i++) { const x = 5 + r() * 16 | 0, y = 70 - 6 - h + r() * h | 0; if (p.on(x, y)) { p.set(x, y, '#4a7a34'); p.set(x, y + 1, '#6a9a44'); } }
   return p.done({ ax: 13, ay: 69 }); }
-function paintRuinArch() { const p = new Pix(90, 76), S = ['#6a6458', '#8a8474', '#aaa494', '#cac4b4'];
-  bricks(p, 0, 0, 90, 76, '#9a9484', 10, 5, 7);
-  for (let y = 0; y < 76; y++) for (let x = 0; x < 90; x++) { const u = (x + .5 - 45) / 28, top = 28 + (1 - Math.sqrt(Math.max(0, 1 - u * u))) * 0; if (Math.abs(u) < 1 && y > 76 - 48 - Math.sqrt(Math.max(0, 1 - u * u)) * 18) p.clear(x, y); }
-  for (let x = 60; x < 90; x++) for (let y = 0; y < 22 + Math.sin(x * .7) * 4; y++) p.clear(x, y);
-  for (let i = 0; i < 40; i++) { const x = (i * 37) % 90, y = (i * 23) % 76; if (p.on(x, y)) { p.set(x, y, '#4a7a34'); if (p.on(x, y + 1)) p.set(x, y + 1, '#3a6a2a'); } }
+function paintRuinArch() { const p = new Pix(90, 66), S = ['#6a6458', '#8a8474', '#aaa494', '#cac4b4'];
+  bricks(p, 0, 0, 90, 66, '#9a9484', 10, 5, 7);
+  for (let y = 0; y < 66; y++) for (let x = 0; x < 90; x++) { const u = (x + .5 - 45) / 27; if (Math.abs(u) < 1 && y > 32 - Math.sqrt(Math.max(0, 1 - u * u)) * 14) p.clear(x, y); }
+  p.rect(0, 0, 90, 3, S[3]); p.rect(0, 3, 90, 1, S[0]); for (let x = 0; x < 90; x++) { const u = (x + .5 - 45) / 27; if (Math.abs(u) < 1) { const y = Math.round(32 - Math.sqrt(1 - u * u) * 14); p.set(x, y, S[3]); } }
+  for (let x = 76; x < 90; x++) for (let y = 0; y < 8 + Math.sin(x * .7) * 3; y++) p.clear(x, y);
+  for (let i = 0; i < 40; i++) { const x = (i * 37) % 90, y = (i * 23) % 66; if (p.on(x, y)) { p.set(x, y, '#4a7a34'); if (p.on(x, y + 1)) p.set(x, y + 1, '#3a6a2a'); } }
   for (let k = 0; k < 5; k++) for (let y = 0; y < 20 + k * 7; y++) { const x = 6 + k * 3 + Math.round(Math.sin(y * .4 + k)); if (p.on(x, y)) p.set(x, y, y % 4 ? '#3e7a34' : '#6aaa4a'); }
-  return p.done({ ax: 45, ay: 75 }); }
+  return p.done({ ax: 45, ay: 65 }); }
 function paintStatue() { const p = new Pix(36, 34), S = ['#5a5a50', '#7a7a6e', '#9a9a8c', '#bcbcac'];
   p.ell(18, 20, 14, 12, S); p.rect(10, 16, 4, 3, '#3a3a34'); p.rect(22, 16, 4, 3, '#3a3a34'); p.rect(15, 24, 6, 2, S[0]); p.rect(16, 19, 4, 4, S[1]);
   p.ell(18, 9, 12, 4, ['#3a6a2a', '#4a8a34', '#6aaa44'], { only: (x, y) => p.on(x, y + 3) });
@@ -994,7 +996,7 @@ const PROPDEF = {
   crystal: { paint: paintCrystal, solid: [[0, -2, 9]] },
   stalag: { paint: paintStalag, solid: [[0, -2, 6]], inst: true, seeded: true },
   // Frostcap, Sunscorch, Mistmire & the ruins
-  cactus: { paint: paintCactus, solid: [[0, -2, 8]], inst: true, seeded: true },
+  cactus: { paint: paintCactus, solid: [[0, -2, 8]], seeded: true },
   palm: { paint: paintPalm, solid: [[0, 0, 7]], sway: .01 },
   cairn: { paint: paintCairn, solid: [[0, -1, 7]], inst: true, seeded: true },
   snowrock: { paint: paintSnowRock, solid: [[0, -2, 11]] },
@@ -1338,7 +1340,7 @@ const AREADEF = {
   },
   // ================= Sunstone Ruins (south of the Sunscorch Dunes)
   ruins: {
-    name: 'Sunstone Colonnade', pal: 'ruins', border: 'desert', w: 540, h: 420, cliffH: 50,
+    name: 'Sunstone Colonnade', pal: 'ruins', border: 'desert', stony: true, cam: [1.28, .1], w: 540, h: 420, cliffH: 50,
     exits: [{ e: 'n', a: 250, b: 290, to: 'dunes', sx: 270, sy: 392 }, { e: 's', a: 250, b: 290, to: 'temple', sx: 270, sy: GT + 26 }],
     paths: [[[270, 40], [270, 440]]],
     props: [['column', 200, 120, { seed: 1 }], ['column', 340, 120, { seed: 2, broken: true }], ['column', 200, 180, { seed: 3, broken: true }], ['column', 340, 180, { seed: 4 }],
@@ -1349,7 +1351,7 @@ const AREADEF = {
     critters: [['lizard', 150, 250], ['lizard', 400, 330], ['eagle', 270, 230]],
   },
   temple: {
-    name: 'Court of the Sun', pal: 'ruins2', border: 'desert', lush: true, w: 540, h: 400, cliffH: 60, pond: { x: 270, y: 244, rx: 84, ry: 30 },
+    name: 'Court of the Sun', pal: 'ruins2', border: 'desert', cam: [1.28, .1], stony: true, w: 540, h: 400, cliffH: 60, pond: { x: 270, y: 244, rx: 84, ry: 30 },
     exits: [{ e: 'n', a: 250, b: 290, to: 'ruins', sx: 270, sy: 392 }],
     paths: [[[270, 40], [270, 200]], [[270, 200], [150, 244], [270, 300], [390, 244], [270, 200]]],
     props: [['ruinarch', 270, 70, {}], ['column', 150, 180, { seed: 11 }], ['column', 390, 180, { seed: 12 }], ['column', 150, 310, { seed: 13, broken: true }], ['column', 390, 310, { seed: 14 }],
@@ -1410,6 +1412,7 @@ const S = {
 const AREAS = {};
 function distSeg(px, py, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy; const t = l ? clamp(((px - a[0]) * dx + (py - a[1]) * dy) / l, 0, 1) : 0; return Math.hypot(px - a[0] - t * dx, py - a[1] - t * dy); }
 function nearPath(A, x, y, d) { return A.paths.some(pl => pl.some((q, i) => i && distSeg(x, y, pl[i - 1], q) < d)); }
+const LOWK = new Set(['rock', 'log', 'stump', 'mush', 'snowrock', 'cairn', 'pumpkin', 'claypots', 'bones', 'hay', 'ore', 'bollard']);   // props you can hop over
 function buildArea(id) {
   const d = AREADEF[id], ap = AP[d.pal], r = rng(id.length * 977 + d.w);
   const A = Object.assign({ id, ap, stones: [], kind: 'forest' }, d); A.props = [];
@@ -1429,7 +1432,7 @@ function buildArea(id) {
   }
   if (A.border === 'desert') {   // cacti, sun-bleached bones and sandstone along the edges
     for (const side of ['w', 'e']) for (let y = GT + 52 + r() * 10; y < A.h - 14; y += 44 + r() * 20) { if (inExit(side, y, 26)) continue; const q = r(); addB(q < .55 ? 'cactus' : q < .8 ? 'rock' : 'bones', side === 'w' ? 8 + r() * 8 : A.w - 8 - r() * 8, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); }
-    for (let x = 14 + r() * 10; x < A.w; x += 46 + r() * 24) if (!inExit('s', x, 24)) addB(r() < .6 ? 'cactus' : 'rock', x, A.h - 2 - r() * 4, { seed: 1 + (r() * 9 | 0), c: ap.rock });
+    for (let x = 14 + r() * 10; x < A.w; x += 46 + r() * 24) if (!inExit('s', x, 24)) addB(r() < .5 ? 'bones' : 'rock', x, A.h - 2 - r() * 4, { seed: 1 + (r() * 9 | 0), c: ap.rock });
   } else if (A.border === 'forest') {
     for (const side of ['w', 'e']) for (let y = GT + 52 + r() * 10; y < A.h - 14; y += 38 + r() * 14) {
       if (inExit(side, y, 26)) continue;
@@ -1456,11 +1459,11 @@ function buildArea(id) {
     if (A.props.some(p => Math.hypot(p.x - x, p.y - y) < 26) || d.npcs.some(n => Math.hypot(NPCS[n].x - x, NPCS[n].y - y) < 40)) continue;
     if (A.kind === 'town') { add(r() < .6 && ap.fall !== 'none' ? 'leafpile' : 'flowers', x, y, {}); i++; continue; }
     if (A.kind === 'cave') { const q = r(); add(q < .5 ? 'stalag' : 'mush', x, y, q < .5 ? { seed: 1 + (r() * 9 | 0), c: ap.rock } : { s: .35 + r() * .15, cap: ['#2f9e9a', '#8a5cc9', '#c4542f'][(r() * 3) | 0] }); i++; continue; }
-    if (A.border === 'desert') { const q = r(); if (A.lush) { add(q < .12 ? 'cactus' : q < .55 ? 'fern' : q < .8 ? 'flowers' : 'rock', x, y, { seed: 1 + (r() * 9 | 0), c: q < .12 ? undefined : q < .55 ? '#6a9a3e' : q < .8 ? undefined : ap.rock }); i++; continue; } add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
+    if (A.border === 'desert') { const q = r(); if (A.lush || A.stony) { add(A.stony ? (q < .3 ? 'rock' : q < .55 ? 'bones' : q < .8 ? 'flowers' : 'fern') : q < .12 ? 'cactus' : q < .55 ? 'fern' : q < .8 ? 'flowers' : 'rock', x, y, { seed: 1 + (r() * 9 | 0), c: q < .12 ? undefined : q < .55 ? '#6a9a3e' : q < .8 ? undefined : ap.rock }); i++; continue; } add(q < .4 ? 'cactus' : q < .7 ? 'rock' : 'bones', x, y, { seed: 1 + (r() * 9 | 0), c: ap.rock }); i++; continue; }
     { const q = r(); add(q < .45 ? (ap.noPiles ? (ap.pines ? 'cairn' : 'rock') : 'leafpile') : q < .75 ? 'fern' : q < .9 ? 'mush' : 'flowers', x, y, q >= .75 && q < .9 ? { s: .4 + r() * .2, cap: ['#c4542f', '#e08a2a', '#9a6fc0'][(r() * 3) | 0] } : ap.noPiles && q >= .45 && q < .75 ? { c: ap.fernC || (ap.pines ? '#5e7a48' : '#7a7a4a') } : {}); } i++;
   }
   A.solids = [];
-  for (const p of A.props) { const sd = pv(PROPDEF[p.k].solid, p); if (sd && p.id !== 'fakebush' && p.id !== 'fakehedge') sd.forEach(s => A.solids.push({ x: p.x + s[0], y: p.y + s[1], r: s[2] })); }
+  for (const p of A.props) { const sd = pv(PROPDEF[p.k].solid, p); if (sd && p.id !== 'fakebush' && p.id !== 'fakehedge') sd.forEach(s => A.solids.push({ x: p.x + s[0], y: p.y + s[1], r: s[2], low: LOWK.has(p.k) })); }
   if (A.fountain) A.solids.push({ x: A.fountain.x, y: A.fountain.y, r: A.fountain.r + 1 });
   if (A.lighthouse) A.solids.push({ x: A.lighthouse.x, y: A.lighthouse.y, r: 24 });
   if (A.hut) for (let x = A.hut.x0 + 8; x <= A.hut.x1 - 6; x += 12) for (let z = A.hut.z0 + 6; z <= A.hut.z1 - 4; z += 12) A.solids.push({ x, y: z, r: 9 });
@@ -1502,6 +1505,8 @@ const sfx = {
   coin() { tone(1319, .08, 'square', .03); tone(1976, .22, 'triangle', .05, 0, .06); },
   item() { [659, 880, 1109].forEach((f, i) => tone(f, .22, 'triangle', .06, 0, i * .07)); },
   thud() { tone(110, .18, 'sine', .14, .5); },
+  hop() { tone(392, .09, 'triangle', .05, 1.9); },
+  land() { tone(150, .06, 'triangle', .05, .6); },
   whoosh() { tone(240, .28, 'sawtooth', .03, .35); },
   roar() { tone(90, .7, 'sawtooth', .05, 1.8); tone(180, .5, 'triangle', .05, 1.5, .1); },
   clang() { [0, .3, .55].forEach(d => { tone(1480, .25, 'square', .025, .8, d); tone(990, .3, 'triangle', .05, 0, d); }); },
@@ -1681,6 +1686,12 @@ function act() {
   if (S.dlg) return advance();
   if (S.target) S.target.use();
 }
+// A: a little paper hop (~0.36s). Outside free play it acts like B (start, advance dialogue, close the end card).
+const JH = 11, JT = .36, JG = 8 * JH / (JT * JT), JV = 4 * JH / JT;
+function jump() {
+  audioInit(); if (S.mode !== 'play' || S.dlg || S.trans) return act();
+  if (S.jz > 0 || S.jv) return; S.jv = JV; S.jz = .01; sfx.hop();
+}
 function back() {
   if (S.mode === 'end') { S.mode = 'play'; return; }
   if (S.dlg) { const d = S.dlg; S.dlg = null; if (d.onEnd) d.onEnd(); }
@@ -1701,8 +1712,8 @@ function setBanner(text) { S.banner = { text, t: 0 }; }
 // ---------------------------------------------------------------- input: keyboard (also used by on-screen overlays)
 const held = { up: 0, down: 0, left: 0, right: 0 };
 const KEYS = { ArrowUp: 'up', KeyW: 'up', w: 'up', ArrowDown: 'down', KeyS: 'down', s: 'down', ArrowLeft: 'left', KeyA: 'left', a: 'left', ArrowRight: 'right', KeyD: 'right', d: 'right',
-  ' ': 'act', Space: 'act', Spacebar: 'act', Enter: 'act', NumpadEnter: 'act', KeyZ: 'act', z: 'act', KeyE: 'act', e: 'act',
-  Escape: 'back', Esc: 'back', KeyX: 'back', x: 'back', KeyM: 'mute', m: 'mute' };
+  ' ': 'jump', Space: 'jump', Spacebar: 'jump', Enter: 'act', NumpadEnter: 'act', KeyZ: 'act', z: 'act', KeyE: 'act', e: 'act', KeyX: 'act', x: 'act',
+  Escape: 'back', Esc: 'back', KeyM: 'mute', m: 'mute' };
 function keyOf(e) { return KEYS[e.code] || KEYS[e.key] || (e.key && KEYS[e.key.toLowerCase()]); }
 function typing(e) { const t = e.target; return t && t !== document && t !== window && t.closest && t.closest('input,textarea,select,[contenteditable],.mo-panel'); }
 // capture phase on window: sees key events dispatched on window, document or any element
@@ -1710,7 +1721,7 @@ window.addEventListener('keydown', e => {
   if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return; const k = keyOf(e); if (!k) return;
   e.preventDefault();
   if (k in held) { held[k] = 1; audioInit(); if (S.mode === 'title' && !SHOT) start(); }
-  else if (!e.repeat) { if (k === 'act') act(); else if (k === 'back') back(); else if (k === 'mute') { muted = !muted; toast(muted ? 'Sound off (M)' : 'Sound on (M)'); } }
+  else if (!e.repeat) { if (k === 'act') act(); else if (k === 'jump') jump(); else if (k === 'back') back(); else if (k === 'mute') { muted = !muted; toast(muted ? 'Sound off (M)' : 'Sound on (M)'); } }
 }, true);
 window.addEventListener('keyup', e => { const k = keyOf(e); if (k && k in held) held[k] = 0; }, true);
 window.addEventListener('blur', () => { for (const k in held) held[k] = 0; });
@@ -1743,13 +1754,15 @@ cv.addEventListener('pointermove', e => {
 });
 const endStick = e => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; restStick(); };
 cv.addEventListener('pointerup', endStick); cv.addEventListener('pointercancel', endStick);
-btnA.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); btnA.classList.add('down'); act(); });
+btnA.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); btnA.classList.add('down'); jump(); });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => btnA.addEventListener(t, () => btnA.classList.remove('down')));
+const btnB = document.getElementById('btnB');
+if (btnB) { btnB.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); btnB.classList.add('down'); act(); }); ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => btnB.addEventListener(t, () => btnB.classList.remove('down'))); }
 cv.addEventListener('contextmenu', e => e.preventDefault());
 
 // ---------------------------------------------------------------- simulation
 function enterArea(id, x, y) {
-  S.area = id; S.A = AREAS[id]; S.px = x; S.py = y; if (!S.trans) { camSnap = true; easeCam(0); } const c = camTarget(); S.camX = c[0]; S.camY = c[1];
+  S.area = id; S.A = AREAS[id]; S.px = x; S.py = y; S.jz = S.jv = 0; if (!S.trans) { camSnap = true; easeCam(0); } const c = camTarget(); S.camX = c[0]; S.camY = c[1];
   for (const p of S.A.props) p.rustle = 0;
   onEnterArea(S.A);
 }
@@ -1783,13 +1796,14 @@ function update(dt) {
   const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
   const canMove = S.mode === 'play' && !S.dlg && !S.trans;
   S.moving = canMove && ml > .15;
+  const air = (S.jz || 0) > 2, okStep = (x, y) => canStand(A, x, y) || (air && (() => { const tr = (S.jv + Math.sqrt(S.jv * S.jv + 2 * JG * S.jz)) / JG; return canStand(A, x + mx * 74 * tr, y + my * 74 * tr); })());
   if (S.moving) {
     const sp = 74; let nx = S.px + mx * sp * dt, ny = S.py;
-    if (!canStand(A, nx, ny)) nx = S.px;
-    ny = S.py + my * sp * dt; if (!canStand(A, nx, ny)) ny = S.py;
-    for (const s of A.solids) { if ((s.fest && !S.flags.fest) || (s.hideFest && S.flags.fest)) continue; const dx = nx - s.x, dy = ny - s.y, d = Math.hypot(dx, dy), mn = s.r + PR; if (d < mn && d > .001) { nx = s.x + dx / d * mn; ny = s.y + dy / d * mn; } }
+    if (!okStep(nx, ny)) nx = S.px;
+    ny = S.py + my * sp * dt; if (!okStep(nx, ny)) ny = S.py;
+    for (const s of A.solids) { if ((s.fest && !S.flags.fest) || (s.hideFest && S.flags.fest) || (s.low && S.jz > 5)) continue; const dx = nx - s.x, dy = ny - s.y, d = Math.hypot(dx, dy), mn = s.r + PR; if (d < mn && d > .001) { nx = s.x + dx / d * mn; ny = s.y + dy / d * mn; } }
     [nx, ny] = clampBounds(A, nx, ny);
-    if (canStand(A, nx, ny)) { S.px = nx; S.py = ny; }
+    if (okStep(nx, ny)) { S.px = nx; S.py = ny; }
     S.walk += dt;
     if (Math.abs(mx) > .2) S.facing = mx > 0 ? 1 : -1;
     if (my < -.35 && Math.abs(my) > Math.abs(mx) * .7) S.back = true; else if (my > .2 || Math.abs(mx) > .35) S.back = false;
@@ -1801,6 +1815,10 @@ function update(dt) {
       if (hit && !S.trans) { S.trans = { t: 0, dur: .9, to: q.to, sx: q.sx, sy: q.sy, dir: q.e, swapped: false }; sfx.page(); }
     }
   }
+  if (S.jv || S.jz > 0) { S.jv -= JG * dt; S.jz += S.jv * dt;
+    if (S.jz <= 0) { S.jz = 0; S.jv = 0; S.land = 1; sfx.land();
+      for (const s of A.solids) { const dx = S.px - s.x, dy = S.py - s.y, d = Math.hypot(dx, dy), mn = s.r + PR; if (d < mn && d > .001 && canStand(A, s.x + dx / d * mn, s.y + dy / d * mn)) { S.px = s.x + dx / d * mn; S.py = s.y + dy / d * mn; } } } }
+  if (S.land) S.land = Math.max(0, S.land - dt * 6);
   const tf = S.facing, df = tf - S.flip; S.flip += Math.sign(df) * Math.min(Math.abs(df), dt * 9);
   // pickups
   if (S.mode === 'play') for (const it of A.items) if (!S.got.has(it.id) && !(it.pop && it.pop.t < 1) && Math.hypot(S.px - it.x, (S.py - it.y) * 1.2) < 12) collect(it);
@@ -1907,7 +1925,19 @@ function bb(c, o = {}) {
 function setFrame(m, c) { if (!c.tex) c.tex = tex(c); if (m.material.map !== c.tex) { m.material.map = c.tex; m.customDepthMaterial.map = c.tex; if (m.material.emissiveMap) m.material.emissiveMap = c.tex; } }
 const SPRC = new Map();
 function cached(key, f) { let c = SPRC.get(key); if (!c) { c = f(); SPRC.set(key, c); } return c; }
-const heroFrames = {}; for (const d of ['down', 'up', 'side']) for (let f = 0; f < 4; f++) for (const b of [0, 1]) heroFrames[d + f + b] = paintHero(d, f, b);
+// paper cutout: a 2-texel cream border around the silhouette and a 1-texel cardboard edge on the lower right
+function paperize(c) {
+  const B = 2, w = c.width + B * 2 + 1, h = c.height + B * 2 + 1, src = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  const M = new Uint8Array(w * h), D = new Uint8Array(w * h); for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (src[(y * c.width + x) * 4 + 3] > 127) M[(y + B) * w + x + B] = 1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (!M[y * w + x]) continue; for (let dy = -B; dy <= B; dy++) for (let dx = -B; dx <= B; dx++) { if (dx * dx + dy * dy > 5) continue; const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < w && Y < h) D[Y * w + X] = 1; } }
+  const o = document.createElement('canvas'); o.width = w; o.height = h; const g = o.getContext('2d'), id = g.createImageData(w, h), a = id.data;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; let col = null;
+    if (D[i]) col = [252, 245, 226]; else if (x > 0 && y > 0 && D[i - w - 1]) col = [168, 150, 120];
+    if (col) { a[i * 4] = col[0]; a[i * 4 + 1] = col[1]; a[i * 4 + 2] = col[2]; a[i * 4 + 3] = 255; } }
+  g.putImageData(id, 0, 0); g.drawImage(c, B, B); o.ax = c.ax + B; o.ay = c.ay + B; return o;
+}
+const heroFrames = {}; for (const d of ['down', 'up', 'side']) for (let f = 0; f < 4; f++) for (const b of [0, 1]) heroFrames[d + f + b] = paperize(paintHero(d, f, b));
+const npcFrames = k => cached('npcp|' + k, () => critFrames(k).map(paperize));
 let heroRib = null;   // frames with Russet's festival ribbon, painted when earned
 const critFrames = k => cached('crit|' + k, () => [0, 1].flatMap(f => [0, 1].map(b => CRIT[k](f, b))));
 const ACORN = paintAcorn(), GLEAF = paintGoldLeaf(), COIN = paintCoin(), APPLE = paintApple(), GLOWCAP = paintGlowcap(), HONEY = paintHoney(), TIN = paintTin(), PIE = paintPie(), INVITE = paintInvite();
@@ -2097,7 +2127,13 @@ const hero = bb(heroFrames.down00); scene.add(hero);
 const blobMat = new THREE.MeshBasicMaterial({ map: BLOB, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
 const blobGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
 function blob(w, d) { const m = new THREE.Mesh(blobGeo, blobMat); m.scale.set(w, 1, d); m.renderOrder = 1; return m; }
-const heroBlob = blob(22, 10); scene.add(heroBlob);
+const heroBlob = blob(18, 8); scene.add(heroBlob);
+// flat drop shadow: the sprite's own silhouette laid on the ground behind it, like a paper figure in a diorama
+const FSG = new Map(), flatGeo = c => { const k = c.width + 'x' + c.height + '@' + c.ax + ',' + c.ay; let g = FSG.get(k); if (!g) { g = bbGeo(c).clone(); g.rotateX(-Math.PI / 2); g.scale(1, 1, .42); g.translate(1.5, 0, 0); FSG.set(k, g); } return g; };
+function flatShadow(parent) { const m = new THREE.Mesh(blobGeo, new THREE.MeshBasicMaterial({ color: 0x1a1020, transparent: true, opacity: .26, alphaTest: .5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 })); m.renderOrder = 1; parent.add(m); return m; }
+function placeFlat(fs, c, x, y, z, sx, a) { fs.geometry = flatGeo(c); fs.material.map = c.tex || (c.tex = tex(c)); fs.position.set(x, y, z); fs.scale.set(sx, 1, 1); fs.material.opacity = a; }
+const heroFS = flatShadow(scene);
+const heroEdge = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), new THREE.MeshLambertMaterial({ color: '#e9dcbc', side: THREE.DoubleSide })); heroEdge.visible = false; scene.add(heroEdge);
 // FX points: fireflies, motes in the beams, secret sparkles, pickup bursts (one draw call)
 const FXN = 640, fxPos = new Float32Array(FXN * 3), fxCol = new Float32Array(FXN * 4), fxSize = new Float32Array(FXN);
 const fxGeo = new THREE.BufferGeometry(); fxGeo.setAttribute('position', new THREE.BufferAttribute(fxPos, 3)); fxGeo.setAttribute('aCol', new THREE.BufferAttribute(fxCol, 4)); fxGeo.setAttribute('aSize', new THREE.BufferAttribute(fxSize, 1));
@@ -2422,7 +2458,7 @@ function buildExtras2(A, G, out, r) {
   const B = townBuilder(), CH = A.cliffH || 34, ap = A.ap;
   if (A.chasm) { const { z0, z1 } = A.chasm, rk = 'k|' + (ap.rock || '#7a7a84') + '|' + (ap.rockSpots || []).join(',');
     // the far wall of the gorge (faces the camera), ledges, a thread of river far below and drifting cloud inside
-    for (let x = -260; x < A.w + 260;) { const w = 16 + r() * 22; B.box(rk, x, x + w, -190, -2 - r() * 3, z0 - 40, z0 + 1 + r() * 3, { noTop: true }); if (r() < .4) { const ya = -40 - r() * 70; B.box(rk, x + 2, x + w - 2, ya, ya + 6 + r() * 8, z0, z0 + 6 + r() * 6); } x += w; }
+    for (let x = -260; x < A.w + 260;) { const w = 16 + r() * 22; B.box(rk, x, x + w, -190, -2 - r() * 3, z0 - 40, z0 + 1 + r() * 3, { noTop: true }); if (r() < .4) { r(); r(); r(); } x += w; }
     for (let x = -260; x < A.w + 260;) { const w = 18 + r() * 20; B.box(rk, x, x + w, -190, -3, z1 - 2 - r() * 3, z1 + 30, { noFront: true, noTop: true }); x += w; }
     { const c = document.createElement('canvas'); c.width = 2; c.height = 64; const gx = c.getContext('2d'), lg = gx.createLinearGradient(0, 0, 0, 64); lg.addColorStop(0, 'rgba(14,18,30,0)'); lg.addColorStop(.06, 'rgba(14,18,30,.35)'); lg.addColorStop(.22, 'rgba(14,18,30,.78)'); lg.addColorStop(.45, 'rgba(10,12,22,.96)'); lg.addColorStop(1, 'rgba(10,12,22,1)'); gx.fillStyle = lg; gx.fillRect(0, 0, 2, 64);
       const dm = new THREE.MeshBasicMaterial({ map: tex(c, false, true), transparent: true, depthWrite: false }); MATS.push(dm); const dp = new THREE.Mesh(new THREE.PlaneGeometry(A.w + 900, 190), dm); dp.position.set(A.w / 2, -97, z0 + 4.5); dp.renderOrder = 2; G.add(dp); }
@@ -2635,7 +2671,7 @@ function build3D(A) {
   // items
   for (const it of A.items) itemMesh(out, it);
   // NPCs
-  out.occ = []; for (const nid of A.npcs) { const n = NPCS[nid], fr = critFrames(n.kind), m = bb(fr[0]); m.userData.p = n; out.occ.push(m); const b = blob(n.kind === 'owl' ? 18 : n.kind === 'tortoise' ? 30 : 22, 9); G.add(m, b); out.npcs[nid] = { m, b, fr }; }
+  out.occ = []; for (const nid of A.npcs) { const n = NPCS[nid], fr = npcFrames(n.kind), m = bb(fr[0]); m.userData.p = n; out.occ.push(m); m.userData.fs = flatShadow(G); const b = blob(n.kind === 'owl' ? 18 : n.kind === 'tortoise' ? 30 : 22, 9); G.add(m, b); out.npcs[nid] = { m, b, fr }; }
   // ambient critters: hens that wander (and scatter when you run at them), cats that doze
   for (const [k, x, y] of A.critters || []) { const fr = critFrames(k), m = bb(fr[0], k === 'wisp' ? { cast: false, glow: '#ffffff', gi: .9 } : { cast: k !== 'gull' && k !== 'bat' && k !== 'eagle' }), b = blob(k === 'cat' ? 18 : 12, 6); G.add(m, b); out.crit.push({ k, x, y, hx: x, hy: y, tx: x, ty: y, wait: Math.random() * 3, m, b, fr, flip: 1, mv: 0, ph: Math.random() * 9 }); }
   // the market fountain: stone basin, a pillar with a bowl, water in both, a carved acorn on top
@@ -2712,6 +2748,7 @@ function applyLight(A) {
   if (curW) for (const m of curW.mist) m.m.material.color.set(P.mist);
 }
 function onEnterArea(A) {
+  { const LC = A.ap.petals || AUT, col = new THREE.Color(); for (let i = 0; i < LEAFN; i++) leafMesh.setColorAt(i, col.set(LC[i % LC.length])); leafMesh.instanceColor.needsUpdate = true; }
   if (!R) return;
   if (!W3[A.id]) W3[A.id] = build3D(A);
   for (const k in W3) W3[k].G.visible = k === A.id;
@@ -2749,18 +2786,27 @@ function update3D(dt) {
   placeCam(S.camX, S.camY); fadeOccluders(W, dt);
   // hero
   const f = S.moving ? Math.floor(S.walk * 9) % 4 : 0, blink = (t % 3.9) < .13 ? 1 : 0;
-  if (S.flags.ribbon && !heroRib) { heroRib = {}; for (const d of ['down', 'up', 'side']) for (let q = 0; q < 4; q++) for (const b of [0, 1]) heroRib[d + q + b] = paintHero(d, q, b, true); }
-  setFrame(hero, (S.flags.ribbon ? heroRib : heroFrames)[S.dir + f + blink]);
-  const hy = standY(A, S.px, S.py);
-  hero.position.set(S.px, hy - .4, S.py); hero.scale.x = S.dir === 'side' && S.facing < 0 ? -1 : 1;
-  heroBlob.position.set(S.px, hy + .15, S.py + 1); heroBlob.visible = S.mode !== 'title' || true;
+  if (S.flags.ribbon && !heroRib) { heroRib = {}; for (const d of ['down', 'up', 'side']) for (let q = 0; q < 4; q++) for (const b of [0, 1]) heroRib[d + q + b] = paperize(paintHero(d, q, b, true)); }
+  // paper turn: the card squashes to a sliver, swaps sides at the midpoint, then opens again
+  const wantF = S.dir === 'side' ? S.facing : 1; if (S.vdir == null) { S.vdir = S.dir; S.vface = wantF; S.turn = 0; }
+  if (!S.turn && (S.dir !== S.vdir || wantF !== S.vface)) S.turn = 1;
+  if (S.turn) { const pt = S.turn; S.turn = Math.max(0, S.turn - dt * 7); if (pt > .5 && S.turn <= .5) { S.vdir = S.dir; S.vface = wantF; } }
+  const frc = (S.flags.ribbon ? heroRib : heroFrames)[S.vdir + f + blink]; setFrame(hero, frc);
+  const hy = standY(A, S.px, S.py), jz = S.jz || 0, open = Math.max(.07, Math.abs(Math.cos(Math.PI * (1 - (S.turn || 0)))));
+  const st = S.jv > 0 ? .12 * Math.min(1, S.jv / JV) : 0, sq = (S.land || 0) * .2;
+  hero.position.set(S.px, hy - .4 + jz, S.py); hero.scale.set((S.vdir === 'side' && S.vface < 0 ? -1 : 1) * open * (1 - st * .6 + sq * .9), 1 + st - sq, 1);
+  hero.rotation.z = S.moving && !jz ? Math.sin(S.walk * 9 * Math.PI / 2) * .05 : hero.rotation.z * Math.max(0, 1 - dt * 10);
+  heroEdge.visible = open < .85; if (heroEdge.visible) { heroEdge.position.set(S.px, hy - .4 + jz, S.py + .4); heroEdge.scale.set(2.4 * (1 - open), frc.height * U * .86, 1); }
+  const gs = 1 - Math.min(.6, jz / 26); heroBlob.position.set(S.px, hy + .15, S.py + 1); heroBlob.scale.set(18 * gs, 1, 8 * gs); heroBlob.visible = true;
+  placeFlat(heroFS, frc, S.px, hy + .2, S.py - .5, hero.scale.x * gs, .26 * gs);
   const hl = beamLight(S.px, S.py) * curP.rays; hero.material.emissive.setRGB(.14 * hl, .1 * hl, .05 * hl);
   // NPCs
   for (const nid in W.npcs) {
-    const n = NPCS[nid], o = W.npcs[nid], on = npcOn(n); o.m.visible = o.b.visible = on; if (!on) continue; const fr = o.fr, idle = Math.floor(t * 1.7 + n.x) % 2, bl = ((t + n.x * .37) % 4.3) < .14 ? 1 : 0;
+    const n = NPCS[nid], o = W.npcs[nid], on = npcOn(n); o.m.visible = o.b.visible = on; if (o.m.userData.fs) o.m.userData.fs.visible = on; if (!on) continue; const fr = o.fr, idle = Math.floor(t * 1.7 + n.x) % 2, bl = ((t + n.x * .37) % 4.3) < .14 ? 1 : 0;
     setFrame(o.m, fr[idle * 2 + bl]);
     const y = n.kind === 'frog' && !n.land ? WATER_Y + .6 : n.kind === 'owl' && !n.land ? 17.5 : standY(A, n.x, n.y);
-    o.m.position.set(n.x, y - .3, n.y + (n.kind === 'owl' && !n.land ? 1.5 : 0)); o.m.scale.x = n.front ? 1 : (n.flip == null || n.flip >= 0 ? 1 : -1);
+    o.m.position.set(n.x, y - .3, n.y + (n.kind === 'owl' && !n.land ? 1.5 : 0)); o.m.scale.x = n.front ? 1 : (n.flip == null ? 1 : Math.sign(n.flip || 1) * Math.max(.07, Math.abs(n.flip)));
+    if (o.m.userData.fs) { const air = (n.kind === 'frog' && !n.land) || (n.kind === 'owl' && !n.land); o.m.userData.fs.visible = !air; if (!air) placeFlat(o.m.userData.fs, fr[idle * 2 + bl], n.x, y + .2, n.y - .5, o.m.scale.x, .24); }
     o.b.position.set(n.x, y + .2, n.y + 1); o.b.visible = n.kind !== 'owl' || !!n.land;
     const k = beamLight(n.x, n.y) * curP.rays; o.m.material.emissive.setRGB(.14 * k, .1 * k, .05 * k);
   }
@@ -2780,7 +2826,7 @@ function update3D(dt) {
   // beams breathe; dust drifts inside them
   fxN = 0; const lowFx = Q.tier === 0;
   for (const B of W.beams) {
-    const a = curP.rays * (A.kind === 'town' ? .55 : .8) * (.13 + .03 * Math.sin(t * .45 + B.b.ph) + .015 * Math.sin(t * 1.7 + B.b.ph * 2)); B.mat.opacity = a; B.pm.opacity = a * .9;
+    const a = curP.rays * (A.kind === 'town' ? .45 : .58) * (.13 + .03 * Math.sin(t * .45 + B.b.ph) + .015 * Math.sin(t * 1.7 + B.b.ph * 2)); B.mat.opacity = a; B.pm.opacity = a * .9;
     if (!lowFx || true) for (const d of B.dust) { const u = (d.u + t * d.sp) % 1; if (lowFx && d.ph > 3) continue;
       const x = lerp(B.Tp.x, B.Bp.x, u) + d.v * B.w * .8 + Math.sin(t * .7 + d.ph) * 2, y = lerp(B.Tp.y, B.Bp.y, u), z = lerp(B.Tp.z, B.Bp.z, u) + d.s * 16;
       fxAdd(x, y, z, '#fff0c8', Math.sin(u * Math.PI) * (.45 + .45 * Math.sin(t * 2.2 + d.ph)), 1.3); }
@@ -2987,7 +3033,7 @@ function drawPrompt(o) {
   const [x, y] = toScreen(o.x, top + 6, o.y), b = Math.sin(S.t * 5) > 0 ? 1 : 0, X = Math.round(x), Y = Math.round(y) - b;
   pbox(X - 6, Y - 14, 13, 13, '#fff4dc'); fr(X - 1, Y - 1, 3, 2, INK); fr(X, Y + 1, 1, 1, INK);
   txt(n ? '!' : '?', X + .5, Y - 7.3, 10, '#b8482a', 'center', null, true);
-  const key = ROOT.classList.contains('touch-ui') ? 'A' : 'Space'; const kw = tw(key, 7, true) + 6;
+  const key = ROOT.classList.contains('touch-ui') || ROOT.classList.contains('tw-shell') ? 'B' : 'X'; const kw = tw(key, 7, true) + 6;
   pbox(X - kw / 2, Y - 25, kw, 10, '#3a2a3a', INK, '#5a4a5a', '#24161c'); txt(key, X, Y - 20, 7, CREAM, 'center', null, true);
 }
 const LOGO_COLS = ['#e0582f', '#f0943a', '#f6c445', '#d04030', '#9ab040', '#b070c0'];
@@ -3014,7 +3060,7 @@ function drawTitle() {
   const touch = ROOT.classList.contains('touch-ui'), msg = SHOT ? 'Tap to play' : touch ? 'Tap to start' : 'Press Space to start';
   if (SHOT || Math.sin(S.t * 4) > -.3) { const mw = tw(msg, 11, true) + 24, my = SHOT ? VH - 36 : touch ? cy + s * 1.9 : VH - 40, mx = SHOT ? VW * .76 : VW / 2;
     pbox(Math.round(mx - mw / 2), Math.round(my), Math.round(mw), 21, '#b8482a', INK, '#e87850', '#7a2a1a'); txt(msg, mx, my + 10.5, 11, CREAM, 'center', '#5a1a10', true); }
-  if (!SHOT && !touch) txt('Arrows / WASD walk  \u00b7  Space talk  \u00b7  M sound', VW / 2, VH - 10, 7, CREAM, 'center', 'rgba(20,8,20,.8)');
+  if (!SHOT && !touch) txt('Arrows walk  \u00b7  Space jump  \u00b7  X talk  \u00b7  M sound', VW / 2, VH - 10, 7, CREAM, 'center', 'rgba(20,8,20,.8)');
 }
 function drawEnd() {
   const fest = S.endKind === 'festival', w = Math.min(VW - 20, 262), h = fest ? 150 : 134, x = Math.round((VW - w) / 2), y = Math.round((VH - h) / 2 - 8);
@@ -3034,7 +3080,7 @@ function drawEnd() {
   }
   const iy = y + (fest ? 104 : 92);
   for (let i = 0; i < 5; i++) icon(fest && i % 2 ? APPLE : ACORN, VW / 2 - 34 + i * 14, iy + (Math.sin(S.t * 5 + i) > 0 ? -2 : 0), 1, Math.cos(S.t * 2 + i) < 0 ? -1 : 1);
-  if (Math.sin(S.t * 4) > -.4) txt(ROOT.classList.contains('touch-ui') ? 'Tap to keep exploring' : 'Space to keep exploring', VW / 2, y + h - 12, 8, '#b8482a', 'center', null, true);
+  if (Math.sin(S.t * 4) > -.4) txt(ROOT.classList.contains('touch-ui') ? 'Tap to keep exploring' : 'X to keep exploring', VW / 2, y + h - 12, 8, '#b8482a', 'center', null, true);
 }
 function drawTrans() {
   const T = S.trans, p = T.t / T.dur, B = 12, cols = Math.ceil(VW / B), rows = Math.ceil(VH / B);
