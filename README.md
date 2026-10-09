@@ -18,7 +18,7 @@ games/                  everything here is served statically from /opt/games
     index.html          the whole game in one file; loads hens/manifest.js and ../shared/auth.js
     previ.png           1200×630 card image, rendered from the game (?shot)
     hens/               THE ONLY bird art folder (swappable): 6 hens.farm Hens + 8 Chikn PNGs, manifest.js, SOURCES.md
-  thimblewood/          Thimblewood: explore a little autumn papercraft forest with god rays, mist and fireflies (all art drawn in code)
+  thimblewood/          Thimblewood (HD-2D): pixel-art sprites in a 3D autumn diorama (three.js r160 vendored), tilt-shift, bloom, god rays; all art drawn in code
     index.html          page, X card meta, on-screen touch controls; loads game.js and ../shared/auth.js
     game.js             the whole game: procedural paper-cutout renderer, 5 areas, NPCs, collectibles
     previ.png           1200×630 card image, rendered from the game (?shot)
@@ -54,7 +54,7 @@ The docs came from Aeterna, so where they say `web/<game>/`, read
 |---|---|---|---|
 | Lunch Rush | `/lunch-rush/` | tower-defence lunch line, 3 misses and out | seconds survived (higher is better) |
 | Coop Sweep | `/coop-sweep/` | minesweeper, 8×8 with 10 hidden hens. Tap digs; long-press, right-click or the FLAG toggle flags; arrows/Space/F/R on keyboard. First dig is always safe | seconds to clear, on win and loss (lower is better, only wins count as best) |
-| Thimblewood | `/thimblewood/` | top-down exploration: 5 connected paper diorama areas, 4 NPCs, 12 acorns to return to Bramble, 3 secret golden leaves. Arrows/WASD + Space/Enter/Z, X/Esc closes; touch stick + A button | seconds to find all 12 acorns (lower is better), on finish only |
+| Thimblewood | `/thimblewood/` | HD-2D exploration (pixel sprites in a WebGL diorama): 5 connected areas, 4 NPCs, 12 acorns to return to Bramble, 3 secret golden leaves. Arrows/WASD + Space/Enter/Z, X/Esc closes; touch stick + A button | seconds to find all 12 acorns (lower is better), on finish only |
 
 Coop Sweep's birds come from two collections in one pool: 6 Hens (hens.farm,
 Robinhood Chain) and 8 Chikn PFPs (chikn.farm, Avalanche). Each board hides 10

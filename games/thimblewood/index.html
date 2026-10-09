@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Thimblewood</title>
-<meta name="description" content="Wander a little paper forest in autumn: hop the stepping stones, poke the springy mushrooms and find Bramble's twelve lost acorns.">
+<meta name="description" content="An HD-2D autumn forest: pixel-art critters in a little 3D diorama with shafts of light, mist and fireflies. Hop the stepping stones, poke the springy mushrooms and find Bramble's twelve lost acorns.">
 <link rel="icon" href="data:,">
 
 <!-- X (Twitter) card: summary_large_image (X no longer plays player cards inline). The post shows the
@@ -13,25 +13,31 @@
 <meta name="twitter:site" content="@sevrin420">
 <meta name="twitter:creator" content="@sevrin420">
 <meta name="twitter:title" content="Thimblewood">
-<meta name="twitter:description" content="Explore a little autumn paper forest and find Bramble's twelve lost acorns. Tap to play.">
+<meta name="twitter:description" content="Explore a little HD-2D autumn forest and find Bramble's twelve lost acorns. Tap to play.">
 <meta name="twitter:url" content="https://membersonly.cc/thimblewood/">
 <meta name="twitter:image" content="https://membersonly.cc/thimblewood/previ.png">
 <meta name="twitter:image:width" content="1200">
 <meta name="twitter:image:height" content="630">
-<meta name="twitter:image:alt" content="Thimblewood: a chunky paper-cutout hero and a hedgehog in an autumn papercraft forest clearing, amber and crimson paper trees, shafts of golden light pouring through the canopy">
+<meta name="twitter:image:alt" content="Thimblewood: a pixel-art hero and a hedgehog in a 3D autumn forest diorama with amber and crimson pixel trees, golden god rays, mist, fireflies and tilt-shift blur">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Thimblewood">
-<meta property="og:description" content="Explore a little autumn paper forest and find Bramble's twelve lost acorns.">
+<meta property="og:description" content="Explore a little HD-2D autumn forest and find Bramble's twelve lost acorns.">
 <meta property="og:url" content="https://membersonly.cc/thimblewood/">
 <meta property="og:image" content="https://membersonly.cc/thimblewood/previ.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #2b3f33; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #2a1a24; }
   body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-  canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+  canvas { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+  /* the 3D view renders at a low internal resolution and is upscaled with hard pixel edges */
+  #gl { image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; z-index: 0; }
+  #c { z-index: 1; }
+  #nogl { position: fixed; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
+    background: #2a1a24; color: #f2dfb4; font: 16px/1.5 "Lucida Console", monospace; }
+  #nogl b { color: #f0943a; font-size: 20px; }
 
   /* On-screen touch controls. Shown on touch devices (html.touch-ui).
      To hide them (e.g. when a shared handheld overlay supplies the buttons) add
@@ -45,10 +51,10 @@
     box-shadow: 0 6px 0 #b39770, 0 10px 18px rgba(0,0,0,.28); opacity: .78; transition: opacity .2s; }
   #stick.on { opacity: .95; }
   #knob { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%;
-    background: #2fa39a; border: 3px solid #fffaf0; box-shadow: 0 5px 0 #1d6e67, 0 7px 10px rgba(0,0,0,.25); }
+    background: #2c7c74; border: 3px solid #fffaf0; box-shadow: 0 5px 0 #1d5650, 0 7px 10px rgba(0,0,0,.25); }
   #btnA { position: absolute; right: calc(22px + env(safe-area-inset-right)); bottom: calc(64px + env(safe-area-inset-bottom));
-    width: 78px; height: 78px; border-radius: 50%; border: 3px solid #fffaf0; background: #e8603f; color: #fffaf0;
-    font: 900 30px "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif; pointer-events: auto; touch-action: none;
+    width: 78px; height: 78px; border-radius: 50%; border: 3px solid #fffaf0; background: #b8482a; color: #fffaf0;
+    font: 700 30px "Pixelify Sans","Lucida Console",monospace; pointer-events: auto; touch-action: none;
     box-shadow: 0 7px 0 #a53b25, 0 11px 18px rgba(0,0,0,.3); padding: 0; }
   #btnA.down { transform: translateY(5px); box-shadow: 0 2px 0 #a53b25, 0 4px 8px rgba(0,0,0,.3); }
 </style>
@@ -57,8 +63,10 @@
 <script src="../shared/auth.js" async data-game="thimblewood" data-corner="tr" data-score="mmss"></script>
 </head>
 <body>
+<canvas id="gl" aria-hidden="true"></canvas>
 <canvas id="c" tabindex="0" aria-label="Thimblewood. Arrow keys or WASD walk, Space, Enter or Z talks and reads, X or Escape closes."></canvas>
 <div id="touch" aria-hidden="true"><div id="stick"><div id="knob"></div></div><button id="btnA" type="button" tabindex="-1">A</button></div>
-<script src="game.js"></script>
+<link rel="preload" href="vendor/PixelifySans.woff2" as="font" type="font/woff2" crossorigin>
+<script type="module" src="game.js"></script>
 </body>
 </html>
