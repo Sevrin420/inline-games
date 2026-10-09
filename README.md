@@ -18,7 +18,7 @@ games/                  everything here is served statically from /opt/games
     index.html          the whole game in one file; loads hens/manifest.js and ../shared/auth.js
     previ.png           1200×630 card image, rendered from the game (?shot)
     hens/               THE ONLY bird art folder (swappable): 6 hens.farm Hens + 8 Chikn PNGs, manifest.js, SOURCES.md
-  thimblewood/          Thimblewood: explore a little papercraft forest (all art drawn in code)
+  thimblewood/          Thimblewood: explore a little autumn papercraft forest with god rays, mist and fireflies (all art drawn in code)
     index.html          page, X card meta, on-screen touch controls; loads game.js and ../shared/auth.js
     game.js             the whole game: procedural paper-cutout renderer, 5 areas, NPCs, collectibles
     previ.png           1200×630 card image, rendered from the game (?shot)
