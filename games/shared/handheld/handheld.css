@@ -1,132 +1,265 @@
-/* MEMBERSONLY POCKET: shared handheld shell. Original design; see handheld.js and docs/Handheld_Overlay.md. */
+/* MEMBERSONLY POCKET v2: shared handheld shell. Original design; see handheld.js and docs/Handheld_Overlay.md. */
 html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: none; }
 
+/* ================================================================ themes
+   Every colour the shell uses is a custom property, so a theme is just a block of variables. */
 .hh-root {
-  /* Classic (default): warm putty plastic, slate bezel, berry buttons */
-  --body1: #e4e1da; --body2: #cfcbc2; --body3: #aaa59a;
+  /* Nova: deep midnight-navy two-tone body, neon coral + teal accents */
+  --b1: #2a3768; --b2: #1b2550; --b3: #121a3d; --b4: #0b1130;   /* top -> bottom; b2/b3 is the two-tone break */
+  --split: 54%;
+  --spec: rgba(140, 170, 255, .30);  --edge: rgba(170, 195, 255, .35); --rim: rgba(0, 0, 0, .55);
   --internals: none;
-  --bezel1: #5a5d6e; --bezel2: #41434f; --bezel-text: #c3c6d3;
-  --rule1: #c2426b; --rule2: #4b5fc4;
-  --btn1: #cf3f6c; --btn2: #8d1d44;
-  --pad1: #3a3b42; --pad2: #1f2025;
-  --pill1: #8f8c86; --pill2: #66635e;
-  --ink: #2c3a8a; --accent: #c2426b;
-  --bg1: #2e3140; --bg2: #11121a;
-  --well: rgba(0, 0, 0, .10);
-  --slot: rgba(40, 30, 20, .55);
+  --bez1: #0a0e1f; --bez2: #05070f; --btxt: #7f8fc4;
+  --acc1: #ff6b5a; --acc2: #2fe6c8;
+  --a1: #ff8a6e; --a2: #e0412f; --aink: #fff2ec;
+  --bb1: #4af0d4; --bb2: #0fa68c; --bink: #032a24;
+  --pad1: #2e3866; --pad2: #141b3a; --padmark: #8fa0d8;
+  --pill1: #3a467c; --pill2: #222b55;
+  --ink: #a9b8ea; --ink2: #ff8a6e;
+  --embhi: rgba(160, 185, 255, .28); --emblo: rgba(0, 0, 0, .6);
+  --well: rgba(0, 0, 0, .28); --ring: rgba(47, 230, 200, .35);
+  --slot: #050815; --screw: #9aa6cf;
+  --led: #ff5a48; --ledglow: rgba(255, 90, 72, .75); --batt: #39f0a0; --battglow: rgba(57, 240, 160, .6);
+  --bg1: #1d2552; --bg2: #05060f; --glow: rgba(255, 107, 90, .16); --glow2: rgba(47, 230, 200, .14);
+  --fill1: #0d1330; --fill2: #04060e;   /* letterbox fill around a non-square game */
+  --hh-font: "Avenir Next", "Futura", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+
   position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 10; overflow: hidden;
-  background: radial-gradient(120% 90% at 50% 30%, var(--bg1), var(--bg2));
+  background:
+    radial-gradient(60% 45% at 18% 12%, var(--glow), transparent 70%),
+    radial-gradient(55% 45% at 85% 90%, var(--glow2), transparent 70%),
+    radial-gradient(120% 90% at 50% 35%, var(--bg1), var(--bg2));
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
-  --hh-font: "Trebuchet MS", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   touch-action: none; font-family: var(--hh-font);
 }
-.hh-root.hh-theme-grape {
-  --body1: rgba(170, 120, 235, .80); --body2: rgba(112, 60, 178, .78); --body3: rgba(66, 28, 120, .86);
+.hh-root.hh-theme-sunset {
+  --b1: #ffb347; --b2: #ff7a3d; --b3: #e8407a; --b4: #8a2a8c; --split: 50%;
+  --spec: rgba(255, 240, 200, .55); --edge: rgba(255, 236, 200, .6); --rim: rgba(70, 10, 50, .55);
+  --bez1: #2a0f2e; --bez2: #160716; --btxt: #ffb58a;
+  --acc1: #ffd23f; --acc2: #ff4fa0;
+  --a1: #ffe26a; --a2: #f0a000; --aink: #5a2a00;
+  --bb1: #7a3cc8; --bb2: #3f1676; --bink: #f3e3ff;
+  --pad1: #4a1a4e; --pad2: #26092a; --padmark: #ffb58a;
+  --pill1: #6b2a6e; --pill2: #3d1240;
+  --ink: #fff1e0; --ink2: #ffe26a; --embhi: rgba(255, 245, 220, .55); --emblo: rgba(110, 20, 60, .55);
+  --well: rgba(80, 10, 50, .22); --ring: rgba(255, 226, 106, .45); --slot: #3a0d33; --screw: #ffd9b0;
+  --led: #ffe26a; --ledglow: rgba(255, 226, 106, .8); --batt: #ff4fa0; --battglow: rgba(255, 79, 160, .7);
+  --bg1: #3b1240; --bg2: #0c0310; --glow: rgba(255, 140, 60, .25); --glow2: rgba(255, 60, 150, .2);
+  --fill1: #2a0f2e; --fill2: #0c030d;
+}
+.hh-root.hh-theme-matcha {
+  --b1: #d6e6bf; --b2: #bdd5a0; --b3: #a3c287; --b4: #86a96c; --split: 58%;
+  --spec: rgba(255, 255, 240, .6); --edge: rgba(255, 255, 240, .75); --rim: rgba(40, 60, 30, .45);
+  --bez1: #22331f; --bez2: #131e12; --btxt: #b9d29a;
+  --acc1: #f2b5a0; --acc2: #fff6dc;
+  --a1: #fff4dc; --a2: #e8d3a8; --aink: #4c6a3a;
+  --bb1: #f3b9a6; --bb2: #d98a74; --bink: #5a2a1e;
+  --pad1: #3f5a39; --pad2: #233621; --padmark: #d6e6bf;
+  --pill1: #6f8f5f; --pill2: #4c6a3f;
+  --ink: #2e4a2a; --ink2: #b8614a; --embhi: rgba(255, 255, 245, .7); --emblo: rgba(40, 70, 30, .35);
+  --well: rgba(50, 80, 30, .14); --ring: rgba(255, 246, 220, .7); --slot: #3b5532; --screw: #f3f7e6;
+  --led: #ff8a6e; --ledglow: rgba(255, 138, 110, .7); --batt: #b6ff5a; --battglow: rgba(182, 255, 90, .6);
+  --bg1: #33452c; --bg2: #0f160d; --glow: rgba(214, 230, 191, .14); --glow2: rgba(242, 181, 160, .14);
+  --fill1: #1b2817; --fill2: #0a1008;
+}
+.hh-root.hh-theme-smoke {
+  --b1: rgba(70, 76, 96, .62); --b2: rgba(44, 48, 64, .58); --b3: rgba(34, 37, 50, .62); --b4: rgba(20, 22, 30, .72); --split: 50%;
+  --spec: rgba(200, 225, 255, .35); --edge: rgba(160, 220, 255, .55); --rim: rgba(0, 0, 0, .6);
   --internals: var(--pcb);
-  --bezel1: #3a2c4c; --bezel2: #241a31; --bezel-text: #d6c6ee;
-  --rule1: #ff7ab6; --rule2: #7ad7ff;
-  --btn1: #4a3166; --btn2: #24163a; --pad1: #463160; --pad2: #22163a; --pill1: #6c5a86; --pill2: #3c2f52;
-  --ink: #f2e9ff; --accent: #ffd36b; --bg1: #2b1f3d; --bg2: #0d0a14; --well: rgba(20, 0, 40, .22); --slot: rgba(20, 5, 40, .7);
+  --bez1: rgba(10, 12, 18, .92); --bez2: rgba(4, 5, 8, .95); --btxt: #8fd8ff;
+  --acc1: #5ad8ff; --acc2: #c58bff;
+  --a1: rgba(120, 220, 255, .75); --a2: rgba(30, 120, 190, .8); --aink: #e8f8ff;
+  --bb1: rgba(200, 150, 255, .75); --bb2: rgba(110, 50, 190, .8); --bink: #f6eeff;
+  --pad1: rgba(60, 66, 86, .85); --pad2: rgba(18, 20, 28, .9); --padmark: #8fd8ff;
+  --pill1: rgba(90, 96, 120, .8); --pill2: rgba(40, 44, 60, .85);
+  --ink: #d6ecff; --ink2: #5ad8ff; --embhi: rgba(160, 220, 255, .35); --emblo: rgba(0, 0, 0, .7);
+  --well: rgba(0, 0, 0, .3); --ring: rgba(90, 216, 255, .6); --slot: rgba(0, 0, 0, .75); --screw: #c9d3e6;
+  --led: #5ad8ff; --ledglow: rgba(90, 216, 255, .9); --batt: #c58bff; --battglow: rgba(197, 139, 255, .8);
+  --bg1: #1a2030; --bg2: #030407; --glow: rgba(90, 216, 255, .18); --glow2: rgba(197, 139, 255, .16);
+  --fill1: #0c0f18; --fill2: #020305;
 }
-.hh-root.hh-theme-clear {
-  --body1: rgba(235, 244, 255, .46); --body2: rgba(196, 214, 236, .34); --body3: rgba(150, 170, 200, .5);
-  --internals: var(--pcb);
-  --bezel1: #4b5263; --bezel2: #2e3440; --bezel-text: #d0d8e8;
-  --rule1: #6cf0c2; --rule2: #ff8ad0;
-  --btn1: rgba(255, 255, 255, .55); --btn2: rgba(170, 190, 220, .55); --pad1: rgba(70, 80, 100, .8); --pad2: rgba(30, 36, 48, .85);
-  --pill1: rgba(200, 210, 230, .7); --pill2: rgba(120, 130, 150, .7);
-  --ink: #f6fbff; --accent: #6cf0c2; --bg1: #23303d; --bg2: #090d12; --well: rgba(0, 10, 30, .2); --slot: rgba(0, 10, 25, .6);
+.hh-root.hh-theme-gold {
+  --b1: #fbefc4; --b2: #e6c873; --b3: #c49a3c; --b4: #7f5d1c; --split: 46%;
+  --spec: rgba(255, 252, 230, .85); --edge: rgba(255, 248, 210, .9); --rim: rgba(60, 40, 5, .6);
+  --bez1: #141210; --bez2: #050504; --btxt: #e6c873;
+  --acc1: #e6c873; --acc2: #fff4cc;
+  --a1: #2b2620; --a2: #0b0a08; --aink: #e6c873;
+  --bb1: #2b2620; --bb2: #0b0a08; --bink: #e6c873;
+  --pad1: #2e2a24; --pad2: #0e0d0b; --padmark: #e6c873;
+  --pill1: #3a342b; --pill2: #15130f;
+  --ink: #4a3608; --ink2: #241a02; --embhi: rgba(255, 252, 230, .85); --emblo: rgba(90, 60, 5, .55);
+  --well: rgba(80, 55, 5, .2); --ring: rgba(255, 248, 210, .8); --slot: #2a1e05; --screw: #fff4cc;
+  --led: #ffd76a; --ledglow: rgba(255, 215, 106, .85); --batt: #fff4cc; --battglow: rgba(255, 244, 204, .7);
+  --bg1: #2a2214; --bg2: #050403; --glow: rgba(230, 200, 115, .2); --glow2: rgba(255, 244, 204, .1);
+  --fill1: #12100c; --fill2: #030302;
 }
-.hh-root.hh-theme-yolk {
-  --body1: #ffe27a; --body2: #f6c832; --body3: #d79e12;
-  --bezel1: #3b2a26; --bezel2: #261a17; --bezel-text: #ffe9b0;
-  --rule1: #e02810; --rule2: #58c848;
-  --btn1: #e8442a; --btn2: #a51f0d; --pad1: #4a3428; --pad2: #2a1c15; --pill1: #b08a3c; --pill2: #7d5f22;
-  --ink: #3b2a26; --accent: #e02810; --bg1: #6a8fbf; --bg2: #1d2a40; --well: rgba(120, 60, 0, .14); --slot: rgba(90, 50, 0, .55);
+.hh-root.hh-theme-vapor {
+  --b1: #ffa6dc; --b2: #d79cff; --b3: #9b8cff; --b4: #5ee7ff; --split: 50%;
+  --spec: rgba(255, 255, 255, .6); --edge: rgba(255, 255, 255, .7); --rim: rgba(40, 10, 80, .5);
+  --internals: var(--grid);
+  --bez1: #24124a; --bez2: #120828; --btxt: #ff9ad5;
+  --acc1: #ff71ce; --acc2: #01cdfe;
+  --a1: #ff8fd8; --a2: #e0309e; --aink: #fff;
+  --bb1: #4fe0ff; --bb2: #0189c9; --bink: #fff;
+  --pad1: #3d2a7a; --pad2: #1d1048; --padmark: #ff9ad5;
+  --pill1: #6a4bb8; --pill2: #3d2a7a;
+  --ink: #2a0f5c; --ink2: #ff2fb0; --embhi: rgba(255, 255, 255, .7); --emblo: rgba(60, 10, 120, .4);
+  --well: rgba(60, 20, 120, .16); --ring: rgba(1, 205, 254, .6); --slot: #2a1060; --screw: #fff;
+  --led: #ff71ce; --ledglow: rgba(255, 113, 206, .9); --batt: #05ffa1; --battglow: rgba(5, 255, 161, .7);
+  --bg1: #2a1060; --bg2: #08021a; --glow: rgba(255, 113, 206, .25); --glow2: rgba(1, 205, 254, .22);
+  --fill1: #1a0a3a; --fill2: #070214;
 }
-.hh-root.hh-theme-midnight {
-  --body1: #3a3d4a; --body2: #23252e; --body3: #121318;
-  --bezel1: #0d0e12; --bezel2: #050507; --bezel-text: #7b8196;
-  --rule1: #2fffd1; --rule2: #ff3fa4;
-  --btn1: #2fffd1; --btn2: #0b9c80; --pad1: #44475a; --pad2: #1a1b22; --pill1: #4a4d5c; --pill2: #2a2c36;
-  --ink: #2fffd1; --accent: #ff3fa4; --bg1: #1a1030; --bg2: #000; --well: rgba(0, 0, 0, .3); --slot: rgba(0, 0, 0, .8);
-}
-/* Circuit board seen through the translucent shells (pure gradients, no images). */
+/* Circuit board seen through the smoke shell (pure gradients) + vaporwave perspective grid. */
 .hh-root {
   --pcb:
-    radial-gradient(circle at 22% 62%, #111 0 7px, transparent 8px),
-    radial-gradient(circle at 70% 70%, #c9a64a 0 3px, transparent 4px),
-    linear-gradient(#141a17, #0b0f0d) 28% 64% / 44px 28px no-repeat,
-    repeating-linear-gradient(90deg, transparent 0 26px, rgba(214, 180, 90, .55) 26px 28px, transparent 28px 61px),
-    repeating-linear-gradient(0deg, transparent 0 34px, rgba(214, 180, 90, .45) 34px 36px, transparent 36px 77px),
-    linear-gradient(160deg, #2f6b4a, #18402c);
+    radial-gradient(circle at 24% 76%, #0d0d0d 0 9px, transparent 10px),
+    radial-gradient(circle at 70% 84%, #d4b25a 0 3px, transparent 4px),
+    radial-gradient(circle at 76% 84%, #d4b25a 0 3px, transparent 4px),
+    linear-gradient(#141a17, #0b0f0d) 30% 66% / 56px 34px no-repeat,
+    linear-gradient(#1a1d22, #101216) 68% 60% / 30px 18px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(214, 180, 90, .45) 22px 24px, transparent 24px 53px),
+    repeating-linear-gradient(0deg, transparent 0 30px, rgba(214, 180, 90, .35) 30px 32px, transparent 32px 71px),
+    linear-gradient(160deg, #1f5a40, #0e2e20);
+  --grid:
+    repeating-linear-gradient(90deg, transparent 0 23px, rgba(255, 255, 255, .22) 23px 24px),
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(255, 255, 255, .22) 23px 24px);
 }
 
-/* ---------------------------------------------------------------- body */
+/* ================================================================ body */
 .hh-device {
   position: absolute; left: 50%; top: 50%; transform-origin: 50% 50%;
   box-sizing: border-box; display: grid;
-  border-radius: 20px 20px 70px 20px;
+  border-radius: 30px 30px 74px 30px;
   background:
-    radial-gradient(140% 60% at 15% 0%, rgba(255, 255, 255, .35), transparent 60%),
-    linear-gradient(165deg, var(--body1), var(--body2) 45%, var(--body3)),
+    repeating-conic-gradient(rgba(255, 255, 255, .022) 0 25%, rgba(0, 0, 0, .03) 0 50%) 0 0 / 3px 3px,   /* fine molded texture */
+    radial-gradient(120% 50% at 12% -4%, var(--spec), transparent 55%),               /* specular top-left */
+    linear-gradient(100deg, transparent 62%, rgba(255, 255, 255, .07) 70%, transparent 78%), /* sheen band */
+    linear-gradient(176deg, var(--b1), var(--b2) calc(var(--split) - 2.5%), var(--b3) calc(var(--split) + 2.5%), var(--b4)),
     var(--internals);
   box-shadow:
-    inset 0 2px 1px rgba(255, 255, 255, .75), inset 3px 0 4px rgba(255, 255, 255, .25),
-    inset 0 -7px 14px rgba(0, 0, 0, .22), inset -4px 0 8px rgba(0, 0, 0, .12),
-    0 2px 0 rgba(0, 0, 0, .25), 0 26px 50px rgba(0, 0, 0, .55), 0 8px 18px rgba(0, 0, 0, .35);
+    inset 0 1.5px 0 var(--edge), inset 1.5px 0 0 rgba(255, 255, 255, .08),     /* chamfer catch-light */
+    inset 0 0 0 1px rgba(255, 255, 255, .06),
+    inset 0 -6px 12px rgba(0, 0, 0, .28), inset -3px 0 8px rgba(0, 0, 0, .14),
+    0 0 0 1.5px var(--rim),
+    0 3px 0 rgba(0, 0, 0, .35), 0 30px 60px rgba(0, 0, 0, .55), 0 10px 22px rgba(0, 0, 0, .35);
 }
-.hh-device::after { /* fine plastic texture + edge highlight */
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .025) 0 2px, rgba(0, 0, 0, .02) 2px 4px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+.hh-device::before { /* inner chamfer ring */
+  content: ""; position: absolute; inset: 5px; border-radius: 25px 25px 69px 25px; pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10), inset 0 -1px 0 rgba(0, 0, 0, .25), 0 1px 0 rgba(0, 0, 0, .12);
 }
 .hh-port .hh-device {
-  width: 340px; padding: 10px 20px 18px; column-gap: 0;
+  width: 372px; padding: 0 9px 12px;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 20px auto 44px 132px 46px 56px;
+  grid-template-rows: 34px auto 34px 132px 38px 56px;
   grid-template-areas: "top top" "bezel bezel" "brand brand" "dpad ab" "sel start" "menu speaker";
 }
 .hh-land .hh-device {
-  padding: 10px 18px 12px; border-radius: 34px 34px 56px 34px; column-gap: 14px;
-  grid-template-columns: 150px auto 150px;
-  grid-template-rows: 20px 1fr 54px 40px;
+  padding: 0 16px 10px; border-radius: 40px 40px 70px 40px; column-gap: 12px;
+  grid-template-columns: 178px auto 178px;
+  grid-template-rows: 34px 1fr 64px 46px;
   grid-template-areas: "top top top" "dpad bezel ab" "sel bezel start" "menu brand speaker";
 }
+.hh-land .hh-device::before { border-radius: 35px 35px 65px 35px; }
 
-/* top edge: switch groove */
-.hh-top { grid-area: top; display: flex; align-items: center; gap: 8px; padding: 0 6px; }
-.hh-groove { flex: 1; height: 3px; border-radius: 2px; background: rgba(0, 0, 0, .14); box-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
-.hh-switch { flex: none; font: 700 7px/1 var(--hh-font); letter-spacing: .14em; color: var(--ink); opacity: .55; white-space: nowrap; }
+/* screws */
+.hh-screw {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%; z-index: 1; opacity: .75;
+  background: radial-gradient(circle at 35% 30%, #fff 0 8%, var(--screw) 30%, rgba(0, 0, 0, .45) 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35), 0 1px 0 var(--embhi);
+}
+.hh-screw::after { content: ""; position: absolute; left: 1.5px; right: 1.5px; top: 3.25px; height: 1.5px; background: rgba(0, 0, 0, .55); transform: rotate(35deg); border-radius: 1px; }
+.hh-screw-tl { left: 12px; top: 12px; } .hh-screw-tr { right: 12px; top: 12px; }
+.hh-screw-bl { left: 14px; bottom: 14px; } .hh-screw-br { right: 40px; bottom: 9px; }
+.hh-theme-smoke .hh-screw { opacity: 1; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5), 0 0 6px rgba(90, 216, 255, .5); }
 
-/* ---------------------------------------------------------------- bezel + screen */
+/* ================================================================ top rim: power switch, cartridge slot, sign-in chip */
+.hh-top { grid-area: top; display: flex; align-items: center; gap: 10px; padding: 0 14px 0 20px; min-width: 0; }
+.hh-pwr { flex: none; display: flex; align-items: center; gap: 5px; cursor: pointer; touch-action: none; padding: 6px 4px; margin: -6px -4px; }
+.hh-pwr-lbl { font: 800 7px/1 var(--hh-font); letter-spacing: .16em; color: var(--ink); opacity: .55; text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); transition: opacity .2s, color .2s; }
+.hh-pwr-lbl:last-child { opacity: .95; color: var(--ink2); }
+.hh-pwr-off .hh-pwr-lbl:first-child { opacity: .95; color: var(--ink2); }
+.hh-pwr-off .hh-pwr-lbl:last-child { opacity: .45; color: var(--ink); }
+.hh-pwr-track {
+  position: relative; width: 42px; height: 15px; border-radius: 8px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, .3)), var(--slot);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .7), inset 0 -1px 0 rgba(255, 255, 255, .06), 0 1px 0 var(--embhi);
+}
+.hh-pwr-lit { /* coloured strip exposed when ON */
+  position: absolute; left: 3px; top: 4px; bottom: 4px; width: 16px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--acc2), var(--acc1)); box-shadow: 0 0 8px var(--acc1); transition: opacity .2s;
+}
+.hh-pwr-off .hh-pwr-lit { opacity: .08; box-shadow: none; }
+.hh-pwr-knob {
+  --k: 1; position: absolute; top: 1.5px; left: 1.5px; width: 20px; height: 12px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  transform: translateX(calc(var(--k) * 19px));
+  transition: transform .26s cubic-bezier(.3, 1.6, .5, 1);
+  background: linear-gradient(180deg, var(--pill1), var(--pill2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -1.5px 1px rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .6);
+}
+.hh-pwr-knob i { width: 1.5px; height: 6px; border-radius: 1px; background: rgba(0, 0, 0, .4); box-shadow: 1px 0 0 rgba(255, 255, 255, .2); }
+.hh-pwr-off .hh-pwr-knob { --k: 0; }
+.hh-pwr-drag .hh-pwr-knob { transition: none; }
+.hh-pwr-press .hh-pwr-knob { filter: brightness(1.15); }
+.hh-cart { /* cartridge-slot hint molded into the rim */
+  flex: 1 1 40px; min-width: 24px; height: 7px; border-radius: 4px; position: relative;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, .15));
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, .55), 0 1px 0 var(--embhi);
+}
+.hh-cart i { position: absolute; left: 18%; right: 18%; top: 2px; height: 2px; border-radius: 1px; background: repeating-linear-gradient(90deg, rgba(212, 178, 90, .55) 0 3px, transparent 3px 6px); }
+.hh-slot { flex: 0 1 auto; display: flex; align-items: center; justify-content: flex-end; min-width: 0; max-width: 48%; }
+.hh-slot > .hh-adopted {
+  position: static !important; max-width: 100%; font-size: 9px !important; padding: 3px 9px !important;
+  border-width: 1px !important; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .15) !important; opacity: .92;
+}
+
+/* ================================================================ bezel + square screen */
 .hh-bezel {
   grid-area: bezel; justify-self: center; align-self: center; position: relative;
-  padding: 24px 30px 16px; border-radius: 10px 10px 42px 10px;
-  background: linear-gradient(170deg, var(--bezel1), var(--bezel2));
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .45), inset 0 -1px 0 rgba(255, 255, 255, .12), 0 1px 0 rgba(255, 255, 255, .45);
+  padding: 7px 7px 0; border-radius: 16px 16px 34px 16px;
+  background: linear-gradient(170deg, var(--bez1), var(--bez2));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .6), inset 0 -1px 0 rgba(255, 255, 255, .08),
+    0 0 0 1px rgba(0, 0, 0, .4), 0 1.5px 0 var(--embhi), 0 -1px 0 var(--emblo);
 }
-.hh-land .hh-bezel { padding: 24px 32px 18px; border-radius: 12px 12px 36px 12px; }
-.hh-bezel-label { position: absolute; left: 12px; right: 12px; top: 8px; display: flex; align-items: center; gap: 6px; font: 700 7px/1 var(--hh-font); letter-spacing: .12em; color: var(--bezel-text); white-space: nowrap; }
-.hh-rule { flex: 1; height: 4px; border-top: 1.5px solid var(--rule1); border-bottom: 1.5px solid var(--rule2); }
-.hh-led-wrap { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 18px; text-align: center; }
-.hh-led-wrap span { display: block; margin-top: 5px; font: 700 5.5px/1 var(--hh-font); letter-spacing: .08em; color: var(--bezel-text); writing-mode: vertical-rl; transform: rotate(180deg); margin-left: 5px; }
-.hh-led {
-  display: block; width: 8px; height: 8px; margin: 0 auto; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff 0 12%, #ff6a5a 30%, #c4100a 75%);
-  box-shadow: 0 0 6px 2px rgba(255, 60, 40, .6), inset 0 -1px 1px rgba(0, 0, 0, .4); transition: filter .08s;
+.hh-land .hh-bezel { border-radius: 16px 16px 38px 16px; }
+.hh-bezel::after { /* glossy cover glass over the whole bezel */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 8;
+  background: linear-gradient(122deg, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, .04) 30%, transparent 30.4%, transparent 74%, rgba(255, 255, 255, .03) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
 }
+.hh-bezel-foot { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 12px 0 4px; }
+.hh-leds { display: flex; align-items: center; gap: 4px; flex: none; }
+.hh-leds span { font: 800 5.5px/1 var(--hh-font); letter-spacing: .1em; color: var(--btxt); margin-right: 5px; opacity: .85; }
+.hh-led { display: block; width: 6px; height: 6px; border-radius: 50%; transition: background .25s, box-shadow .25s; }
+.hh-led-pwr { background: radial-gradient(circle at 35% 35%, #fff 0 14%, var(--led) 40%); box-shadow: 0 0 6px 1.5px var(--ledglow); }
+.hh-led-batt { background: radial-gradient(circle at 35% 35%, #fff 0 14%, var(--batt) 40%); box-shadow: 0 0 5px 1px var(--battglow); }
 .hh-led.hh-led-blink { filter: brightness(1.7) saturate(1.3); }
+.hh-pwr-off .hh-led { background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, .25) 0 14%, #1b1b20 50%); box-shadow: inset 0 1px 1px rgba(0, 0, 0, .6); }
+.hh-rule { flex: 1; height: 3px; min-width: 10px; border-top: 1px solid var(--acc1); border-bottom: 1px solid var(--acc2); opacity: .8; }
+.hh-bezel-label { flex: none; font: 800 6px/1 var(--hh-font); letter-spacing: .14em; color: var(--btxt); white-space: nowrap; }
+
 .hh-screen {
-  position: relative; overflow: hidden; background: #0b0d0c; border-radius: 3px;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, .55), 0 0 0 3px rgba(255, 255, 255, .06);
+  position: relative; overflow: hidden; border-radius: 7px;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .025) 0 5px, transparent 5px 11px),
+    radial-gradient(80% 80% at 50% 45%, var(--fill1), var(--fill2));
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .7), 0 0 0 2.5px rgba(255, 255, 255, .05);
   contain: layout paint;
 }
-.hh-screen > .hh-game { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; display: block; }
+.hh-view { position: absolute; z-index: 2; overflow: hidden; transform-origin: 50% 50%; }
+.hh-letterbox .hh-view { box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 0 22px 4px rgba(0, 0, 0, .55); }
+.hh-letterbox .hh-screen::after { /* faint accent hairlines on the fill */
+  content: ""; position: absolute; inset: 6px; border-radius: 4px; pointer-events: none; z-index: 1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+.hh-view > .hh-game { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; display: block; }
+.hh-black { position: absolute; inset: 0; z-index: 1; background: #000; opacity: 0; pointer-events: none; transition: opacity .2s; }
 .hh-off .hh-screen { position: fixed; left: 0; top: 0; width: 100%; height: 100%; border-radius: 0; box-shadow: none; z-index: 1; }
+.hh-off .hh-view { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; box-shadow: none !important; }
+.hh-off .hh-screen::after { display: none; }
 .hh-off .hh-device { display: none; }
-.hh-fx, .hh-glass, .hh-cursor, .hh-boot { position: absolute; pointer-events: none; }
-.hh-fx, .hh-glass { inset: 0; display: none; }
+.hh-fx, .hh-glass, .hh-cursor, .hh-pwrfx { position: absolute; pointer-events: none; }
+.hh-fx, .hh-glass { inset: 0; display: none; z-index: 4; }
 .hh-fx-lcd .hh-fx {
   display: block; mix-blend-mode: multiply; opacity: .55;
   background:
@@ -134,112 +267,179 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
     repeating-linear-gradient(90deg, rgba(0, 0, 0, .08) 0 1px, transparent 1px 3px);
 }
 .hh-fx-lcd .hh-glass, .hh-fx-glass .hh-glass {
-  display: block;
-  background: linear-gradient(118deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .05) 34%, transparent 34.5%, transparent 70%, rgba(255, 255, 255, .04) 100%);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, .35);
+  display: block; z-index: 5;
+  background:
+    radial-gradient(70% 35% at 22% 0%, rgba(255, 255, 255, .16), transparent 70%),
+    linear-gradient(122deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .03) 32%, transparent 32.3%, transparent 72%, rgba(255, 255, 255, .035) 100%);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .04);
 }
 .hh-off .hh-fx, .hh-off .hh-glass { display: none; }
-.hh-slot { display: flex; align-items: center; justify-content: flex-end; min-width: 0; max-width: 62%; }
-.hh-slot > .hh-adopted {
-  position: static !important; max-width: 100%; font-size: 9px !important; padding: 3px 9px !important;
-  border-width: 1px !important; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .15) !important; opacity: .92;
-}
 
 /* D-pad cursor (pointer mode / 'tap' keys) */
 .hh-cursor { z-index: 4; width: 26px; height: 26px; margin: -13px 0 0 -13px; display: none; }
 .hh-cursor-on { display: block; }
 .hh-cursor::before, .hh-cursor::after { content: ""; position: absolute; inset: 0; border-radius: 50%; }
-.hh-cursor::before { border: 3px solid #fff; box-shadow: 0 0 0 2px #3b2a26, inset 0 0 0 2px #3b2a26; animation: hh-pulse 1s ease-in-out infinite; }
-.hh-cursor::after { inset: 10px; background: #f8d030; box-shadow: 0 0 0 1.5px #3b2a26; }
+.hh-cursor::before { border: 3px solid #fff; box-shadow: 0 0 0 2px #1b1530, inset 0 0 0 2px #1b1530; animation: hh-pulse 1s ease-in-out infinite; }
+.hh-cursor::after { inset: 10px; background: var(--acc1); box-shadow: 0 0 0 1.5px #1b1530; }
 @keyframes hh-pulse { 50% { transform: scale(.82); } }
 
-/* power-on flash, once per session */
-.hh-boot { inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b0d0c; opacity: 0; }
-.hh-boot b { font: italic 900 22px/1 var(--hh-font); letter-spacing: .04em; color: #f2f2f2; }
-.hh-boot i { font: italic 700 13px/1 Georgia, serif; color: var(--rule1); margin-top: 4px; }
-.hh-boot-run { animation: hh-boot 1.4s ease-out forwards; }
-.hh-boot-run b, .hh-boot-run i { animation: hh-bootword 1.4s ease-out forwards; }
-@keyframes hh-boot { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes hh-bootword { 0% { transform: scale(.7); opacity: 0; filter: blur(4px); } 30% { transform: scale(1); opacity: 1; filter: none; } 100% { transform: scale(1.04); } }
+/* ================================================================ power: CRT off / boot / on */
+.hh-pwrfx { inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; will-change: opacity; }
+.hh-crtline { position: absolute; left: 50%; top: 50%; width: 100%; height: 2px; margin-top: -1px; transform: translateX(-50%) scaleX(0); background: #fff; opacity: 0;
+  box-shadow: 0 0 10px 3px rgba(255, 255, 255, .85), 0 0 26px 8px var(--acc2); border-radius: 2px; }
+.hh-bootmark { display: none; flex-direction: column; align-items: center; gap: 2px; }
+.hh-bootmark b { font: italic 900 22px/1 var(--hh-font); letter-spacing: .05em;
+  background: linear-gradient(90deg, var(--acc1), #fff 50%, var(--acc2)); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hh-bootmark i { font: italic 700 14px/1 Georgia, "Times New Roman", serif; color: var(--acc2); }
+.hh-bootbar { display: block; width: 92px; height: 3px; margin-top: 10px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.hh-bootbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--acc1), var(--acc2)); transform-origin: 0 50%; transform: scaleX(0); }
 
-/* ---------------------------------------------------------------- wordmark */
-.hh-brand { grid-area: brand; display: flex; align-items: baseline; gap: 6px; padding: 10px 4px 0; color: var(--ink); white-space: nowrap; overflow: hidden; }
-.hh-land .hh-brand { justify-content: center; padding-top: 8px; }
-.hh-brand b { font: italic 900 17px/1 var(--hh-font); letter-spacing: .02em; text-shadow: 0 1px 0 rgba(255, 255, 255, .45); }
-.hh-brand i { font: italic 700 15px/1 Georgia, "Times New Roman", serif; color: var(--accent); }
-.hh-gamename { margin-left: auto; font: 700 8px/1 var(--hh-font); letter-spacing: .16em; opacity: .65; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+/* off (steady): black, input blocked */
+.hh-pwr-off .hh-black { opacity: 1; transition: none; }
+.hh-pwr-off .hh-view { transform: scale(0, .004); }
+.hh-pwr-off .hh-pwrfx, .hh-anim-boot .hh-pwrfx { pointer-events: auto; }
+.hh-pwr-off .hh-glass { opacity: .5; }
+/* off (animated): picture collapses to a bright line, then a dot */
+.hh-anim-off .hh-view { animation: hh-view-off .5s cubic-bezier(.6, 0, .9, .4) forwards; }
+.hh-anim-off .hh-black { animation: hh-black-in .5s forwards; }
+.hh-anim-off .hh-crtline { animation: hh-line-off .55s ease-in forwards; }
+@keyframes hh-view-off {
+  0% { transform: none; filter: none; }
+  45% { transform: scale(1, .006); filter: brightness(3) saturate(.3); }
+  80% { transform: scale(.02, .004); filter: brightness(4); }
+  100% { transform: scale(0, .004); filter: brightness(4); }
+}
+@keyframes hh-black-in { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes hh-line-off {
+  0%, 38% { opacity: 0; transform: translateX(-50%) scaleX(1); }
+  45% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+  78% { opacity: 1; transform: translateX(-50%) scaleX(.02) scaleY(2); }
+  100% { opacity: 0; transform: translateX(-50%) scaleX(0) scaleY(2); }
+}
+/* boot: black screen, wordmark + bar, then the picture opens from a line */
+.hh-anim-boot .hh-black { opacity: 1; transition: none; }
+.hh-anim-boot .hh-view { transform: scale(0, .004); }
+.hh-anim-boot .hh-bootmark { display: flex; animation: hh-mark 1.25s ease-out forwards; }
+.hh-anim-boot .hh-bootbar i { animation: hh-bar 1s .15s cubic-bezier(.4, 0, .2, 1) forwards; }
+@keyframes hh-mark { 0% { opacity: 0; transform: scale(.82); } 22% { opacity: 1; transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: scale(1.03); } }
+@keyframes hh-bar { to { transform: scaleX(1); } }
+.hh-anim-on .hh-black { opacity: 1; animation: hh-black-out .45s forwards; }
+.hh-anim-on .hh-view { animation: hh-view-on .42s cubic-bezier(.2, .7, .3, 1) forwards; }
+.hh-anim-on .hh-crtline { animation: hh-line-on .3s ease-out forwards; }
+@keyframes hh-view-on { 0% { transform: scale(1, .006); filter: brightness(3); } 60% { transform: scale(1, 1.02); filter: brightness(1.4); } 100% { transform: none; filter: none; } }
+@keyframes hh-black-out { 0%, 30% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hh-line-on { 0% { opacity: 1; transform: translateX(-50%) scaleX(1); } 100% { opacity: 0; transform: translateX(-50%) scaleX(1) scaleY(30); } }
+/* first load in a session: quick wordmark flash over the running game */
+.hh-anim-flash .hh-pwrfx { background: #05060c; animation: hh-flash 1.45s ease-out forwards; }
+.hh-anim-flash .hh-bootmark { display: flex; animation: hh-mark 1.3s ease-out forwards; }
+.hh-anim-flash .hh-bootbar i { animation: hh-bar .9s .1s cubic-bezier(.4, 0, .2, 1) forwards; }
+@keyframes hh-flash { 0%, 62% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ================================================================ wordmark */
+.hh-brand { grid-area: brand; display: flex; align-items: center; gap: 6px; padding: 0 6px; color: var(--ink); white-space: nowrap; overflow: hidden; min-width: 0; }
+.hh-land .hh-brand { justify-content: center; }
+.hh-brand b { font: italic 900 17px/1 var(--hh-font); letter-spacing: .03em; color: var(--ink); text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); } /* embossed */
+.hh-brand i { font: italic 700 15px/1 Georgia, "Times New Roman", serif; color: var(--ink2); text-shadow: 0 1px 0 var(--embhi); }
+.hh-gamename {
+  margin-left: auto; font: 800 7.5px/1 var(--hh-font); letter-spacing: .18em; color: var(--ink); opacity: .8; overflow: hidden; text-overflow: ellipsis; max-width: 42%;
+  padding: 3px 7px; border-radius: 6px; background: var(--well); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi);
+}
 .hh-land .hh-gamename { margin-left: 10px; }
 
-/* ---------------------------------------------------------------- D-pad */
-.hh-dpad { grid-area: dpad; position: relative; width: 112px; height: 112px; align-self: center; justify-self: center; }
-.hh-port .hh-dpad { justify-self: start; margin-left: 8px; }
-.hh-well { position: absolute; inset: -6px; border-radius: 50%; background: radial-gradient(circle, var(--well) 55%, transparent 72%); box-shadow: inset 0 2px 5px rgba(0, 0, 0, .12); }
-.hh-cross { position: absolute; inset: 4px; transition: transform .05s; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)) drop-shadow(0 5px 6px rgba(0, 0, 0, .3)); }
-.hh-arm { position: absolute; border-radius: 6px; background: linear-gradient(160deg, var(--pad1), var(--pad2)); box-shadow: inset 0 1px 1px rgba(255, 255, 255, .22), inset 0 -2px 3px rgba(0, 0, 0, .35); }
-.hh-arm-v { left: 36%; right: 36%; top: 0; bottom: 0; }
-.hh-arm-h { top: 36%; bottom: 36%; left: 0; right: 0; }
-.hh-hub { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: radial-gradient(circle at 50% 60%, rgba(0, 0, 0, .35), rgba(255, 255, 255, .06) 70%); }
-.hh-tri { position: absolute; width: 0; height: 0; border: 5px solid transparent; opacity: .45; }
-.hh-tri-up { left: 50%; top: 7px; margin-left: -5px; border-bottom-color: #000; border-top-width: 0; }
-.hh-tri-down { left: 50%; bottom: 7px; margin-left: -5px; border-top-color: #000; border-bottom-width: 0; }
-.hh-tri-left { top: 50%; left: 7px; margin-top: -5px; border-right-color: #000; border-left-width: 0; }
-.hh-tri-right { top: 50%; right: 7px; margin-top: -5px; border-left-color: #000; border-right-width: 0; }
-.hh-p-up .hh-tri-up, .hh-p-down .hh-tri-down, .hh-p-left .hh-tri-left, .hh-p-right .hh-tri-right { opacity: .9; border-color: transparent; }
-.hh-p-up .hh-tri-up { border-bottom-color: var(--rule1); }
-.hh-p-down .hh-tri-down { border-top-color: var(--rule1); }
-.hh-p-left .hh-tri-left { border-right-color: var(--rule1); }
-.hh-p-right .hh-tri-right { border-left-color: var(--rule1); }
+/* ================================================================ D-pad */
+.hh-dpad, .hh-ab, .hh-bezel { will-change: transform; } /* own layers: presses and game frames don't repaint the body */
+.hh-dpad { grid-area: dpad; position: relative; width: 116px; height: 116px; align-self: center; justify-self: center; }
+.hh-port .hh-dpad { justify-self: start; margin-left: 10px; }
+.hh-land .hh-dpad { width: 124px; height: 124px; }
+.hh-well { display: none; } /* v3: the D-pad sits directly on the body */
+.hh-cross { position: absolute; inset: 4px; transition: transform .05s; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4)) drop-shadow(0 6px 7px rgba(0, 0, 0, .35)); }
+.hh-arm { position: absolute; border-radius: 8px; background: linear-gradient(160deg, var(--pad1), var(--pad2));
+  box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, .25), inset 0 -2px 3px rgba(0, 0, 0, .4); }
+.hh-arm-v { left: 35%; right: 35%; top: 0; bottom: 0; }
+.hh-arm-h { top: 35%; bottom: 35%; left: 0; right: 0; }
+.hh-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 62%, rgba(0, 0, 0, .45), rgba(255, 255, 255, .07) 72%); }
+.hh-tri { position: absolute; width: 0; height: 0; border: 5px solid transparent; opacity: .7; }
+.hh-tri-up { left: 50%; top: 8px; margin-left: -5px; border-bottom-color: var(--padmark); border-top-width: 0; }
+.hh-tri-down { left: 50%; bottom: 8px; margin-left: -5px; border-top-color: var(--padmark); border-bottom-width: 0; }
+.hh-tri-left { top: 50%; left: 8px; margin-top: -5px; border-right-color: var(--padmark); border-left-width: 0; }
+.hh-tri-right { top: 50%; right: 8px; margin-top: -5px; border-left-color: var(--padmark); border-right-width: 0; }
+.hh-p-up .hh-tri-up, .hh-p-down .hh-tri-down, .hh-p-left .hh-tri-left, .hh-p-right .hh-tri-right { opacity: 1; border-color: transparent; filter: drop-shadow(0 0 4px var(--acc1)); }
+.hh-p-up .hh-tri-up { border-bottom-color: var(--acc1); }
+.hh-p-down .hh-tri-down { border-top-color: var(--acc1); }
+.hh-p-left .hh-tri-left { border-right-color: var(--acc1); }
+.hh-p-right .hh-tri-right { border-left-color: var(--acc1); }
 
-/* ---------------------------------------------------------------- A / B */
-.hh-ab { grid-area: ab; position: relative; align-self: center; justify-self: end; }
-.hh-land .hh-ab { justify-self: center; }
-.hh-ab-well { display: flex; gap: 14px; padding: 9px 10px; border-radius: 40px; background: var(--well); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .14), 0 1px 0 rgba(255, 255, 255, .35); transform: rotate(-24deg); }
+/* ================================================================ A / B */
+.hh-ab { grid-area: ab; position: relative; align-self: center; justify-self: end; margin-right: 2px; }
+.hh-land .hh-ab { justify-self: center; margin: 0; }
+.hh-ab-well { display: flex; gap: 16px; padding: 9px 11px; transform: rotate(-24deg); } /* no well: A/B sit directly on the body */
 .hh-btn-b { margin-top: 26px; }
-.hh-btn { position: relative; width: 50px; height: 50px; }
+.hh-btn { position: relative; width: 54px; height: 54px; }
+.hh-cap { position: absolute; inset: 0; border-radius: 50%; transition: transform .05s, box-shadow .05s; }
+.hh-btn-a .hh-cap { --c1: var(--a1); --c2: var(--a2); }
+.hh-btn-b .hh-cap { --c1: var(--bb1); --c2: var(--bb2); }
 .hh-cap {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, .55), transparent 38%), linear-gradient(160deg, var(--btn1), var(--btn2));
-  box-shadow: inset 0 -3px 4px rgba(0, 0, 0, .3), inset 0 2px 2px rgba(255, 255, 255, .3), 0 4px 0 rgba(0, 0, 0, .35), 0 7px 10px rgba(0, 0, 0, .3);
-  transition: transform .05s, box-shadow .05s;
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, .75) 0 8%, rgba(255, 255, 255, .25) 22%, transparent 42%),
+    radial-gradient(circle at 60% 85%, rgba(255, 255, 255, .18), transparent 40%),
+    linear-gradient(160deg, var(--c1), var(--c2));
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, .3), inset 0 2px 2px rgba(255, 255, 255, .35), 0 4px 0 rgba(0, 0, 0, .45), 0 8px 12px rgba(0, 0, 0, .35);
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, .3), inset 0 2px 2px rgba(255, 255, 255, .35),
+    0 4px 0 color-mix(in srgb, var(--c2) 55%, #000), 0 8px 12px rgba(0, 0, 0, .35);
 }
-.hh-down .hh-cap { transform: translateY(3px) scale(.97); box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .3), inset 0 2px 3px rgba(0, 0, 0, .25), 0 1px 0 rgba(0, 0, 0, .35); }
-.hh-lbl { position: absolute; left: 50%; transform: translateX(-50%); top: 100%; margin-top: 8px; font: 800 11px/1 var(--hh-font); letter-spacing: .12em; color: var(--ink); }
+.hh-down .hh-cap { transform: translateY(3px) scale(.97);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .3), inset 0 2px 4px rgba(0, 0, 0, .3), 0 1px 0 rgba(0, 0, 0, .45), 0 0 14px var(--c1);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .3), inset 0 2px 4px rgba(0, 0, 0, .3), 0 1px 0 color-mix(in srgb, var(--c2) 55%, #000), 0 0 14px var(--c1); }
+.hh-lbl { position: absolute; left: 50%; transform: translateX(-50%); top: 100%; margin-top: 8px; font: 900 11px/1 var(--hh-font); letter-spacing: .12em; color: var(--ink);
+  text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); }
 
-/* ---------------------------------------------------------------- start / select */
-.hh-pillwrap { position: relative; align-self: start; padding-top: 8px; transform: rotate(-24deg); }
-.hh-select { grid-area: sel; justify-self: end; margin-right: 10px; }
-.hh-start { grid-area: start; justify-self: start; margin-left: 10px; }
-.hh-land .hh-select, .hh-land .hh-start { justify-self: center; margin: 0; }
-.hh-pill { position: relative; width: 46px; height: 14px; border-radius: 10px; padding: 3px; background: var(--well); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2); }
-.hh-pillcap { position: absolute; inset: 3px; border-radius: 8px; background: linear-gradient(180deg, var(--pill1), var(--pill2)); box-shadow: 0 2px 0 rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .25); transition: transform .05s; }
-.hh-down .hh-pillcap { transform: translateY(1.5px); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35); }
-.hh-pillwrap .hh-lbl { font-size: 8px; margin-top: 6px; }
+/* ================================================================ start / select */
+.hh-pillwrap { position: relative; align-self: start; padding-top: 4px; transform: rotate(-24deg); }
+.hh-select { grid-area: sel; justify-self: end; margin-right: 14px; }
+.hh-start { grid-area: start; justify-self: start; margin-left: 14px; }
+.hh-land .hh-select, .hh-land .hh-start { justify-self: center; margin: 0; align-self: center; }
+.hh-pill { position: relative; width: 48px; height: 15px; border-radius: 10px; padding: 3px; background: var(--well); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .3), 0 1px 0 var(--embhi); }
+.hh-pillcap { position: absolute; inset: 3px; border-radius: 8px; background: linear-gradient(180deg, var(--pill1), var(--pill2));
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .3); transition: transform .05s; }
+.hh-down .hh-pillcap { transform: translateY(1.5px); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4), 0 0 8px var(--acc2); }
+.hh-pillwrap .hh-lbl { font-size: 7.5px; margin-top: 6px; }
 
-/* ---------------------------------------------------------------- speaker + menu */
-.hh-speaker { grid-area: speaker; justify-self: end; align-self: end; display: flex; gap: 7px; transform: rotate(-28deg); margin: 0 6px 4px 0; }
-.hh-land .hh-speaker { justify-self: center; align-self: center; margin: 0; }
-.hh-speaker i { display: block; width: 6px; height: 44px; border-radius: 4px; background: var(--slot); box-shadow: inset 0 2px 3px rgba(0, 0, 0, .5), 0 1px 0 rgba(255, 255, 255, .4); }
-.hh-land .hh-speaker i { height: 30px; }
-.hh-menu { grid-area: menu; align-self: end; display: flex; gap: 5px; margin-bottom: 2px; }
-.hh-land .hh-menu { align-self: center; justify-self: center; }
+/* ================================================================ speaker, model number, menu */
+.hh-speaker { grid-area: speaker; justify-self: end; align-self: center; position: relative; width: 58px; height: 58px; margin-right: 18px; border-radius: 50%;
+  background: radial-gradient(circle, var(--well) 60%, transparent 72%); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi); }
+.hh-speaker i { position: absolute; inset: 6px; border-radius: 50%;
+  background: radial-gradient(circle, var(--slot) 0 1.9px, rgba(255,255,255,.10) 2.2px, transparent 2.9px) 0 0 / 7px 7px;
+  -webkit-mask: radial-gradient(circle, #000 64%, transparent 68%); mask: radial-gradient(circle, #000 64%, transparent 68%); opacity: .9; }
+.hh-land .hh-speaker { justify-self: center; margin: 0; width: 50px; height: 50px; }
+.hh-model { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font: 800 6px/1 var(--hh-font); letter-spacing: .22em; color: var(--ink); opacity: .55;
+  text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); white-space: nowrap; pointer-events: none; }
+.hh-land .hh-model { bottom: 6px; }
+.hh-menu { grid-area: menu; align-self: center; display: flex; gap: 5px; margin-left: 12px; }
+.hh-land .hh-menu { justify-self: center; margin: 0; }
 .hh-mbtn {
   font: 800 7.5px/1 var(--hh-font); letter-spacing: .1em; color: var(--ink); cursor: pointer;
   padding: 5px 7px; border-radius: 10px; border: 0; background: var(--well);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .18), 0 1px 0 rgba(255, 255, 255, .35); opacity: .8;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi); opacity: .85;
 }
 .hh-mbtn:hover { opacity: 1; }
 .hh-show {
   display: none; position: fixed; left: 8px; top: 8px; z-index: 20; width: 30px; height: 30px; padding: 0; cursor: pointer;
-  border-radius: 8px 8px 12px 8px; border: 1.5px solid rgba(0, 0, 0, .55); background: linear-gradient(165deg, var(--body1), var(--body3));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .35); opacity: .7;
+  border-radius: 8px 8px 12px 8px; border: 1.5px solid rgba(0, 0, 0, .55); background: linear-gradient(165deg, var(--b1), var(--b4));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35); opacity: .75;
 }
-.hh-show i { position: absolute; left: 6px; right: 6px; top: 5px; height: 9px; border-radius: 2px; background: var(--bezel2); }
+.hh-show i { position: absolute; left: 6px; right: 6px; top: 5px; height: 9px; border-radius: 2px; background: var(--bez2); box-shadow: 0 0 0 1px var(--acc2); }
 .hh-show:hover { opacity: 1; }
 .hh-off .hh-show { display: block; }
 .hh-toast {
   position: fixed; left: 50%; top: 14px; z-index: 30; transform: translate(-50%, -10px); opacity: 0; pointer-events: none;
-  font: 800 12px/1 "Trebuchet MS", system-ui, sans-serif; letter-spacing: .08em; color: #fff; background: rgba(15, 15, 20, .82);
+  font: 800 12px/1 "Avenir Next", "Trebuchet MS", system-ui, sans-serif; letter-spacing: .08em; color: #fff; background: rgba(12, 14, 26, .86);
+  box-shadow: 0 0 0 1px var(--acc2), 0 4px 14px rgba(0, 0, 0, .4);
   padding: 7px 12px; border-radius: 999px; transition: opacity .15s, transform .15s;
 }
 .hh-toast-on { opacity: 1; transform: translate(-50%, 0); }
-@media (prefers-reduced-motion: reduce) { .hh-cursor::before, .hh-boot-run, .hh-boot-run b, .hh-boot-run i { animation: none; } .hh-boot-run { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .hh-cursor::before { animation: none; }
+  .hh-anim-off .hh-view, .hh-anim-on .hh-view, .hh-anim-boot .hh-bootmark, .hh-anim-flash .hh-pwrfx { animation: none; }
+}

@@ -29,8 +29,12 @@ const ok = m => console.log(`  ok  ${m}`);
 const PHONE = { width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true };
 const DESK = { width: 1280, height: 800, deviceScaleFactor: 1 };
 
-async function open(url, viewport, ready) {
-  const page = await browser.newPage();
+// WebGL games (Thimblewood) need SwiftShader in headless Chrome; the 2D pages keep the plain browser.
+let glBrowser = null;
+const gl = async () => glBrowser || (glBrowser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome', headless: true,
+  args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }));
+async function open(url, viewport, ready, br = browser) {
+  const page = await br.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   // no API here, so auth.js's probe 404s; anything else is a real error
@@ -38,7 +42,7 @@ async function open(url, viewport, ready) {
   await page.setViewport(viewport);
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForFunction(ready);
-  await wait(250);
+  await wait(1700); // first-load wordmark flash + first raster (slow under software GL)
   return { page, errors };
 }
 const center = (page, sel) => page.$eval(sel, e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
@@ -49,6 +53,39 @@ async function hold(page, sel, ms, { touch = true, dx = 0, dy = 0 } = {}) {
   else { await page.mouse.move(x + dx, y + dy); await page.mouse.down(); await wait(ms); await page.mouse.up(); }
 }
 const tapCtl = (page, sel, opts) => hold(page, sel, 60, opts);
+// Power switch: OFF freezes the game (rAF held), blocks keys and buttons, LED dark; ON boots and resumes.
+async function powerCycle(page, tag, game, clockFn, touch) {
+  // a page rAF loop stands in for the game's clock (the game's own loop is held the same way)
+  await page.evaluate(() => { window.__keys = 0; window.addEventListener('keydown', () => window.__keys++); window.__frames = 0; (function f() { window.__frames++; requestAnimationFrame(f); })(); });
+  const clock = () => page.evaluate(`[window.__frames, String((${clockFn.toString()})())]`);
+  if (touch) await page.touchscreen.tap(...await center(page, '.hh-pwr-track')); else await page.click('.hh-pwr-track');
+  await wait(700);
+  const off = await page.evaluate(() => ({ power: window.Handheld.current.power, cls: document.querySelector('.hh-root').classList.contains('hh-pwr-off'),
+    aria: document.querySelector('.hh-pwr').getAttribute('aria-checked'), led: getComputedStyle(document.querySelector('.hh-led-pwr')).boxShadow }));
+  assert.equal(off.power, false); assert.ok(off.cls); assert.equal(off.aria, 'false'); assert.ok(/inset/.test(off.led) && !/6px 1\.5px/.test(off.led), 'LED dark: ' + off.led);
+  await page.screenshot({ path: path.join(shots, `${game}-${tag}-power-off.png`) });
+  const t0 = await clock(); await wait(500); const t1 = await clock();
+  assert.deepEqual(t0, t1, 'game frozen while off');
+  await page.keyboard.press('Enter'); await tapCtl(page, '.hh-btn-a .hh-cap', { touch });
+  assert.equal(await page.evaluate(() => window.__keys), 0, 'no input reaches the game while off');
+  // drag the knob back to ON
+  const r = await page.$eval('.hh-pwr-knob', e => { const b = e.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2, b.width]; });
+  if (touch) {
+    const cdp = await page.createCDPSession();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r[0], y: r[1], id: 9 }] });
+    for (let k = 1; k <= 6; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: r[0] + k * r[2] * 0.25, y: r[1], id: 9 }] }); await wait(16); }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } else { await page.mouse.move(r[0], r[1]); await page.mouse.down(); await page.mouse.move(r[0] + r[2] * 1.5, r[1], { steps: 6 }); await page.mouse.up(); }
+  await wait(500);
+  assert.equal(await page.evaluate(() => window.Handheld.current.power), true, 'dragged ON');
+  await page.screenshot({ path: path.join(shots, `${game}-${tag}-power-boot.png`) });
+  await wait(1500);
+  const t2 = await clock(); await wait(400); const t3 = await clock();
+  assert.ok(t3[0] > t2[0] && t3[1] !== t2[1], 'game resumed: ' + t2 + ' -> ' + t3);
+  await page.keyboard.press('Shift');
+  assert.ok(await page.evaluate(() => window.__keys) > 0, 'keys reach the game again');
+  ok(`${tag} ${game}: power OFF (tap) freezes the game, blocks keys/buttons, LED dark; drag to ON boots and resumes`);
+}
 
 try {
   // ------------------------------------------------------------ demo page: key events
@@ -63,9 +100,9 @@ try {
     await hold(page, '.hh-dpad', 700, { touch, dx: 40 }); // right edge of the pad: hold -> repeats
     let log = await page.evaluate(() => window.__HH.log.splice(0));
     assert.deepEqual(log[0], ['down', 'ArrowRight', 'ArrowRight', 39, false]);
-    assert.ok(log.filter(l => l[0] === 'down' && l[4]).length >= 3, 'press-and-hold repeats');
+    assert.ok(log.filter(l => l[0] === 'down' && l[4]).length >= 3, 'press-and-hold repeats: ' + JSON.stringify(log));
     assert.deepEqual(log.at(-1), ['up', 'ArrowRight', 'ArrowRight', 39, false]);
-    assert.ok(await page.evaluate(() => window.__HH.P.x > 100), 'dot moved right');
+    assert.ok(await page.evaluate(() => window.__HH.P.x > 100), 'dot moved right: ' + JSON.stringify(await page.evaluate(() => [window.__HH.P, devicePixelRatio])) + JSON.stringify(log.slice(0,3)) + log.length);
     await tapCtl(page, '.hh-btn-a .hh-cap', { touch }); await tapCtl(page, '.hh-btn-b .hh-cap', { touch });
     await tapCtl(page, '.hh-start .hh-pill', { touch }); await tapCtl(page, '.hh-select .hh-pill', { touch });
     log = await page.evaluate(() => window.__HH.log.splice(0));
@@ -127,7 +164,7 @@ try {
     assert.ok(c1.shown && c1.y > c0.y + 0.1 && Math.abs(c1.x - c0.x) < 0.01, 'cursor moved down');
     // aim the cursor at an empty board tile and press A
     const target = await page.evaluate(() => {
-      const L = window.__LR, scr = document.querySelector('.hh-screen').getBoundingClientRect();
+      const L = window.__LR, scr = document.querySelector('.hh-view').getBoundingClientRect();
       const [lx, ly] = L.P(1.5, 3.5), [x, y] = L.screen(lx, ly);
       window.Handheld.current.setCursor((x - scr.left) / scr.width, (y - scr.top) / scr.height); return [x, y];
     });
@@ -142,15 +179,23 @@ try {
     assert.equal(await page.evaluate(() => window.Handheld.current.cursor.shown), false, 'direct tap hides the cursor');
     ok(`${tag} Lunch Rush: START starts, D-pad moves the cursor, A taps the tile under it, B deselects, direct taps still work`);
 
+    // square screen; the tall game is fitted inside it (side bars), crisp canvas from its own box
+    const sq = await page.evaluate(() => { const s = document.querySelector('.hh-screen').getBoundingClientRect(), v = document.querySelector('.hh-view').getBoundingClientRect(), c = document.getElementById('c');
+      return { sw: s.width, sh: s.height, vw: v.width, vh: v.height, cw: c.width, dpr: Math.min(2, devicePixelRatio) }; });
+    assert.ok(Math.abs(sq.sw - sq.sh) < 1.5, 'square screen');
+    assert.ok(sq.sw >= (touch ? 335 : 520), 'big screen: ' + sq.sw);
+    assert.ok(Math.abs(sq.vh - sq.sh) < 1.5 && Math.abs(sq.vw / sq.vh - 136 / 188) < 0.01, 'game fitted at its own aspect');
+    assert.ok(Math.abs(sq.cw - sq.vw * sq.dpr) <= 3, 'canvas sized from its box');
+    ok(`${tag} Lunch Rush: square ${Math.round(sq.sw)}px screen, game fitted ${Math.round(sq.vw)}x${Math.round(sq.vh)} with side bars`);
+    await powerCycle(page, tag, 'lunch-rush', () => { const u = document.getElementById('c').toDataURL(); return u.length + ':' + u.slice(-120); }, touch);
+
     // themes, screen effect, hide/show; remembered
     await page.click('.hh-menu .hh-mbtn:nth-child(1)'); await page.click('.hh-menu .hh-mbtn:nth-child(2)');
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx]), ['grape', 'lcd']);
+    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx]), ['nova', 'lcd']);
     await wait(1200);
-    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-grape-lcd.png`) });
-    await page.evaluate(() => window.Handheld.current.setTheme('clear', true));
-    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-clear.png`) });
-    for (const th of ['yolk', 'midnight', 'classic']) { await page.evaluate(t => window.Handheld.current.setTheme(t, true), th); if (tag === '390x844') await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) }); }
-    await page.evaluate(() => { window.Handheld.current.setTheme('grape', true); window.Handheld.current.setFx('glass', true); });
+    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-nova-lcd.png`) });
+    for (const th of ['matcha', 'smoke', 'gold', 'vapor', 'sunset']) { await page.evaluate(t => window.Handheld.current.setTheme(t, true), th); if (tag === '390x844') await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) }); }
+    await page.evaluate(() => { window.Handheld.current.setTheme('gold', true); window.Handheld.current.setFx('glass', true); });
     await page.click('.hh-menu .hh-mbtn:nth-child(3)'); // HIDE
     await wait(100);
     const off = await page.evaluate(() => { const c = document.getElementById('c'), r = c.getBoundingClientRect(); return [window.Handheld.current.visible, r.width === innerWidth && r.height === innerHeight, c.width]; });
@@ -160,9 +205,39 @@ try {
     if (touch) await page.touchscreen.tap(...await center(page, '.hh-show')); else await page.click('.hh-show');
     assert.equal(await page.evaluate(() => window.Handheld.current.visible), true);
     await page.reload({ waitUntil: 'load' }); await page.waitForFunction(lrReady);
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx, window.Handheld.current.visible]), ['grape', 'glass', true], 'settings remembered');
+    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx, window.Handheld.current.visible]), ['gold', 'glass', true], 'settings remembered');
+    assert.equal(await page.evaluate(() => window.Handheld.current.power), true, 'always powered on at load');
     ok(`${tag} Lunch Rush: THEME/FX/HIDE buttons work, hidden mode is full-window, settings remembered across reloads`);
     assert.deepEqual(errors, []);
+    await page.evaluate(() => localStorage.clear());
+    await page.close();
+  }
+
+  // ------------------------------------------------------------ Thimblewood (WebGL, square stage)
+  for (const [vp, tag, layout] of [[PHONE, '390x844', 'port'], [DESK, '1280x800', 'land']]) {
+    const touch = !!vp.hasTouch;
+    const { page, errors } = await open(`${base}/thimblewood/?q=low`, vp, () => window.Thimblewood && window.Handheld && window.Handheld.current, await gl());
+    await wait(1500);
+    const st = () => page.evaluate(() => window.Thimblewood.state());
+    const info = await page.evaluate(() => { const H = window.Handheld.current, s = document.querySelector('.hh-screen').getBoundingClientRect(), v = document.querySelector('.hh-view').getBoundingClientRect();
+      return { layout: H.layout, sw: s.width, sh: s.height, vw: v.width, vh: v.height, own: getComputedStyle(document.getElementById('touch')).display, webgl: window.Thimblewood.state().webgl }; });
+    assert.equal(info.layout, layout); assert.ok(Math.abs(info.sw - info.sh) < 1.5 && Math.abs(info.vw - info.sw) < 1.5 && Math.abs(info.vh - info.sh) < 1.5, 'square stage fills the square screen');
+    assert.equal(info.own, 'none', 'own touch controls hidden in the shell');
+    assert.equal(await page.evaluate(() => window.Handheld.current.theme), 'sunset', 'Sunset is the default for new visitors');
+    assert.ok(info.webgl > 0, 'WebGL running');
+    await tapCtl(page, '.hh-btn-a .hh-cap', { touch });
+    assert.equal((await st()).mode, 'play', 'A starts');
+    const x0 = (await st()).x; await hold(page, '.hh-dpad', 600, { touch, dx: -40 });
+    assert.ok((await st()).x < x0 - 5, 'D-pad left walks');
+    await powerCycle(page, tag, 'thimblewood', () => window.Thimblewood.state().t, touch);
+    await page.click('.hh-menu .hh-mbtn:nth-child(3)'); await wait(200);
+    const hid = await page.evaluate(() => [window.Handheld.current.visible, document.getElementById('c').getBoundingClientRect().width === innerWidth]);
+    assert.deepEqual(hid, [false, true], 'HIDE: full window');
+    if (touch) assert.notEqual(await page.evaluate(() => getComputedStyle(document.getElementById('touch')).display), 'none', 'HIDE: own touch controls back');
+    await page.click('.hh-show'); await wait(200);
+    await page.screenshot({ path: path.join(shots, `thimblewood-${tag}.png`) });
+    assert.deepEqual(errors, []);
+    ok(`${tag} Thimblewood: square stage fills the square screen, A starts, D-pad walks, HIDE brings back its own controls`);
     await page.evaluate(() => localStorage.clear());
     await page.close();
   }
@@ -171,13 +246,15 @@ try {
   const shot = await open(`${base}/lunch-rush/?shot`, { width: 1200, height: 630 }, () => window.__LR && window.__LR.G);
   assert.equal(await shot.page.$('.hh-root'), null, '?shot never wraps (card image capture)');
   const none = await open(`${base}/lunch-rush/?handheld=0`, DESK, lrReady);
+  await none.page.evaluate(() => localStorage.setItem('handheld.theme', 'classic')); await none.page.reload({ waitUntil: 'load' }); await none.page.waitForFunction(lrReady);
+  assert.equal(await none.page.evaluate(() => window.Handheld.current.theme), 'sunset', 'old/unknown saved theme falls back to Sunset');
   assert.equal(await none.page.evaluate(() => window.Handheld.current.visible), false);
   assert.deepEqual([...shot.errors, ...none.errors], []);
   ok('?shot (card capture) is never wrapped; ?handheld=0 starts hidden');
 
   console.log(`\nHandheld browser check passed. Screenshots in ${shots}`);
-  await browser.close(); srv.close(); process.exit(0);
+  await browser.close(); if (glBrowser) await glBrowser.close(); srv.close(); process.exit(0);
 } catch (e) {
   console.error('\nHANDHELD CHECK FAILED:', e);
-  await browser.close().catch(() => {}); srv.close(); process.exit(1);
+  await browser.close().catch(() => {}); if (glBrowser) await glBrowser.close().catch(() => {}); srv.close(); process.exit(1);
 }

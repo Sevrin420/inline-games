@@ -1,7 +1,8 @@
 # Handheld overlay (MEMBERSONLY pocket)
 
 `games/shared/handheld/` is a shared "brick handheld" shell any game can opt into: a molded-plastic
-body around the game screen, with a D-pad, A/B, START/SELECT, a speaker grille and a power LED. On phones
+body around a big **square** game screen, with a sliding power switch on the top rim, a D-pad, A/B, START/SELECT,
+a dot-grille speaker, screws, power/battery LEDs and a cartridge-slot hint. On phones
 the buttons are real touch controls. The design and branding (MEMBERSONLY *pocket*,
 "MEMBERSONLY.CC · INLINE PLAY SYSTEM") are our own. It uses no third-party logos, names or artwork.
 
@@ -25,7 +26,8 @@ Or call it from JS:
 ```js
 Handheld.mount({
   element: canvas,          // or a selector; this element becomes the "screen"
-  aspect: 136 / 188,        // screen width / height (match your stage, incl. its margin)
+  aspect: 136 / 188,        // the GAME's width / height (default 1). The shell's screen window is always
+                            // square; the game is fitted inside it at this aspect, with a themed fill around it.
   name: 'LUNCH RUSH',       // small label on the body
   keys: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
           a: ' ', b: 'x', start: 'Enter', select: 'Escape' },   // these are the defaults
@@ -104,12 +106,16 @@ Change this with `adopt: '<selector>'`, or turn it off with `adopt: null`.
 These are set with the small **THEME / FX / HIDE** buttons on the body and remembered in `localStorage`
 (`handheld.theme`, `handheld.fx`, `handheld.on`). The settings are shared by every game on the site.
 
-- **Themes:**
-  - `classic`: warm grey with berry buttons.
-  - `grape`: translucent purple, with the circuit board showing through.
-  - `clear`: clear shell.
-  - `yolk`: hen yellow.
-  - `midnight`: black with neon.
+- **Themes** (v2; older saved theme ids fall back to the default):
+  - `sunset` (default): orange → coral → magenta → plum gradient, yellow A, violet B.
+  - `nova`: deep midnight-navy two-tone body, neon coral A, teal B.
+  - `matcha`: soft green, cream A, peach B, forest bezel.
+  - `smoke`: clear smoke plastic with the circuit board, screws and a cyan glow showing.
+  - `gold`: champagne-gold metallic with a black bezel and black buttons.
+  - `vapor`: pink → lilac → cyan with a faint grid, hot-pink A, cyan B.
+  - Each theme also sets the D-pad, START/SELECT, LED, wordmark and page-glow colours.
+- **Materials:** specular highlight, molded micro-texture, chamfered edges, embossed wordmark and labels,
+  an inset screen with glossy cover glass over the whole bezel. All CSS gradients/shadows, no images.
 - **Screen effect:**
   - `glass`: a subtle reflection and inner shadow. This is the default.
   - `lcd`: the glass plus a faint scanline/pixel grid.
@@ -122,6 +128,17 @@ These are set with the small **THEME / FX / HIDE** buttons on the body and remem
   - **Landscape** puts the D-pad on the left, the screen in the middle and A/B on the right. Desktops and
     landscape phones use this layout.
   - `auto` picks whichever shows the game bigger.
+- **Square screen:** 340 px (portrait) / 420 px (landscape) before scaling; the body is scaled to fit, so a
+  390x844 phone gets a ~350 px screen and a 1280x800 desktop ~590 px. Games that aren't square are letterboxed
+  inside it (Lunch Rush gets side bars); Thimblewood renders a square stage.
+- **Power switch:** the slider on the top-left of the rim. Tap it, or drag the knob. **OFF**: the picture
+  collapses to a line and a dot (CRT style), the screen goes black, both LEDs go dark, and the game is
+  paused: the shell holds the page's `requestAnimationFrame` callbacks, suspends Web Audio contexts and pauses
+  `<audio>`/`<video>`, releases held buttons (and sends a `blur`), and blocks keys, buttons and taps. **ON**: a
+  short wordmark boot, then the picture opens back up and everything resumes where it was. Power is never
+  remembered: the shell always starts ON. Hiding the shell while it is off turns it back on.
+  Games can listen for `window` `handheld:power` (`e.detail.on`) or pass `onPower(on)` to `mount`.
+- **Sign-in chip:** adopted into the top-right of the rim, clear of the power switch.
 - **Power-on flash:** a short MEMBERSONLY *pocket* flash plays once per browser session. It is skipped
   with reduced motion.
 
@@ -140,7 +157,8 @@ as before.
 - `press(name)` and `release(name)`
 - `tap()`
 - `setTheme(id)`, `setFx('glass'|'lcd'|'off')`, `setVisible(bool)`
-- `setCursor(x, y)` (fractions of the screen) and `cursor`
+- `setCursor(x, y)` (fractions of the game view, `.hh-view`) and `cursor`
+- `setPower(bool, quick)` and `power`
 - `theme`, `fx`, `visible`, `layout`
 - `relayout()`, `destroy()`
 - `root`, `screen`, `element`
@@ -150,9 +168,10 @@ as before.
 | Game | D-pad | A | B | START | SELECT |
 |---|---|---|---|---|---|
 | Lunch Rush (`pointer: true`) | moves the cursor | taps at the cursor | Escape (deselect) | Enter (start / try again) | nothing |
-| Thimblewood (`#stage`, 4/3) | arrows (walk) | Space (talk / read / advance) | x (close) | Enter (start / talk) | m (sound on/off) |
+| Thimblewood (`#stage`, square) | arrows (walk) | Space (talk / read / advance) | x (close) | Enter (start / talk) | m (sound on/off) |
 
-Thimblewood mounts its `#stage` (the 3D canvas and the UI canvas together), so tilt-shift, bloom and the
+Thimblewood mounts its `#stage` (the 3D canvas and the UI canvas together) with `data-aspect="1"`, so it
+fills the square screen; tilt-shift, bloom and the
 pixel UI all render inside the screen. While the shell shows, the game sets `html.tw-shell`, hides its own
 stick and A button, and renders the 3D view at a chunkier internal resolution. Hiding the shell (HIDE or
 `?handheld=0`) brings the touch controls back.
@@ -166,9 +185,12 @@ screen, and Escape deselects.
 cd server && CHROME_PATH=/usr/bin/google-chrome npm run browser:handheld [screenshot-dir]
 ```
 
-This runs the demo page and Lunch Rush at 390x844 (touch, @3x) and 1280x800. It checks:
+This runs the demo page, Lunch Rush and Thimblewood (WebGL via SwiftShader) at 390x844 (touch, @3x) and
+1280x800. It checks:
 - key events, hold-repeat, sliding across the D-pad and two-finger presses;
 - cursor + A taps, and direct screen taps;
-- theme, FX and hide (and that they're remembered);
+- the square screen and the game fitted inside it at its own aspect;
+- the power switch: tap OFF freezes the game, blocks keys and buttons, LED dark; drag to ON resumes;
+- theme, FX and hide (and that they're remembered; power is not);
 - `?shot` and `?handheld=0`;
 - no console errors.
