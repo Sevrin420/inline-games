@@ -4,7 +4,7 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 /* ================================================================ themes
    Every colour the shell uses is a custom property, so a theme is just a block of variables. */
 .hh-root {
-  /* Nova (default): deep midnight-navy two-tone body, neon coral + teal accents */
+  /* Nova: deep midnight-navy two-tone body, neon coral + teal accents */
   --b1: #2a3768; --b2: #1b2550; --b3: #121a3d; --b4: #0b1130;   /* top -> bottom; b2/b3 is the two-tone break */
   --split: 54%;
   --spec: rgba(140, 170, 255, .30);  --edge: rgba(170, 195, 255, .35); --rim: rgba(0, 0, 0, .55);
@@ -352,9 +352,7 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 .hh-dpad { grid-area: dpad; position: relative; width: 116px; height: 116px; align-self: center; justify-self: center; }
 .hh-port .hh-dpad { justify-self: start; margin-left: 10px; }
 .hh-land .hh-dpad { width: 124px; height: 124px; }
-.hh-well { position: absolute; inset: -8px; border-radius: 50%;
-  background: radial-gradient(circle, var(--well) 60%, transparent 71%);
-  box-shadow: inset 0 3px 6px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi), 0 0 0 1px var(--ring); }
+.hh-well { display: none; } /* v3: the D-pad sits directly on the body */
 .hh-cross { position: absolute; inset: 4px; transition: transform .05s; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4)) drop-shadow(0 6px 7px rgba(0, 0, 0, .35)); }
 .hh-arm { position: absolute; border-radius: 8px; background: linear-gradient(160deg, var(--pad1), var(--pad2));
   box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, .25), inset 0 -2px 3px rgba(0, 0, 0, .4); }
@@ -376,8 +374,7 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 /* ================================================================ A / B */
 .hh-ab { grid-area: ab; position: relative; align-self: center; justify-self: end; margin-right: 2px; }
 .hh-land .hh-ab { justify-self: center; margin: 0; }
-.hh-ab-well { display: flex; gap: 16px; padding: 9px 11px; border-radius: 44px; background: var(--well);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, .25), 0 1px 0 var(--embhi), 0 0 0 1px var(--ring); transform: rotate(-24deg); }
+.hh-ab-well { display: flex; gap: 16px; padding: 9px 11px; transform: rotate(-24deg); } /* no well: A/B sit directly on the body */
 .hh-btn-b { margin-top: 26px; }
 .hh-btn { position: relative; width: 54px; height: 54px; }
 .hh-cap { position: absolute; inset: 0; border-radius: 50%; transition: transform .05s, box-shadow .05s; }

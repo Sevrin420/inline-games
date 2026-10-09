@@ -191,11 +191,11 @@ try {
 
     // themes, screen effect, hide/show; remembered
     await page.click('.hh-menu .hh-mbtn:nth-child(1)'); await page.click('.hh-menu .hh-mbtn:nth-child(2)');
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx]), ['sunset', 'lcd']);
+    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx]), ['nova', 'lcd']);
     await wait(1200);
-    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-sunset-lcd.png`) });
-    for (const th of ['matcha', 'smoke', 'gold', 'vapor', 'nova']) { await page.evaluate(t => window.Handheld.current.setTheme(t, true), th); if (tag === '390x844') await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) }); }
-    await page.evaluate(() => { window.Handheld.current.setTheme('sunset', true); window.Handheld.current.setFx('glass', true); });
+    await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-nova-lcd.png`) });
+    for (const th of ['matcha', 'smoke', 'gold', 'vapor', 'sunset']) { await page.evaluate(t => window.Handheld.current.setTheme(t, true), th); if (tag === '390x844') await page.screenshot({ path: path.join(shots, `lunch-rush-${tag}-${th}.png`) }); }
+    await page.evaluate(() => { window.Handheld.current.setTheme('gold', true); window.Handheld.current.setFx('glass', true); });
     await page.click('.hh-menu .hh-mbtn:nth-child(3)'); // HIDE
     await wait(100);
     const off = await page.evaluate(() => { const c = document.getElementById('c'), r = c.getBoundingClientRect(); return [window.Handheld.current.visible, r.width === innerWidth && r.height === innerHeight, c.width]; });
@@ -205,7 +205,7 @@ try {
     if (touch) await page.touchscreen.tap(...await center(page, '.hh-show')); else await page.click('.hh-show');
     assert.equal(await page.evaluate(() => window.Handheld.current.visible), true);
     await page.reload({ waitUntil: 'load' }); await page.waitForFunction(lrReady);
-    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx, window.Handheld.current.visible]), ['sunset', 'glass', true], 'settings remembered');
+    assert.deepEqual(await page.evaluate(() => [window.Handheld.current.theme, window.Handheld.current.fx, window.Handheld.current.visible]), ['gold', 'glass', true], 'settings remembered');
     assert.equal(await page.evaluate(() => window.Handheld.current.power), true, 'always powered on at load');
     ok(`${tag} Lunch Rush: THEME/FX/HIDE buttons work, hidden mode is full-window, settings remembered across reloads`);
     assert.deepEqual(errors, []);
@@ -223,6 +223,7 @@ try {
       return { layout: H.layout, sw: s.width, sh: s.height, vw: v.width, vh: v.height, own: getComputedStyle(document.getElementById('touch')).display, webgl: window.Thimblewood.state().webgl }; });
     assert.equal(info.layout, layout); assert.ok(Math.abs(info.sw - info.sh) < 1.5 && Math.abs(info.vw - info.sw) < 1.5 && Math.abs(info.vh - info.sh) < 1.5, 'square stage fills the square screen');
     assert.equal(info.own, 'none', 'own touch controls hidden in the shell');
+    assert.equal(await page.evaluate(() => window.Handheld.current.theme), 'sunset', 'Sunset is the default for new visitors');
     assert.ok(info.webgl > 0, 'WebGL running');
     await tapCtl(page, '.hh-btn-a .hh-cap', { touch });
     assert.equal((await st()).mode, 'play', 'A starts');
@@ -245,6 +246,8 @@ try {
   const shot = await open(`${base}/lunch-rush/?shot`, { width: 1200, height: 630 }, () => window.__LR && window.__LR.G);
   assert.equal(await shot.page.$('.hh-root'), null, '?shot never wraps (card image capture)');
   const none = await open(`${base}/lunch-rush/?handheld=0`, DESK, lrReady);
+  await none.page.evaluate(() => localStorage.setItem('handheld.theme', 'classic')); await none.page.reload({ waitUntil: 'load' }); await none.page.waitForFunction(lrReady);
+  assert.equal(await none.page.evaluate(() => window.Handheld.current.theme), 'sunset', 'old/unknown saved theme falls back to Sunset');
   assert.equal(await none.page.evaluate(() => window.Handheld.current.visible), false);
   assert.deepEqual([...shot.errors, ...none.errors], []);
   ok('?shot (card capture) is never wrapped; ?handheld=0 starts hidden');

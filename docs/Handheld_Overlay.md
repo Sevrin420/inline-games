@@ -107,8 +107,8 @@ These are set with the small **THEME / FX / HIDE** buttons on the body and remem
 (`handheld.theme`, `handheld.fx`, `handheld.on`). The settings are shared by every game on the site.
 
 - **Themes** (v2; older saved theme ids fall back to the default):
-  - `nova` (default): deep midnight-navy two-tone body, neon coral A, teal B.
-  - `sunset`: orange → coral → magenta → plum gradient, yellow A, violet B.
+  - `sunset` (default): orange → coral → magenta → plum gradient, yellow A, violet B.
+  - `nova`: deep midnight-navy two-tone body, neon coral A, teal B.
   - `matcha`: soft green, cream A, peach B, forest bezel.
   - `smoke`: clear smoke plastic with the circuit board, screws and a cyan glow showing.
   - `gold`: champagne-gold metallic with a black bezel and black buttons.

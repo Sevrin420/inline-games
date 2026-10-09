@@ -31,14 +31,14 @@
   if (window.Handheld) return;
 
   var THEMES = [
-    { id: 'nova', name: 'Nova' },              // default: midnight navy two-tone, coral + teal
-    { id: 'sunset', name: 'Sunset' },
+    { id: 'sunset', name: 'Sunset' },          // default: orange -> magenta -> plum
+    { id: 'nova', name: 'Nova' },              // midnight navy two-tone, coral + teal
     { id: 'matcha', name: 'Matcha' },
     { id: 'smoke', name: 'Clear Smoke' },
     { id: 'gold', name: 'Gold Edition' },
     { id: 'vapor', name: 'Vaporwave' },
   ];
-  var DEFAULT_THEME = 'nova';
+  var DEFAULT_THEME = 'sunset';
   var SQ = { port: 340, land: 420 };           // square screen side, in unscaled body px
   var FX = ['glass', 'lcd', 'off'];
   var FX_NAME = { glass: 'Glass', lcd: 'LCD', off: 'Off' };
