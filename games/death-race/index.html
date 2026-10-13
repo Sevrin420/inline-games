@@ -33,6 +33,7 @@
     </div>
     <div id="hMsg"></div>
     <div id="hCenter"></div>
+    <div id="hHint"></div>
   </div>
   <div id="touch" class="hidden">
     <div id="tStick"><div id="tBase"><div id="tKnob"></div></div><div class="hint">STEER</div></div>
@@ -77,5 +78,9 @@
 </div>
 <script src="shared.js"></script>
 <script src="game.js"></script>
+<!-- Handheld shell (../shared/handheld/): D-pad = arrows, A = Space (drift / fire / select), B = e (item),
+     START = Enter (gunner: reset turret; menus: confirm), SELECT = Escape. ?handheld=0 opts out. -->
+<script src="../shared/handheld/handheld.js" data-screen="#wrap" data-aspect="1" data-name="DEATH RACE"
+        data-keys='{"a":" ","b":"e","start":"Enter","select":"Escape"}'></script>
 </body>
 </html>
