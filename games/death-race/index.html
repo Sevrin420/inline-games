@@ -35,13 +35,21 @@
     <div id="hCenter"></div>
   </div>
   <div id="touch" class="hidden">
-    <div id="tSteer"><div id="tKnob"></div></div>
-    <div id="tBtns">
-      <button id="tDrift">DRIFT</button>
-      <button id="tBrake">BRAKE</button>
-      <button id="tItem">ITEM</button>
+    <div id="tStick"><div id="tBase"><div id="tKnob"></div></div><div class="hint">STEER</div></div>
+    <div id="tAim"><div class="hint">DRAG TO AIM</div></div>
+    <div class="dBtns">
+      <button id="tDrift" class="tb big">DRIFT</button>
+      <button id="tBrake" class="tb">BRAKE</button>
+      <button id="tItem" class="tb item">ITEM</button>
     </div>
+    <div class="gBtns">
+      <button id="tFire" class="tb big fire">FIRE</button>
+      <button id="tItemG" class="tb item">ITEM</button>
+    </div>
+    <button id="tFwd" class="tb sm">⟲ FWD</button>
+    <button id="tTilt" class="tb sm">TILT OFF</button>
   </div>
+  <div id="rotate"><div>📱↻</div><p>ROTATE YOUR PHONE</p><small>Death Race plays in landscape</small></div>
   <button id="mute" title="Mute">🔊</button>
   <button id="fwdBtn" class="hidden" title="Reset turret to forward (R)">⟲ FWD <small>R</small></button>
   <div id="title">
@@ -53,6 +61,7 @@
       <button id="bShoot" class="role"><em>🎯</em>SHOOT<small>aim the roof gun</small></button>
     </div>
     <div id="status">connecting…</div>
+    <div class="mhelp">Left thumb steers · right thumb drifts &amp; brakes · gunner drags right side to aim, holds FIRE</div>
     <div class="help">
       <p><b>DRIVER</b> ←/→ steer &middot; SPACE hold to drift (release for turbo) &middot; ↓ brake &middot; E item</p>
       <p><b>GUNNER</b> 360° turret: move mouse (or drag / ←→) to swing the gun &middot; click/hold fires &middot; R recentres &middot; E item</p>
