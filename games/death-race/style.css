@@ -2,7 +2,7 @@
 html,body{margin:0;height:100%;background:#07020f;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 body{font-family:'Press Start 2P',ui-monospace,monospace;color:#fff}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#view{image-rendering:pixelated;image-rendering:crisp-edges;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;display:block;background:#000}
+#view{image-rendering:auto;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;display:block;background:#000}
 .hidden{display:none!important}
 #hud{position:absolute;inset:0;pointer-events:none;text-shadow:2px 2px 0 #000,0 0 8px rgba(255,60,120,.6)}
 #hTop{position:absolute;top:2.2vmin;left:3vmin;right:3vmin;display:flex;justify-content:space-between;align-items:flex-start}
@@ -76,3 +76,6 @@ body{font-family:'Press Start 2P',ui-monospace,monospace;color:#fff}
 #mute{bottom:auto;top:12vmin;right:9vmin}
 body.touch #hItem{display:none}
 body.touch #hFire{bottom:auto;top:30%}
+#fwdBtn{position:absolute;z-index:21;left:20vmin;bottom:20vmin;font:inherit;font-size:2vmin;padding:1.4vmin 2.2vmin;border-radius:5vmin;border:3px solid #7df9ff;background:rgba(20,0,40,.7);color:#fff;cursor:pointer;box-shadow:0 0 2vmin rgba(41,230,255,.5)}
+#fwdBtn small{font-size:1.2vmin;color:#7df9ff;margin-left:.6vmin}
+body.touch #fwdBtn{bottom:auto;top:24vmin;font-size:2.6vmin}
