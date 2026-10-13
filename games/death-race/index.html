@@ -18,7 +18,7 @@
 </head>
 <body>
 <div id="wrap">
-  <canvas id="view" width="400" height="225"></canvas>
+  <canvas id="view" width="480" height="270"></canvas>
   <div id="hud" class="hidden">
     <div id="hTop">
       <div id="hPos"><b>-</b><small>/ -</small></div>
@@ -43,6 +43,7 @@
     </div>
   </div>
   <button id="mute" title="Mute">🔊</button>
+  <button id="fwdBtn" class="hidden" title="Reset turret to forward (R)">⟲ FWD <small>R</small></button>
   <div id="title">
     <div class="logo"><span class="d">DEATH</span><span class="r">RACE</span></div>
     <div class="tag">ONE DRIVES &middot; ONE SHOOTS &middot; NOBODY STOPS</div>
@@ -54,7 +55,7 @@
     <div id="status">connecting…</div>
     <div class="help">
       <p><b>DRIVER</b> ←/→ steer &middot; SPACE hold to drift (release for turbo) &middot; ↓ brake &middot; E item</p>
-      <p><b>GUNNER</b> mouse aims &middot; click/hold fires &middot; E or right-click item</p>
+      <p><b>GUNNER</b> 360° turret: move mouse (or drag / ←→) to swing the gun &middot; click/hold fires &middot; R recentres &middot; E item</p>
       <p>Outrun the <span class="fire">wall of fire</span>. Kill zombies for power-ups. Spend cash between races.</p>
     </div>
   </div>
