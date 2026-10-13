@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>DEATH RACE</title>
+<meta name="description" content="2 players per car. One drives, one shoots. Outrun the wall of fire through a zombie-infested 1980s city.">
+<meta property="og:title" content="DEATH RACE">
+<meta property="og:description" content="Drive or shoot. Outrun the wall of fire. Kill zombies for power-ups. Upgrade between races.">
+<meta property="og:image" content="https://membersonly.cc/death-race/card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DEATH RACE">
+<meta name="twitter:description" content="2 players per car: one drives, one shoots. Outrun the wall of fire.">
+<meta name="twitter:image" content="https://membersonly.cc/death-race/card.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="view" width="400" height="225"></canvas>
+  <div id="hud" class="hidden">
+    <div id="hTop">
+      <div id="hPos"><b>-</b><small>/ -</small></div>
+      <div id="hTime">2:00</div>
+      <div id="hCash">$0</div>
+    </div>
+    <div id="hRole"></div>
+    <div id="hFire" class="hidden">🔥 FIRE <span>0</span>m</div>
+    <div id="hBottom">
+      <div id="hHealth"><div id="hHpBar"><i></i></div><div id="hSpeed"><b>0</b> MPH</div></div>
+      <div id="hItem"><span></span><small>ITEM</small></div>
+    </div>
+    <div id="hMsg"></div>
+    <div id="hCenter"></div>
+  </div>
+  <div id="touch" class="hidden">
+    <div id="tSteer"><div id="tKnob"></div></div>
+    <div id="tBtns">
+      <button id="tDrift">DRIFT</button>
+      <button id="tBrake">BRAKE</button>
+      <button id="tItem">ITEM</button>
+    </div>
+  </div>
+  <button id="mute" title="Mute">🔊</button>
+  <div id="title">
+    <div class="logo"><span class="d">DEATH</span><span class="r">RACE</span></div>
+    <div class="tag">ONE DRIVES &middot; ONE SHOOTS &middot; NOBODY STOPS</div>
+    <input id="name" maxlength="14" placeholder="YOUR NAME" autocomplete="off">
+    <div class="pick">
+      <button id="bDrive" class="role"><em>🏁</em>DRIVE<small>steer, drift, boost</small></button>
+      <button id="bShoot" class="role"><em>🎯</em>SHOOT<small>aim the roof gun</small></button>
+    </div>
+    <div id="status">connecting…</div>
+    <div class="help">
+      <p><b>DRIVER</b> ←/→ steer &middot; SPACE hold to drift (release for turbo) &middot; ↓ brake &middot; E item</p>
+      <p><b>GUNNER</b> mouse aims &middot; click/hold fires &middot; E or right-click item</p>
+      <p>Outrun the <span class="fire">wall of fire</span>. Kill zombies for power-ups. Spend cash between races.</p>
+    </div>
+  </div>
+  <div id="shop" class="hidden">
+    <div class="shopHead"><h2>PIT STOP</h2><div id="shopTimer">15</div></div>
+    <div id="shopCar"></div>
+    <div id="shopGrid"></div>
+    <div id="results"></div>
+  </div>
+</div>
+<script src="shared.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
