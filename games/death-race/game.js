@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 const S = window.DRShared;
-let W = 480; const H = 270, HOR = 88, F = 252, CH = 21, CAMD = 44, ZMAX = 1500;
+let W = 480, F = 252; const H = 270, HOR = 88, CH = 21, CAMD = 44, ZMAX = 1500;
 const cv = document.getElementById('view'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
 ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 const $ = (id) => document.getElementById(id);
@@ -698,7 +698,7 @@ function drawMinimap(wd, me) {
 const keys = {};
 const inp = { s: 0, g: 1, b: 0, d: 0, i: 0, a: 0, f: 0 };
 let mouse = { x: W / 2, y: HOR + 60, down: false, has: false }, touchSteer = 0, touchMode = false;
-addEventListener('keydown', (e) => { if (document.activeElement === $('name')) { if (e.key === 'Enter') join(lastRole || 'drive'); return; } keys[e.code] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'KeyX') inp.i = 1; if (e.code === 'KeyM') toggleMute(); if ((e.code === 'KeyR' || e.code === 'KeyF') && myRole === 'shoot') resetAim(); });
+addEventListener('keydown', (e) => { if (document.activeElement === $('name')) { if (e.key === 'Enter') join(lastRole || 'drive'); if (!e.handheld) return; $('name').blur(); } if (menuKey(e)) { e.preventDefault(); return; } keys[e.code] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (e.code === 'KeyE' || e.code === 'KeyX' || (e.code === 'Enter' && myRole !== 'shoot')) inp.i = 1; if (myRole === 'shoot' && (e.code === 'Enter' || (e.code === 'ArrowUp' && inShell()))) resetAim(); if (e.code === 'KeyM') toggleMute(); if ((e.code === 'KeyR' || e.code === 'KeyF') && myRole === 'shoot') resetAim(); });
 addEventListener('keyup', (e) => { keys[e.code] = false; });
 function toCanvas(cx, cy) { const r = cv.getBoundingClientRect(); return { x: (cx - r.left) / r.width * W, y: (cy - r.top) / r.height * H }; }
 cv.addEventListener('mousemove', (e) => {
@@ -748,8 +748,11 @@ function audioInit() {
   engGain = AC.createGain(); engGain.gain.value = 0; engOsc.connect(engFilt); engFilt.connect(engGain); engGain.connect(master); engOsc.start();
   startMusic();
 }
+addEventListener('handheld:mute', (e) => { const m = !!(e.detail && e.detail.muted); if (m !== muted) toggleMute(); });
+addEventListener('handheld:power', (e) => { if (e.detail && !e.detail.on) { for (const k in keys) keys[k] = false; touchFire = false; } });
 function toggleMute() { muted = !muted; localStorage.setItem('dr-muted', muted ? '1' : '0'); $('mute').textContent = muted ? '🔇' : '🔊'; if (master) master.gain.value = muted ? 0 : 0.5; }
 $('mute').textContent = muted ? '🔇' : '🔊';
+setTimeout(() => { if (window.Handheld && Handheld.current && Handheld.current.muted !== muted) { muted = !muted; toggleMute(); } }, 0);
 $('mute').addEventListener('click', (e) => { audioInit(); toggleMute(); e.stopPropagation(); });
 let noiseBuf = null;
 function noise(dur, gain, f0, f1) {
@@ -794,6 +797,24 @@ const ORD = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'TH' : ['TH', 'ST', 'ND
 const UPG_INFO = { engine: ['🔥', 'ENGINE', 'Top speed + acceleration'], armor: ['🛡️', 'ARMOR', '+35 max hull'], guns: ['🔫', 'GUNS', 'Damage + fire rate'], tires: ['🛞', 'TIRES', 'Grip + off-road speed'] };
 let lastRole = '', hudCache = {};
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).innerHTML = v; } }
+const inShell = () => { const H = window.Handheld && Handheld.current; const on = document.documentElement.classList.contains('hh-active') && !!H && H.visible !== false; document.documentElement.classList.toggle('dr-shell', on); return on; };
+let titleSel = 0, shopSel = 0;
+function markTitle() { $('bDrive').classList.toggle('sel', titleSel === 0); $('bShoot').classList.toggle('sel', titleSel === 1); }
+function markShop() { const ups = [...document.querySelectorAll('.up')]; ups.forEach((u, i) => u.classList.toggle('sel', i === shopSel)); }
+function menuKey(e) {
+  const title = !$('title').classList.contains('hidden'), shop = joined && !$('shop').classList.contains('hidden');
+  if (!title && !shop) return false;
+  const c = e.code;
+  if (title) {
+    if (c === 'ArrowLeft' || c === 'ArrowRight' || c === 'ArrowUp' || c === 'ArrowDown') { titleSel = c === 'ArrowLeft' ? 0 : c === 'ArrowRight' ? 1 : 1 - titleSel; markTitle(); sfx('beep'); return true; }
+    if (c === 'Space' || c === 'Enter') { join(titleSel ? 'shoot' : 'drive'); return true; }
+    return false;
+  }
+  if (c === 'ArrowLeft' || c === 'ArrowRight') { shopSel = (shopSel + (c === 'ArrowRight' ? 1 : 3)) % 4; markShop(); sfx('beep'); return true; }
+  if (c === 'Space' || c === 'Enter') { if (!e.repeat) { const u = document.querySelectorAll('.up')[shopSel]; if (u && !u.disabled) { send({ t: 'buy', k: u.dataset.k }); sfx('pick'); u.classList.add('on'); setTimeout(() => u.classList.remove('on'), 120); } } return true; }
+  if (c === 'ArrowUp' || c === 'ArrowDown') return true;
+  return false;
+}
 function join(role) {
   lastRole = role; audioInit(); goFullscreen(); buzz(15);
   const name = ($('name').value || '').trim().toUpperCase();
@@ -804,9 +825,16 @@ function join(role) {
 $('name').value = localStorage.getItem('dr-name') || '';
 $('bDrive').onclick = () => join('drive');
 $('bShoot').onclick = () => join('shoot');
+markTitle();
+function showHint() {
+  const el = $('hHint'); if (!el) return;
+  el.innerHTML = !inShell() ? '' : myRole === 'shoot' ? 'L/R AIM · <b>A</b> FIRE · <b>B</b> ITEM<br>UP/START = FWD · DRAG SCREEN TO AIM' : 'L/R STEER · <b>A</b> DRIFT<br><b>B</b> ITEM · DOWN BRAKE';
+  el.classList.remove('fade'); clearTimeout(showHint.t); showHint.t = setTimeout(() => el.classList.add('fade'), 9000);
+}
 function onJoined() {
   $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
-  if (isTouch()) { touchMode = true; showTouch(); }
+  if (isTouch() || inShell()) { touchMode = isTouch(); showTouch(); }
+  showHint();
   cv.style.cursor = myRole === 'shoot' ? 'grab' : 'none'; showFwd(); kbAim = 0; turretAim = 0;
 }
 function renderShop() {
@@ -819,7 +847,7 @@ function renderShop() {
     const lvl = m.up[k], cost = S.UPG_COST[lvl], maxed = lvl >= S.MAX_LVL, [ic, nm, ds] = UPG_INFO[k];
     html += `<button class="up" data-k="${k}" ${maxed || cash < cost ? 'disabled' : ''}><em>${ic}</em><h3>${nm}</h3><div class="pips">${'■'.repeat(lvl)}${'□'.repeat(S.MAX_LVL - lvl)}</div><div class="cost">${maxed ? 'MAXED' : '$' + cost}</div><div class="desc">${ds}</div></button>`;
   }
-  if (hudCache.shopGrid !== html) { hudCache.shopGrid = html; g.innerHTML = html; g.querySelectorAll('.up').forEach((b) => { b.onclick = () => { send({ t: 'buy', k: b.dataset.k }); sfx('pick'); }; b.addEventListener('touchstart', (e) => { e.preventDefault(); if (b.disabled) return; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 120); buzz(12); send({ t: 'buy', k: b.dataset.k }); sfx('pick'); }, { passive: false }); }); }
+  if (hudCache.shopGrid !== html) { hudCache.shopGrid = html; g.innerHTML = html; markShop(); g.querySelectorAll('.up').forEach((b) => { b.onclick = () => { send({ t: 'buy', k: b.dataset.k }); sfx('pick'); }; b.addEventListener('touchstart', (e) => { e.preventDefault(); if (b.disabled) return; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 120); buzz(12); send({ t: 'buy', k: b.dataset.k }); sfx('pick'); }, { passive: false }); }); }
   const res = meta.results || [];
   let t = '<table><tr><th>POS</th><th>CAR</th><th>DRIVER</th><th>GUNNER</th><th>DIST</th><th>CAR KILLS</th><th>ZOMBIES</th><th>PRIZE</th></tr>';
   for (const r of res) t += `<tr class="${r.id === myCar ? 'me' : ''}"><td>${ORD(r.pos)}</td><td>${r.name}</td><td>${r.d}</td><td>${r.g}</td><td>${r.dist}m</td><td>${r.kills}</td><td>${r.zk}</td><td>$${r.prize}</td></tr>`;
@@ -932,13 +960,17 @@ function makeVignette() { const [c, x] = mk(W, H); const g = x.createRadialGradi
 vignette = makeVignette();
 function resizeView() {
   // match the internal canvas to the screen's aspect so phones fill edge to edge (no letterbox)
-  const asp = clamp(innerWidth / Math.max(1, innerHeight), 1.3, 2.4);
+  if (typeof inShell === 'function') inShell();
+  const box = $('wrap').getBoundingClientRect();
+  const bw = box.width || innerWidth, bh = box.height || innerHeight;
+  const asp = clamp(bw / Math.max(1, bh), 1, 2.4);
   const nw = Math.round(H * asp / 2) * 2;
+  document.documentElement.classList.toggle('dr-square', asp < 1.2);
   if (nw === W) return;
-  W = nw; cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  W = nw; F = asp < 1.2 ? 200 : 252; // square shell screen: a slightly wider lens cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   gImg = ctx.createImageData(W, GH); gBuf = new Uint32Array(gImg.data.buffer); vignette = makeVignette();
 }
-addEventListener('resize', resizeView); addEventListener('orientationchange', () => setTimeout(resizeView, 200));
+addEventListener('resize', resizeView); addEventListener('load', () => setTimeout(resizeView, 50)); addEventListener('orientationchange', () => setTimeout(resizeView, 200));
 resizeView();
 window.DeathRace = { state: () => { const wd = lastWD; const me = wd && wd.cars.find((c) => c.id === myCar); return { connected, joined, myCar, myRole, phase: wd && wd.ph, tl: wd && wd.tl, cars: wd ? wd.cars.length : 0, zombies: wd ? wd.zombies.length : 0, me: me ? { x: me.x, y: me.y, hp: me.hp, spd: me.spd, cash: me.cash, item: me.item } : null, fy: wd && wd.fy }; }, keys };
 
@@ -946,15 +978,16 @@ window.DeathRace = { state: () => { const wd = lastWD; const me = wd && wd.cars.
 const isTouch = () => touchMode || matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
 function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 function goFullscreen() {
-  if (!isTouch()) return;
+  if (!isTouch() || inShell()) return;
   const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
   try {
     if (rq && !document.fullscreenElement) { const p = rq.call(el, { navigationUI: 'hide' }); if (p && p.then) p.then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {}); }
   } catch (e) {}
 }
-function showFwd() { $('fwdBtn').classList.toggle('hidden', myRole !== 'shoot' || isTouch()); }
+function showFwd() { $('fwdBtn').classList.toggle('hidden', myRole !== 'shoot' || isTouch() || inShell()); }
 function showTouch() {
   if (!joined) return;
+  if (inShell()) { const t = $('touch'); t.classList.remove('hidden'); t.classList.add('shell'); t.classList.toggle('gunner', myRole === 'shoot'); t.classList.toggle('driver', myRole !== 'shoot'); showFwd(); return; }
   document.body.classList.add('touch'); const t = $('touch');
   t.classList.remove('hidden'); t.classList.toggle('gunner', myRole === 'shoot'); t.classList.toggle('driver', myRole !== 'shoot'); showFwd();
 }
@@ -971,7 +1004,7 @@ function holdBtn(el, down, up) {
   const z = $('tStick'), base = $('tBase'), knob = $('tKnob'); let id = null, ox = 0, oy = 0;
   const R = () => Math.min(innerWidth, innerHeight) * 0.16;
   z.addEventListener('touchstart', (e) => {
-    e.preventDefault(); touchMode = true; if (id !== null) return; const t = e.changedTouches[0]; id = t.identifier; ox = t.clientX; oy = t.clientY;
+    e.preventDefault(); touchMode = true; if (id !== null && [...e.touches].some((q) => q.identifier === id)) return; const t = e.changedTouches[0]; id = t.identifier; ox = t.clientX; oy = t.clientY;
     base.style.left = ox + 'px'; base.style.top = oy + 'px'; base.classList.add('on'); knob.style.transform = ''; buzz(6);
   }, { passive: false });
   z.addEventListener('touchmove', (e) => {
@@ -990,7 +1023,7 @@ function holdBtn(el, down, up) {
 // right-thumb turret drag (gunner)
 (function aimZone() {
   const z = $('tAim'); let id = null, lx = 0, lt = 0;
-  z.addEventListener('touchstart', (e) => { e.preventDefault(); touchMode = true; if (id !== null) return; const t = e.changedTouches[0]; id = t.identifier; lx = t.clientX; lt = performance.now(); aimDragging = true; }, { passive: false });
+  z.addEventListener('touchstart', (e) => { e.preventDefault(); touchMode = true; if (id !== null && [...e.touches].some((q) => q.identifier === id)) return; const t = e.changedTouches[0]; id = t.identifier; lx = t.clientX; lt = performance.now(); aimDragging = true; }, { passive: false });
   z.addEventListener('touchmove', (e) => {
     e.preventDefault();
     for (const t of e.changedTouches) if (t.identifier === id) {
@@ -1001,6 +1034,10 @@ function holdBtn(el, down, up) {
   }, { passive: false });
   const end = (e) => { for (const t of e.changedTouches) if (t.identifier === id) { id = null; aimDragging = false; } };
   z.addEventListener('touchend', end); z.addEventListener('touchcancel', end);
+  let mx = null; // mouse drag on the shell screen
+  z.addEventListener('mousedown', (e) => { mx = e.clientX; aimDragging = true; });
+  addEventListener('mousemove', (e) => { if (mx === null) return; kbAim = wrapA(kbAim + (e.clientX - mx) * AIM_TOUCH_PX * 1.2); mx = e.clientX; aimReset = false; });
+  addEventListener('mouseup', () => { if (mx !== null) { mx = null; aimDragging = false; } });
 })();
 holdBtn($('tDrift'), () => { keys.TouchDrift = true; }, () => { keys.TouchDrift = false; });
 holdBtn($('tBrake'), () => { keys.TouchBrake = true; }, () => { keys.TouchBrake = false; });
@@ -1023,12 +1060,13 @@ let aimDragging = false, aimSensMul = 1;
 const AIM_TOUCH_PX = 0.0075;
 // gentle aim assist on touch: drift the turret toward the closest target near the crosshair
 function aimAssist(me, dt) {
-  if (!isTouch() || aimReset || !lastWD) return;
-  let best = null, bd = 0.3;
+  if (!(isTouch() || inShell()) || aimReset || !lastWD) return;
+  if (!touchFire && !keys.Space && !aimDragging) return; // only nudge while you're actively aiming/shooting
+  let best = null, bd = 0.22;
   const consider = (x, y, w) => { const d = Math.hypot(x - me.x, y - me.y); if (d < 12 || d > 230) return; const da = wrapA(Math.atan2(x - me.x, y - me.y) - me.h - kbAim); if (Math.abs(da) * w < bd) { bd = Math.abs(da) * w; best = da; } };
   for (const z of lastWD.zombies) consider(z.x, z.y, 1);
   for (const c of lastWD.cars) if (c.id !== myCar && !(c.fl & 1)) consider(c.x, c.y, 0.8);
-  if (best !== null) kbAim = wrapA(kbAim + clamp(best, -1, 1) * dt * ((touchFire ? 3.2 : 1.6) * (aimDragging ? 0.5 : 1)));
+  if (best !== null) kbAim = wrapA(kbAim + clamp(best, -0.5, 0.5) * dt * (aimDragging ? 0.6 : 1.4));
 }
 // no page scroll / zoom / pull-to-refresh / long-press / double-tap zoom
 document.addEventListener('touchmove', (e) => { if (!e.target.closest || !e.target.closest('#results')) e.preventDefault(); }, { passive: false });
@@ -1041,7 +1079,7 @@ document.addEventListener('touchstart', () => { touchMode = true; audioInit(); }
 
 $('fwdBtn').addEventListener('click', (e) => { resetAim(); e.stopPropagation(); });
 $('fwdBtn').addEventListener('touchstart', (e) => { resetAim(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
-window.DeathRace.aim = () => kbAim; window.DeathRace.inp = () => ({ ...inp, touchSteer, touchFire, W });
+window.DeathRace.aim = () => kbAim; window.DeathRace.inp = () => ({ ...inp, touchSteer, touchFire, W, muted, shell: inShell() });
 connect();
 requestAnimationFrame(frame);
 })();
