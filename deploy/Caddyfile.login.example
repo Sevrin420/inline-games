@@ -16,6 +16,12 @@ membersonly.cc {
 		reverse_proxy 127.0.0.1:3100
 	}
 
+	# Death Race realtime server: systemd unit death-race on 127.0.0.1:3110.
+	@deathrace path /death-race/ws /death-race/status
+	handle @deathrace {
+		reverse_proxy 127.0.0.1:3110
+	}
+
 	handle {
 		root * /opt/games
 		file_server

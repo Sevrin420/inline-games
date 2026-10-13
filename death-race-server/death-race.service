@@ -1,0 +1,19 @@
+[Unit]
+Description=Death Race realtime game server (WebSocket on 127.0.0.1:3110)
+After=network.target
+
+[Service]
+Type=simple
+User=inline-games
+WorkingDirectory=/opt/death-race-server
+Environment=PORT=3110
+ExecStart=/opt/inline-games-node/bin/node /opt/death-race-server/server.js
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
