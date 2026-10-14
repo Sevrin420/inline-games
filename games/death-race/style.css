@@ -2,7 +2,7 @@
 html,body{margin:0;height:100%;position:fixed;inset:0;overscroll-behavior:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;background:#07020f;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 body{font-family:'Press Start 2P',ui-monospace,monospace;color:#fff}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;container-type:size;overflow:hidden}
-#view{image-rendering:auto;width:100vw;height:100vh;height:100dvh;display:block;background:#000}
+#view{image-rendering:pixelated;image-rendering:crisp-edges;width:100vw;height:100vh;height:100dvh;display:block;background:#000}
 .hidden{display:none!important}
 #hud{position:absolute;inset:0;pointer-events:none;text-shadow:2px 2px 0 #000,0 0 8px rgba(255,60,120,.6)}
 #hTop{position:absolute;top:2.2cqmin;left:3cqmin;right:3cqmin;display:flex;justify-content:space-between;align-items:flex-start}
