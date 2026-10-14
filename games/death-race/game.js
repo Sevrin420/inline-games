@@ -2,9 +2,9 @@
 (function () {
 'use strict';
 const S = window.DRShared;
-let W = 480, F = 252; const H = 270, HOR = 88, CH = 21, CAMD = 44, ZMAX = 1500;
+let W = 480, H = 270, HOR = 88, F = 252, SCALE = 1; const CH = 21, CAMD = 44, ZMAX = 1500, BASE_H = 270;
 const cv = document.getElementById('view'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
-ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+ctx.imageSmoothingEnabled = false;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrapA = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -423,8 +423,9 @@ function proj(wx, wy) {
 }
 
 // ================= ground =================
-const GH = H - HOR;
-let gImg = ctx.createImageData(W, GH), gBuf = new Uint32Array(gImg.data.buffer);
+let GH = H - HOR; Object.defineProperty(window, '__DR_GH', { set(v) { GH = v; }, get() { return GH; }, configurable: true });
+const groundCv = document.createElement('canvas'); let groundCtx = groundCv.getContext('2d');
+let gImg = groundCtx.createImageData(W, GH), gBuf = new Uint32Array(gImg.data.buffer);
 const TN = 2400, cT = new Float32Array(TN), hT = new Float32Array(TN);
 function drawGround() {
   const cx = camState.x, cy = camState.y, fx = camState.fx, fy = camState.fy, rx = camState.rx, ry = camState.ry;
@@ -473,7 +474,9 @@ function drawGround() {
       gBuf[p++] = (255 << 24) | (((((col >> 16) & 255) * fi + fb) | 0) << 16) | (((((col >> 8) & 255) * fi + fg) | 0) << 8) | ((((col & 255) * fi + fr) | 0));
     }
   }
-  ctx.putImageData(gImg, 0, HOR);
+  groundCtx.putImageData(gImg, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(groundCv, 0, HOR);
 }
 
 // ================= glow sprites =================
@@ -558,12 +561,12 @@ function drawWall(t, A, B, ua, ub, ht, dark) {
   const hP = ht * P.s, hQ = ht * Q.s, hAvg = (hP + hQ) / 2;
   const a = (Q.sx - P.sx) / du, bb = (Q.sy - P.sy) / du, d = hAvg / t.TH;
   ctx.globalAlpha = fogAlpha((A.z + B.z) / 2);
-  ctx.imageSmoothingEnabled = d < 1.8; // keep big close-up walls crisp, smooth the distance
-  ctx.setTransform(a, bb, 0, d, P.sx, P.sy - hAvg);
+  ctx.imageSmoothingEnabled = false; // crisp pixels everywhere
+  ctx.setTransform(a * SCALE, bb * SCALE, 0, d * SCALE, P.sx * SCALE, (P.sy - hAvg) * SCALE);
   ctx.drawImage(t.c, u0, 0, Math.min(du + 0.6, t.TW - u0), t.TH, 0, 0, Math.min(du + 0.6, t.TW - u0), t.TH);
   if (dark) { ctx.fillStyle = `rgba(10,0,20,${dark})`; ctx.fillRect(0, 0, du + 0.6, t.TH); }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true;
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = false;
 }
 function addProps() {
   const STEP = 58, i0 = Math.floor((camState.y - 40) / STEP), i1 = Math.floor((camState.y + 1100) / STEP);
@@ -815,6 +818,14 @@ function menuKey(e) {
   if (c === 'ArrowUp' || c === 'ArrowDown') return true;
   return false;
 }
+function updateTitleHelp() {
+  const m = $('mhelp'); if (!m) return;
+  if (inShell()) m.innerHTML = 'D-PAD pick Drive/Shoot · <b>A</b> / START joins · type a name if you want';
+  else if (isTouch()) m.innerHTML = 'Left thumb steers · right thumb drifts &amp; brakes · gunner: drag to aim, hold FIRE';
+  else m.innerHTML = 'Driver: ←→ steer · SPACE drift · ↓ brake · E item &nbsp;·&nbsp; Gunner: mouse aims · click fires · R FWD · E item';
+}
+setTimeout(updateTitleHelp, 0); addEventListener('load', () => setTimeout(updateTitleHelp, 80));
+addEventListener('resize', () => setTimeout(updateTitleHelp, 60));
 function join(role) {
   lastRole = role; audioInit(); goFullscreen(); buzz(15);
   const name = ($('name').value || '').trim().toUpperCase();
@@ -828,13 +839,28 @@ $('bShoot').onclick = () => join('shoot');
 markTitle();
 function showHint() {
   const el = $('hHint'); if (!el) return;
-  el.innerHTML = !inShell() ? '' : myRole === 'shoot' ? 'L/R AIM · <b>A</b> FIRE · <b>B</b> ITEM<br>UP/START = FWD · DRAG SCREEN TO AIM' : 'L/R STEER · <b>A</b> DRIFT<br><b>B</b> ITEM · DOWN BRAKE';
-  el.classList.remove('fade'); clearTimeout(showHint.t); showHint.t = setTimeout(() => el.classList.add('fade'), 9000);
+  let html = '';
+  if (inShell()) {
+    html = myRole === 'shoot'
+      ? 'D-PAD aim · <b>A</b> fire · <b>B</b> item<br>UP / START = FWD · drag screen to aim'
+      : 'D-PAD steer · <b>A</b> drift · <b>B</b> item<br>DOWN = brake';
+  } else if (isTouch()) {
+    html = myRole === 'shoot'
+      ? 'Drag right to aim · hold <b>FIRE</b> · <b>ITEM</b> · <b>FWD</b> resets'
+      : 'Left stick steers · <b>DRIFT</b> · <b>BRAKE</b> · <b>ITEM</b>';
+  } else {
+    html = myRole === 'shoot'
+      ? 'Mouse aims · click fires · <b>R</b> FWD · <b>E</b> item'
+      : '←→ steer · <b>SPACE</b> drift · ↓ brake · <b>E</b> item';
+  }
+  el.innerHTML = html;
+  el.classList.remove('fade'); clearTimeout(showHint.t); showHint.t = setTimeout(() => el.classList.add('fade'), 7000);
 }
 function onJoined() {
   $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
   if (isTouch() || inShell()) { touchMode = isTouch(); showTouch(); }
   showHint();
+  updateTitleHelp();
   cv.style.cursor = myRole === 'shoot' ? 'grab' : 'none'; showFwd(); kbAim = 0; turretAim = 0;
 }
 function renderShop() {
@@ -908,8 +934,9 @@ function frame(now) {
   // sky
   const off = ((-camState.h / (Math.PI * 2)) * sky.SW * 2) % sky.SW;
   const ox = ((off % sky.SW) + sky.SW) % sky.SW;
-  ctx.drawImage(sky.c, ox, 0, Math.min(W, sky.SW - ox), HOR + 2, 0, 0, Math.min(W, sky.SW - ox), HOR + 2);
-  if (sky.SW - ox < W) ctx.drawImage(sky.c, 0, 0, W - (sky.SW - ox), HOR + 2, sky.SW - ox, 0, W - (sky.SW - ox), HOR + 2);
+  const SKH = sky.c.height;
+  ctx.drawImage(sky.c, ox, 0, Math.min(W, sky.SW - ox), SKH, 0, 0, Math.min(W, sky.SW - ox), HOR + 2);
+  if (sky.SW - ox < W) ctx.drawImage(sky.c, 0, 0, W - (sky.SW - ox), SKH, sky.SW - ox, 0, W - (sky.SW - ox), HOR + 2);
   drawGround();
   // horizon haze
   const hz = ctx.createLinearGradient(0, HOR - 10, 0, HOR + 14); hz.addColorStop(0, 'rgba(255,120,90,0)'); hz.addColorStop(0.5, 'rgba(255,120,90,.55)'); hz.addColorStop(1, 'rgba(255,120,90,0)');
@@ -947,8 +974,7 @@ function frame(now) {
     if (me && (me.fl & 64)) { gunT -= dt; if (gunT <= 0) { sfx('gun'); gunT = 0.09; } }
     updateHud(wd, me);
   }
-  bloom();
-  // scanlines + vignette for the CRT feel
+  // scanlines + vignette for the CRT feel (no whole-screen bloom — keeps the shell crisp)
   ctx.fillStyle = 'rgba(0,0,0,.05)'; for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1);
   ctx.drawImage(vignette, 0, 0);
   // engine
@@ -959,16 +985,37 @@ let vignette;
 function makeVignette() { const [c, x] = mk(W, H); const g = x.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,0,25,.55)'); x.fillStyle = g; x.fillRect(0, 0, W, H); return c; }
 vignette = makeVignette();
 function resizeView() {
-  // match the internal canvas to the screen's aspect so phones fill edge to edge (no letterbox)
   if (typeof inShell === 'function') inShell();
   const box = $('wrap').getBoundingClientRect();
-  const bw = box.width || innerWidth, bh = box.height || innerHeight;
-  const asp = clamp(bw / Math.max(1, bh), 1, 2.4);
-  const nw = Math.round(H * asp / 2) * 2;
-  document.documentElement.classList.toggle('dr-square', asp < 1.2);
-  if (nw === W) return;
-  W = nw; F = asp < 1.2 ? 200 : 252; // square shell screen: a slightly wider lens cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  gImg = ctx.createImageData(W, GH); gBuf = new Uint32Array(gImg.data.buffer); vignette = makeVignette();
+  const bw = Math.max(1, box.width || innerWidth), bh = Math.max(1, box.height || innerHeight);
+  const asp = clamp(bw / bh, 1, 2.4);
+  const square = asp < 1.2;
+  document.documentElement.classList.toggle('dr-square', square);
+  // Logical game size: square shell gets a sharper base; wide stays 270-tall 16:9-ish.
+  const baseH = square ? 320 : BASE_H;
+  const nw = Math.round(baseH * asp / 2) * 2;
+  const nh = baseH;
+  const nHor = Math.round(baseH * (88 / BASE_H));
+  // Integer scale so one game pixel → N device pixels (no mushy upscale). Cap for perf.
+  const dpr = Math.min(3, devicePixelRatio || 1);
+  const nextScale = Math.max(1, Math.min(4, Math.round((dpr * Math.min(bw, bh)) / Math.min(nw, nh))));
+  if (nw === W && nh === H && nextScale === SCALE && cv.width === W * SCALE) {
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    return;
+  }
+  W = nw; H = nh; HOR = nHor; F = square ? 210 : 252; SCALE = nextScale;
+  cv.width = W * SCALE; cv.height = H * SCALE;
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  groundCv.width = W; groundCv.height = H - HOR;
+  groundCtx = groundCv.getContext('2d');
+  // GH is const-bound above; refresh ground buffers against current H
+  const gh = H - HOR;
+  gImg = groundCtx.createImageData(W, gh); gBuf = new Uint32Array(gImg.data.buffer);
+  // patch GH used by drawGround via a writable alias
+  window.__DR_GH = gh;
+  vignette = makeVignette();
 }
 addEventListener('resize', resizeView); addEventListener('load', () => setTimeout(resizeView, 50)); addEventListener('orientationchange', () => setTimeout(resizeView, 200));
 resizeView();
@@ -1079,7 +1126,7 @@ document.addEventListener('touchstart', () => { touchMode = true; audioInit(); }
 
 $('fwdBtn').addEventListener('click', (e) => { resetAim(); e.stopPropagation(); });
 $('fwdBtn').addEventListener('touchstart', (e) => { resetAim(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
-window.DeathRace.aim = () => kbAim; window.DeathRace.inp = () => ({ ...inp, touchSteer, touchFire, W, muted, shell: inShell() });
+window.DeathRace.aim = () => kbAim; window.DeathRace.inp = () => ({ ...inp, touchSteer, touchFire, W, H, SCALE, muted, shell: inShell(), cvW: cv.width, cvH: cv.height });
 connect();
 requestAnimationFrame(frame);
 })();
