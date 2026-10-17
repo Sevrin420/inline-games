@@ -149,14 +149,14 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 }
 .hh-port .hh-device {
   width: 372px; padding: 0 9px 12px;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 34px auto 34px 132px 38px 56px;
-  grid-template-areas: "top top" "bezel bezel" "brand brand" "dpad ab" "sel start" "menu speaker";
+  grid-template-columns: 1fr auto auto 1fr;
+  grid-template-rows: 34px auto 34px 160px 60px;
+  grid-template-areas: "top top top top" "bezel bezel bezel bezel" "brand brand brand brand" "dpad dpad ab ab" "menu sel start speaker"; /* v4: START/SELECT tucked between mute and speaker, no row of their own */
 }
 .hh-land .hh-device {
   padding: 0 16px 10px; border-radius: 40px 40px 70px 40px; column-gap: 12px;
   grid-template-columns: 178px auto 178px;
-  grid-template-rows: 34px 1fr 64px 46px;
+  grid-template-rows: 34px 1fr 40px 46px;
   grid-template-areas: "top top top" "dpad bezel ab" "sel bezel start" "menu brand speaker";
 }
 .hh-land .hh-device::before { border-radius: 35px 35px 65px 35px; }
@@ -349,22 +349,22 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
 
 /* ================================================================ D-pad */
 .hh-dpad, .hh-ab, .hh-bezel { will-change: transform; } /* own layers: presses and game frames don't repaint the body */
-.hh-dpad { grid-area: dpad; position: relative; width: 116px; height: 116px; align-self: center; justify-self: center; }
-.hh-port .hh-dpad { justify-self: start; margin-left: 10px; }
-.hh-land .hh-dpad { width: 124px; height: 124px; }
+.hh-dpad { grid-area: dpad; position: relative; width: 150px; height: 150px; align-self: center; justify-self: center; }
+.hh-port .hh-dpad { justify-self: start; margin-left: 6px; }
+.hh-land .hh-dpad { width: 156px; height: 156px; }
 .hh-well { display: none; } /* v3: the D-pad sits directly on the body */
 .hh-cross { position: absolute; inset: 4px; transition: transform .05s; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4)) drop-shadow(0 6px 7px rgba(0, 0, 0, .35)); }
-.hh-arm { position: absolute; border-radius: 8px; background: linear-gradient(160deg, var(--pad1), var(--pad2));
+.hh-arm { position: absolute; border-radius: 10px; background: linear-gradient(160deg, var(--pad1), var(--pad2));
   box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, .25), inset 0 -2px 3px rgba(0, 0, 0, .4); }
 .hh-arm-v { left: 35%; right: 35%; top: 0; bottom: 0; }
 .hh-arm-h { top: 35%; bottom: 35%; left: 0; right: 0; }
-.hh-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
+.hh-hub { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
   background: radial-gradient(circle at 50% 62%, rgba(0, 0, 0, .45), rgba(255, 255, 255, .07) 72%); }
-.hh-tri { position: absolute; width: 0; height: 0; border: 5px solid transparent; opacity: .7; }
-.hh-tri-up { left: 50%; top: 8px; margin-left: -5px; border-bottom-color: var(--padmark); border-top-width: 0; }
-.hh-tri-down { left: 50%; bottom: 8px; margin-left: -5px; border-top-color: var(--padmark); border-bottom-width: 0; }
-.hh-tri-left { top: 50%; left: 8px; margin-top: -5px; border-right-color: var(--padmark); border-left-width: 0; }
-.hh-tri-right { top: 50%; right: 8px; margin-top: -5px; border-left-color: var(--padmark); border-right-width: 0; }
+.hh-tri { position: absolute; width: 0; height: 0; border: 7px solid transparent; opacity: .7; }
+.hh-tri-up { left: 50%; top: 10px; margin-left: -7px; border-bottom-color: var(--padmark); border-top-width: 0; }
+.hh-tri-down { left: 50%; bottom: 10px; margin-left: -7px; border-top-color: var(--padmark); border-bottom-width: 0; }
+.hh-tri-left { top: 50%; left: 10px; margin-top: -7px; border-right-color: var(--padmark); border-left-width: 0; }
+.hh-tri-right { top: 50%; right: 10px; margin-top: -7px; border-left-color: var(--padmark); border-right-width: 0; }
 .hh-p-up .hh-tri-up, .hh-p-down .hh-tri-down, .hh-p-left .hh-tri-left, .hh-p-right .hh-tri-right { opacity: 1; border-color: transparent; filter: drop-shadow(0 0 4px var(--acc1)); }
 .hh-p-up .hh-tri-up { border-bottom-color: var(--acc1); }
 .hh-p-down .hh-tri-down { border-top-color: var(--acc1); }
@@ -396,15 +396,15 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
   text-shadow: 0 1px 0 var(--embhi), 0 -1px 0 var(--emblo); }
 
 /* ================================================================ start / select */
-.hh-pillwrap { position: relative; align-self: start; padding-top: 4px; transform: rotate(-24deg); }
-.hh-select { grid-area: sel; justify-self: end; margin-right: 14px; }
-.hh-start { grid-area: start; justify-self: start; margin-left: 14px; }
-.hh-land .hh-select, .hh-land .hh-start { justify-self: center; margin: 0; align-self: center; }
-.hh-pill { position: relative; width: 48px; height: 15px; border-radius: 10px; padding: 3px; background: var(--well); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .3), 0 1px 0 var(--embhi); }
-.hh-pillcap { position: absolute; inset: 3px; border-radius: 8px; background: linear-gradient(180deg, var(--pill1), var(--pill2));
+.hh-pillwrap { position: relative; align-self: center; margin-top: -8px; transform: rotate(-24deg); }
+.hh-select { grid-area: sel; justify-self: center; margin-right: 4px; }
+.hh-start { grid-area: start; justify-self: center; margin-left: 4px; }
+.hh-land .hh-select, .hh-land .hh-start { justify-self: center; margin: -6px 0 0; align-self: start; }
+.hh-pill { box-sizing: content-box; position: relative; width: 34px; height: 11px; border-radius: 8px; padding: 2px; background: var(--well); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .3), 0 1px 0 var(--embhi); }
+.hh-pillcap { position: absolute; inset: 2px; border-radius: 6px; background: linear-gradient(180deg, var(--pill1), var(--pill2));
   box-shadow: 0 2px 0 rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .3); transition: transform .05s; }
 .hh-down .hh-pillcap { transform: translateY(1.5px); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4), 0 0 8px var(--acc2); }
-.hh-pillwrap .hh-lbl { font-size: 7.5px; margin-top: 6px; }
+.hh-pillwrap .hh-lbl { font-size: 6px; margin-top: 4px; letter-spacing: .1em; }
 
 /* ================================================================ speaker, model number, mute */
 .hh-speaker { grid-area: speaker; justify-self: end; align-self: center; position: relative; width: 58px; height: 58px; margin-right: 18px; border-radius: 50%;
