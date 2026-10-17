@@ -225,14 +225,16 @@ const ITEM_IMG = (() => {
 
 // ================================================================ world: 80x80 metatiles of 16x16, with height levels (3/4 view, pre-projected)
 const TS = 16, MW = 80, MH = 80, WPX = MW * TS;
-const K = { ASPH: 0, WALK: 1, GRASS: 2, PLAZA: 3, DIRT: 4, RUBTOP: 5, LEDGE: 6, TROOF: 7, BED: 8, BROOF: 10, BWALL: 11, TFACE: 12, RFACE: 13, CAR: 14, BARRIER: 15, PROP: 16, PARAPET: 17 };
+const K = { ASPH: 0, WALK: 1, GRASS: 2, PLAZA: 3, DIRT: 4, RUBTOP: 5, LEDGE: 6, TROOF: 7, BED: 8, BROOF: 10, BWALL: 11, TFACE: 12, RFACE: 13, CAR: 14, BARRIER: 15, PROP: 16, PARAPET: 17, LADDER: 18 };
 const kind = new Uint8Array(MW * MH), lvl = new Int8Array(MW * MH);
 const id = (x, y) => (x < 0 || y < 0 || x >= MW || y >= MH ? -1 : y * MW + x);
 function setT(x, y, k, l) { const i = id(x, y); if (i < 0) return; kind[i] = k; lvl[i] = l; }
-const isFace = (i) => i >= 0 && (kind[i] === K.TFACE || kind[i] === K.RFACE);
+const isFace = (i) => i >= 0 && (kind[i] === K.TFACE || kind[i] === K.RFACE || kind[i] === K.LADDER);
 const WR = rng(2026);
 const buildings = [], ruins = [], cars = [], props = [], ledges = [];
 const TOWER = { x0: 34, x1: 45, ry0: 24, ry1: 31, fy0: 32, fy1: 45, ROOF: 7 };
+// v3: one step up onto the tower (A jump), then a ladder straight up the face to the roof
+const LADDER = { x0: 39, x1: 40, y0: 32, y1: 43, cx: 40 * 16, top: 31 * 16 + 12, bot: 44 * 16 + 10 };
 const NEST = { x: 40 * TS + 8, y: 27 * TS + 12 }; // campfire (world px)
 function genWorld() {
   kind.fill(K.ASPH); lvl.fill(0);
@@ -247,12 +249,13 @@ function genWorld() {
   }
   // plaza around the tower
   for (let x = 32; x <= 49; x++) for (let y = 22; y <= 49; y++) setT(x, y, K.PLAZA, 0);
-  // the tower: roof (level 7) + tall south face; ledges zig-zag up the face (levels 1..6)
+  // the tower: roof (level 7) + tall south face; a single entrance step (level 1) and a ladder up the face
   const T = TOWER;
   for (let x = T.x0; x <= T.x1; x++) { for (let y = T.ry0; y <= T.ry1; y++) setT(x, y, K.TROOF, T.ROOF); for (let y = T.fy0; y <= T.fy1; y++) setT(x, y, K.TFACE, -1); }
-  for (let x = T.x0; x <= T.x1; x++) { setT(x, T.ry0, K.PARAPET, -1); if (x < 39 || x > 42) setT(x, T.ry1, K.PARAPET, -1); }
+  for (let x = T.x0; x <= T.x1; x++) { setT(x, T.ry0, K.PARAPET, -1); if (x < LADDER.x0 || x > LADDER.x1) setT(x, T.ry1, K.PARAPET, -1); }
   for (let y = T.ry0; y <= T.ry1; y++) { setT(T.x0, y, K.PARAPET, -1); setT(T.x1, y, K.PARAPET, -1); }
-  [[35, 44], [39, 42], [43, 40], [39, 38], [35, 36], [38, 33]].forEach(([x, y], i) => { for (let dx = 0; dx < 3; dx++) for (let dy = 0; dy < 2; dy++) setT(x + dx, y + dy, K.LEDGE, i + 1); ledges.push({ x, y, level: i + 1 }); });
+  [[37, 44, 6]].forEach(([x, y, w], i) => { for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < 2; dy++) setT(x + dx, y + dy, K.LEDGE, i + 1); ledges.push({ x, y, w, level: i + 1 }); });
+  for (let x = LADDER.x0; x <= LADDER.x1; x++) for (let y = LADDER.y0; y <= LADDER.y1; y++) setT(x, y, K.LADDER, -1);
   setT(40, 27, K.PROP, -1); setT(43, 26, K.PROP, -1); props.push({ type: 'campfire', tx: 40, ty: 27 }, { type: 'crate', tx: 43, ty: 26, static: true });
   setT(36, 27, K.BED, 7); setT(36, 28, K.BED, 7);
   setT(35, 25, K.PROP, -1); props.push({ type: 'antenna', tx: 35, ty: 25 });
@@ -421,11 +424,16 @@ function drawTower() {
   R_(X, FY, W, 2, C[3]);
   R_(X, FY + FH - 6, W, 6, C[2]); R_(X, FY + FH - 2, W, 2, C[3]);
   R_(X, FY, 2, FH, C[0]); R_(X + W - 4, FY, 4, FH, C[2]); R_(X - 1, FY, 1, FH, OUT); R_(X + W, FY, 1, FH, OUT); R_(X, FY + FH - 1, W, 1, OUT);
-  // painted arrows guiding the climb
-  for (const [ax, ay] of [[37 * TS + 8, 46 * TS - 30]]) { R_(ax - 1, ay - 10, 3, 9, RAMP.scarf[1]); R_(ax - 4, ay - 7, 9, 2, RAMP.scarf[1]); R_(ax - 3, ay - 8, 7, 1, RAMP.scarf[1]); }
+  // the ladder: dark recess behind it, two outlined rails, rungs every 5 px, top-left lit
+  { const lx = LADDER.x0 * TS + 2, lw = (LADDER.x1 - LADDER.x0 + 1) * TS - 4, ly = FY - 2, lh = (LADDER.y1 + 1) * TS - ly, Mt = RAMP.metal;
+    R_(lx - 2, ly, lw + 4, lh, OUT); R_(lx, ly, lw, lh, C[3]);
+    for (let yy = ly + 3; yy < ly + lh - 1; yy += 5) { R_(lx + 3, yy, lw - 6, 2, Mt[1]); R_(lx + 3, yy, lw - 6, 1, Mt[0]); R_(lx + 3, yy + 2, lw - 6, 1, OUT); }
+    for (const rx of [lx + 1, lx + lw - 4]) { R_(rx - 1, ly, 5, lh, OUT); R_(rx, ly, 3, lh, Mt[1]); R_(rx, ly, 1, lh, Mt[0]); R_(rx + 2, ly, 1, lh, Mt[2]); }
+    // painted UP arrows beside the ladder
+    for (const ax of [lx - 9, lx + lw + 8]) for (const ay of [FY + FH - 70, FY + 70]) { R_(ax - 1, ay - 10, 3, 9, RAMP.scarf[1]); R_(ax - 4, ay - 7, 9, 2, RAMP.scarf[1]); R_(ax - 3, ay - 8, 7, 1, RAMP.scarf[1]); } }
   // ledges: metal grating platforms with a hazard lip, cast shadow on the wall below, struts
   for (const L of ledges) {
-    const lx = L.x * TS, ly = L.y * TS, lw = 3 * TS, lh = 2 * TS, Mt = RAMP.metal;
+    const lx = L.x * TS, ly = L.y * TS, lw = L.w * TS, lh = 2 * TS, Mt = RAMP.metal;
     R_(lx, ly + lh, lw, 6, DARK_SHADOW); R_(lx + 2, ly + lh + 6, 3, 8, OUT); R_(lx + lw - 5, ly + lh + 6, 3, 8, OUT);
     R_(lx, ly, lw, lh - 4, Mt[1]);
     for (let gx = 0; gx < lw; gx += 4) R_(lx + gx, ly, 1, lh - 4, Mt[2]);
@@ -506,7 +514,7 @@ function newGame() {
     inv: { food: 2, mre: 0, med: 1, ammo: 0, shells: 0 }, owned: ['fists', 'pipe'], weapon: 'pipe',
     resting: false, menuI: 0, shake: 0, flash: 0, deathCause: '', tracers: [], hits: [], cdT: 0, lightning: 0, swing: null,
   };
-  Object.assign(player, { x: 38 * TS + 8, y: 29 * TS + 8, level: TOWER.ROOF, air: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0] });
+  Object.assign(player, { x: 38 * TS + 8, y: 29 * TS + 8, level: TOWER.ROOF, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0] });
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
   scatterLoot(40, true);
   say('THE CITY IS DEAD. SCAVENGE.', 4);
@@ -533,6 +541,7 @@ function moveBody(b, dx, dy, hw) {
 }
 const JUMP_V = 110, GRAV = 420, HOP_V = 60;
 function jump() {
+  if (player.climb) return;
   if (player.air) { player.jumpBuf = 0.12; return; }
   if (G.stam < 4) { say('TOO TIRED TO JUMP', 1); return; }
   Object.assign(player, { air: true, vz: JUMP_V, jz: 0, maxL: player.level + 1, sx: player.x, sy: player.y });
@@ -719,6 +728,21 @@ function updatePlayer(dt) {
   if (G.state !== 'play' || G.resting) { mx = my = 0; m = 0; }
   player.moving = m > 0.1;
   if (player.moving) { player.fx = mx / m; player.fy = my / m; player.anim += dt * 8 * m; player.dir = Math.abs(mx) > Math.abs(my) * 1.05 ? (mx < 0 ? 2 : 3) : (my > 0 ? 0 : 1); }
+  // LADDER: hold up on the entrance step (or down at the roof gap) to grab it; climb with up/down
+  const onLadderCol = Math.abs(player.x - LADDER.cx) < 12;
+  if (!player.climb && !player.air && G.state === 'play' && onLadderCol && !G.resting) {
+    if (player.level === 1 && my < -0.5 && kind[tileAt(player.x, player.y - 9)] === K.LADDER) { player.climb = true; player.x = LADDER.cx; }
+    else if (player.level === TOWER.ROOF && my > 0.5 && kind[tileAt(player.x, player.y + 6)] === K.LADDER) { player.climb = true; player.x = LADDER.cx; player.y = LADDER.top + 2; }
+  }
+  if (player.climb) {
+    player.kb[0] = player.kb[1] = 0; player.dir = 1; player.moving = Math.abs(my) > 0.2; player.fx = 0; player.fy = -1;
+    if (player.moving) { player.y += Math.sign(my) * 60 * dt; player.anim += dt * 7; if (Math.random() < dt * 5) sfx('rung'); }
+    if (player.y >= LADDER.bot) { player.y = LADDER.bot; player.climb = false; player.level = 1; }
+    else if (player.y <= LADDER.top) { player.y = LADDER.top; player.climb = false; player.level = TOWER.ROOF; say('SAFE ON THE ROOF', 2); }
+    else player.level = player.y > (LADDER.y1 - 1) * TS ? 1 : TOWER.ROOF - 1; // zombies can only reach your heels at the bottom
+    player.atkT = Math.max(0, player.atkT - dt); player.hurtT = Math.max(0, player.hurtT - dt); G.cdT = Math.max(0, G.cdT - dt);
+    return;
+  }
   const spd = (G.hunger <= 0 ? 52 : 70) * (player.air ? 1.2 : 1);
   const kb = player.kb;
   const hit = moveBody(player, (mx * spd + kb[0]) * dt, (my * spd + kb[1]) * dt, 4);
@@ -766,9 +790,9 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
 // controls labels: every on-screen hint names the real control for the current mode
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
 const LABELS = {
-  shell: { move: 'D-PAD', A: 'A', B: 'B', START: 'START', SELECT: 'SELECT' },
-  touch: { move: 'STICK', A: 'A', B: 'B', START: 'BAG', SELECT: 'SWAP' },
-  keys: { move: 'WASD', A: 'SPACE', B: 'X', START: 'ENTER', SELECT: 'Q' },
+  shell: { move: 'D-PAD', up: 'UP', A: 'A', B: 'B', START: 'START', SELECT: 'SELECT' },
+  touch: { move: 'STICK', up: 'STICK UP', A: 'A', B: 'B', START: 'BAG', SELECT: 'SWAP' },
+  keys: { move: 'WASD', up: 'W', A: 'SPACE', B: 'X', START: 'ENTER', SELECT: 'Q' },
 };
 const L = (k) => LABELS[mode()][k];
 
@@ -811,6 +835,7 @@ function sfx(n) {
     case 'splat': noise(0.25, 400, 0.35); tone(90, 40, 0.25, 'sawtooth', 0.08); break;
     case 'pistol': noise(0.18, 1200, 0.45, 0.6); tone(300, 80, 0.12, 'square', 0.1); break;
     case 'shotgun': noise(0.4, 700, 0.6, 0.4); tone(150, 40, 0.3, 'sawtooth', 0.12); break;
+    case 'rung': tone(640, 600, 0.03, 'square', 0.035); break;
     case 'click': tone(1200, 1100, 0.03, 'square', 0.05); break;
     case 'pick': tone(660, 660, 0.06, 'square', 0.07); tone(990, 990, 0.08, 'square', 0.07, 0.06); break;
     case 'hurt': tone(200, 70, 0.25, 'sawtooth', 0.15); noise(0.15, 500, 0.25); break;
@@ -871,6 +896,7 @@ function handleButtons() {
       else if (b === 'SELECT') swapWeapon();
       continue;
     }
+    if (player.climb && (b === 'A' || b === 'B')) continue; // hands full on the ladder
     if (b === 'A') jump();
     else if (b === 'B') { if (nearFire()) openMenu('camp'); else attack(); }
     else if (b === 'START') openMenu('bag');
@@ -934,8 +960,11 @@ function hintText() {
   if (nearFire()) return B + ' CAMP: EAT / REST    ' + bag;
   if (G.t < 34 && G.day === 1) return mv + ' MOVE  ' + A + ' JUMP  ' + B + ' ATTACK';
   if (G.t < 48 && G.day === 1) return bag + ' / PAUSE   ' + swp;
-  const nearLedge = player.level < TOWER.ROOF && Math.abs(player.x / TS - 40) < 9 && player.y / TS > 30 && player.y / TS < 50;
-  if (nearLedge) return A + ' JUMP UP THE LEDGES TO THE NEST';
+  if (player.climb) return 'HOLD ' + L('up') + ' TO CLIMB  (DOWN TO DESCEND)';
+  if (player.level === 1 && !player.air) return Math.abs(player.x - LADDER.cx) < 12 ? 'HOLD ' + L('up') + ' TO CLIMB THE LADDER' : 'WALK TO THE LADDER, HOLD ' + L('up');
+  const nearTower = player.level === 0 && Math.abs(player.x / TS - 40) < 9 && player.y / TS > 44 && player.y / TS < 52;
+  if (nearTower) return A + ' JUMP ONTO THE STEP, THEN CLIMB';
+  if (onTower() && Math.abs(player.x - LADDER.cx) < 12 && player.y > 30 * TS) return 'HOLD DOWN TO CLIMB DOWN';
   const w = WEAPONS[G.weapon]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) return 'NO AMMO - ' + swp;
   return '';
 }
@@ -971,7 +1000,7 @@ function drawHUD(dt, t) {
   hx.drawImage(ICONS.skull, 5, 31); text('' + G.kills, 14, 29, 8, '#d8d0c0');
   if (onTower()) text('SAFE', 30, 29, 8, '#8ab83a');
   else { // compass arrow to the tower when it is off-screen
-    const p = w2s(40 * TS + 8, 38 * TS);
+    const p = w2s(LADDER.cx, 45 * TS);
     if (p[0] < 6 || p[0] > N - 6 || p[1] < 6 || p[1] > N - 6) { const c = N / 2, a = Math.atan2(p[1] - c, p[0] - c), r = N / 2 - 34; const ax = c + Math.cos(a) * r, ay = c + Math.sin(a) * r; hx.fillStyle = night ? '#ff5a3a' : '#f0c050'; for (let k = 0; k < 4; k++) { const bx = ax - Math.cos(a) * k * 2, by = ay - Math.sin(a) * k * 2; hx.fillRect(Math.round(bx - (3 - k) / 2), Math.round(by - (3 - k) / 2), 4 - k, 4 - k); } text('TOWER', Math.round(ax), Math.round(ay + 4), 8, night ? '#ff5a3a' : '#f0c050', 'center'); }
   }
   // messages
@@ -1115,7 +1144,7 @@ function renderWorld(dt, t) {
   const prect = [player.x - 8, player.y - 22 - player.jz, 16, 22];
   const drawPlayer = (sil) => {
     const [sx, sy] = w2s(player.x, player.y), py = sy - 21 - Math.round(player.jz);
-    if (!sil) { const sh = player.jz > 6 ? SHADOW.i : SHADOW.s; hx.drawImage(sh, sx - sh.width / 2, sy - 3); }
+    if (!sil && !player.climb) { const sh = player.jz > 6 ? SHADOW.i : SHADOW.s; hx.drawImage(sh, sx - sh.width / 2, sy - 3); }
     if (!sil && player.hurtT > 0 && Math.floor(t * 30) % 2) return;
     hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - 8, py, 16, 22);
     if (!sil && player.atkT > 0) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, -8, py + 6 + oy, 16, 16); hx.restore(); } else hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, sx - 8 + ox, py + 6 + oy, 16, 16); } }
@@ -1198,5 +1227,5 @@ function frame(now) {
 genWorld(); renderMap();
 resize();
 requestAnimationFrame(frame);
-window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, ledges, NEST, TOWER, TS, get N() { return N; }, setTime: (t) => { G.t = t; },
+window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, ledges, LADDER, NEST, TOWER, TS, get N() { return N; }, setTime: (t) => { G.t = t; },
   get muted() { return muted; }, get mode() { return mode(); }, get covered() { return lastCovered; }, get cam() { return [camX, camY]; }, spawnZombie, lvlAt: (x, y) => lvl[tileAt(x, y)], kindAt: (x, y) => kind[tileAt(x, y)], props };
