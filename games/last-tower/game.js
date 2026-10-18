@@ -1,4 +1,5 @@
-/* LAST TOWER v2: 3/4 top-down pixel survival in the style rules of 16-bit SNES adventure games.
+/* LAST TOWER v4 (chikn edition): 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+   Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
 
@@ -37,54 +38,54 @@ function resize() {
 }
 addEventListener('resize', () => { resize(); setTimeout(resize, 120); });
 
-// ================================================================ palette: "dark world" ramps [highlight, base, shadow, deep]
-// highlights lean warm/yellow, shadows lean blue/purple (hue-shifted ramps)
-const OUT = '#140c18';
+// ================================================================ palette: hens.farm vibe, bright flat cartoon farm (see HENS-STYLE-NOTES.md)
+// ink outlines (#090b0a), cream, bright grass green #08d14a, gold #ffc42f, red #ff3347, sky #8ed8ff; ramps kept short and flat.
+const OUT = '#090b0a';
 const RAMP = {
-  asphalt: ['#5e5a6a', '#4a465a', '#39354a', '#2a2638'],
-  walk: ['#9a9080', '#7e7666', '#615a52', '#463f42'],
-  plaza: ['#9a9486', '#7c776c', '#605b56', '#443f44'],
-  grass: ['#7a7c44', '#5e6236', '#46492e', '#30302a'],
-  dirt: ['#86705a', '#6a5646', '#504038', '#382c2e'],
-  brick: ['#b0684e', '#8c4c3e', '#6a3436', '#47222c'],
-  conc: ['#8e8a90', '#726e7a', '#575264', '#3c374c'],
-  tower: ['#9a9488', '#7a756e', '#5c5658', '#3e3942'],
-  roof: ['#6a6058', '#524a46', '#3e3638', '#2a242a'],
-  rust: ['#c07a40', '#9a5430', '#723a2a', '#4a2226'],
-  metal: ['#b4ae9c', '#8a8578', '#66605e', '#433e44'],
-  hazard: ['#f0c850', '#d09a30', '#9a6a28', '#5a3a22'],
-  car1: ['#7e8a96', '#5e6a7a', '#46505e', '#2e3442'],
-  car2: ['#a4584a', '#80403c', '#5e2c30', '#3e1c24'],
-  car3: ['#8c8a62', '#6c6a4a', '#504e3a', '#36342a'],
-  glass: ['#8ab0c4', '#5a7890', '#3c5068', '#262e44'],
-  lit: ['#ffe9a0', '#f0c050', '#c08030', '#7a4a24'],
-  wood: ['#a07a4a', '#7c5a36', '#5c4028', '#3c2a20'],
-  fire: ['#fff4c0', '#ffc040', '#e86020', '#a02818'],
-  water: ['#6a7a9a', '#4a5878', '#36405c', '#262c44'],
-  blood: ['#b03030', '#842424', '#5a1a20', '#3a1018'],
-  // actors
-  pskin: ['#f0b890', '#c88a66', '#94604c', '#5e3a36'],
-  hood: ['#7c8e52', '#5c6c3c', '#40502e', '#2a3424'],
-  coat: ['#6a7848', '#4c5a36', '#36402a', '#242a20'],
-  scarf: ['#f08a40', '#c85a2a', '#8c3a24', '#5a2420'],
-  pants: ['#646884', '#4a4c66', '#34364c', '#242436'],
-  boots: ['#6a4a34', '#4a3224', '#32221c', '#201418'],
-  pack: ['#9a7a48', '#765a34', '#543e28', '#38281e'],
-  gog: ['#3a3a48', '#26263a', '#1a1a2a', '#100c18'],
-  zskin: ['#a8b88c', '#84946c', '#606e54', '#3e4a3c'],
-  zhair: ['#4a4038', '#36302c', '#262224', '#18141a'],
-  zshirt1: ['#6a7e92', '#4e6074', '#384558', '#262e3e'],
-  zshirt2: ['#a05a48', '#7c4038', '#5a2c2e', '#3c1c22'],
-  zshirt3: ['#9a9680', '#7a7662', '#5a5648', '#3c3a34'],
-  bshirt: ['#5a5a48', '#424236', '#2e2e28', '#1e1e1c'],
-  bvest: ['#e0b040', '#b08428', '#7c5a20', '#4c3618'],
-  zpants: ['#5a4e40', '#443a30', '#302a24', '#201c1a'],
-  eyeZ: ['#fff0a0', '#fff0a0', '#fff0a0', '#fff0a0'],
-  eyeB: ['#ff7a40', '#ff7a40', '#ff7a40', '#ff7a40'],
-  mouth: ['#3a1018', '#3a1018', '#3a1018', '#3a1018'],
-  glint: ['#e0f0ff', '#e0f0ff', '#e0f0ff', '#e0f0ff'],
+  asphalt: ['#e2c08a', '#d0a96e', '#b48c56', '#86643c'],   // dirt farm track
+  walk: ['#ffe68a', '#f6cf55', '#d9ab38', '#9c7424'],      // straw verge
+  plaza: ['#fffdf5', '#f3ecd4', '#ddd1ac', '#a99c76'],     // cream farmyard
+  grass: ['#52e67e', '#22d457', '#0aa83f', '#036b2b'],
+  dirt: ['#c39260', '#a77748', '#855a36', '#5a3c26'],      // tilled field
+  brick: ['#ff6470', '#ef3646', '#bd2232', '#7c1422'],     // barn red
+  conc: ['#ffffff', '#efebde', '#cfc8b2', '#8f8a78'],      // whitewash
+  tower: ['#f0c27e', '#d69e5a', '#a87840', '#6e4c28'],     // coop planks
+  roof: ['#7a8894', '#5f6c78', '#47525d', '#2c343c'],      // slate barn roof
+  rust: ['#ffb24a', '#f0901e', '#c06a16', '#7e420e'],
+  metal: ['#e4e8ea', '#bfc6cb', '#939ba2', '#5c636a'],
+  hazard: ['#ffe066', '#ffc42f', '#d89a14', '#8c6214'],
+  car1: ['#56e886', '#14c94e', '#0a9238', '#055a22'],      // tractor green
+  car2: ['#ff6a78', '#ff3347', '#c8202f', '#80141f'],      // tractor red
+  car3: ['#ffe066', '#ffc42f', '#d49a1c', '#8c6214'],      // tractor yellow
+  glass: ['#e2f6ff', '#8ed8ff', '#58aedc', '#2e6c96'],
+  lit: ['#fff4b0', '#ffd23f', '#e09a20', '#8a5a14'],
+  wood: ['#d09a5a', '#a87440', '#7e5430', '#523620'],
+  fire: ['#fff6c8', '#ffc42f', '#ff7a1a', '#d0301c'],
+  water: ['#b8e8ff', '#8ed8ff', '#5ab0e0', '#2f6f9a'],
+  blood: ['#9ac83a', '#6e9a26', '#4c701a', '#2e4610'],      // zombie goo (green, cartoon-friendly)
+  hay: ['#fff0a0', '#ffd659', '#e2ae2e', '#a07418'],
+  worm: ['#ffc4ca', '#ff9aa4', '#e0606a', '#a03a44'],
+  leaf: ['#5ce88a', '#22c95a', '#0d9a42', '#056028'],
+  // actors: hens
+  feather: ['#ffffff', '#ffffff', '#e4e7ea', '#b9c0c6'],
+  fshade: ['#d9dde1', '#d9dde1', '#c2c8ce', '#a0a8b0'],
+  comb: ['#ff4b5a', '#ff3347', '#d4202f', '#8a1420'],
+  beak: ['#ffd65a', '#ffc42f', '#e39a12', '#a06a0a'],
+  leg: ['#ffb84a', '#ff9d00', '#d47c00', '#8c5000'],
+  ink: ['#090b0a', '#090b0a', '#090b0a', '#090b0a'],
+  bandana: ['#4fc3ff', '#1a9be6', '#0f6fb0', '#0a4a78'],    // the hero hen's blue bandana
+  // undead flock
+  zf1: ['#e0edbc', '#c2d99a', '#9cb874', '#6a8250'],
+  zf2: ['#e6dccb', '#c9b9a0', '#a2907a', '#6e6050'],
+  zf3: ['#ddd3ea', '#bcaed2', '#9586ad', '#64587a'],
+  zcomb: ['#b4505c', '#94384a', '#6c2836', '#461824'],
+  rooster: ['#a07a5a', '#7e5c44', '#5c4232', '#3a2a22'],
+  rtail: ['#4a9a80', '#2c6e60', '#1c4c44', '#10302c'],
+  eyeZ: ['#d8ff40', '#d8ff40', '#d8ff40', '#d8ff40'],
+  eyeB: ['#ff5030', '#ff5030', '#ff5030', '#ff5030'],
+  glint: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
 };
-const DARK_SHADOW = 'rgba(28,14,48,0.42)'; // cast shadows: purple, layered like colour-math subtraction
+const DARK_SHADOW = 'rgba(9,11,10,0.26)'; // hard ink offset shadows, like hens.farm's 6px 7px 0 ink card shadows
 // ================================================================ crisp pixel text: built-in 5x7 bitmap font (no smoothing, no font loading)
 const FONT = {
   A: [0x7C, 0x12, 0x11, 0x12, 0x7C], B: [0x7F, 0x49, 0x49, 0x49, 0x36], C: [0x3E, 0x41, 0x41, 0x41, 0x22], D: [0x7F, 0x41, 0x41, 0x22, 0x1C],
@@ -99,7 +100,7 @@ const FONT = {
   8: [0x36, 0x49, 0x49, 0x49, 0x36], 9: [0x06, 0x49, 0x49, 0x29, 0x1E],
   ' ': [0, 0], '.': [0x60, 0x60], ',': [0x80, 0x60], ':': [0x36, 0x36], '!': [0x5F], '?': [0x02, 0x01, 0x51, 0x09, 0x06], '-': [0x08, 0x08, 0x08, 0x08],
   '/': [0x60, 0x18, 0x06, 0x01], '+': [0x08, 0x08, 0x3E, 0x08, 0x08], '%': [0x23, 0x13, 0x08, 0x64, 0x62], '>': [0x41, 0x22, 0x14, 0x08],
-  '<': [0x08, 0x14, 0x22, 0x41], '(': [0x1C, 0x22, 0x41], ')': [0x41, 0x22, 0x1C], '&': [0x36, 0x49, 0x55, 0x22, 0x50], "'": [0x05, 0x03], '*': [0x2A, 0x1C, 0x3E, 0x1C, 0x2A],
+  '<': [0x08, 0x14, 0x22, 0x41], '(': [0x1C, 0x22, 0x41], ')': [0x41, 0x22, 0x1C], '&': [0x36, 0x49, 0x55, 0x22, 0x50], "'": [0x05, 0x03], '*': [0x2A, 0x1C, 0x3E, 0x1C, 0x2A], '$': [0x24, 0x2A, 0x7F, 0x2A, 0x12],
 };
 const textCache = new Map();
 function textImg(str, size, col, outline) {
@@ -148,42 +149,51 @@ function paint(grid, mats, opt = {}) {
   x.putImageData(img, 0, 0); return c;
 }
 const flipRow = (r) => [...r].reverse().join('');
-// ---- humanoid templates (16 wide x 22 tall, 1px margin left for the outline)
-const P_DOWN = [
-  '................', '.....HHHHHH.....', '....HHHHHHHH....', '...HHHHHHHHHH...', '...HHSSSSSSHH...', '...HGGGSSGGGH...', '...HGgGSSGgGH...', '...HSSSSSSSSH...',
-  '....HMMMMMMH....', '....AAAAAAAA....', '...CCAAAAAACC...', '..CCCCAAAACCCC..', '..CCCCCCCCCCCC..', '..SCCCCCCCCCCS..', '..SCCCCCCCCCCS..', '...LLLLLLLLLL...'];
-const P_UP = [
-  '................', '.....HHHHHH.....', '....HHHHHHHH....', '...HHHHHHHHHH...', '...HHHHHHHHHH...', '...HHHHHHHHHH...', '...HHHHHHHHHH...', '....HHHHHHHH....',
-  '....AAAAAAAA....', '...CCKKKKKKCC...', '..CCKKKKKKKKCC..', '..CCKkkkkkkKCC..', '..CCKKKKKKKKCC..', '..SCKKKKKKKKCS..', '..SCCKKKKKKCCS..', '...LLLLLLLLLL...'];
-const P_SIDE = [
-  '................', '......HHHHH.....', '.....HHHHHHH....', '....HHHHHHHHH...', '....HHHHSSSSH...', '....HHHSGGGG....', '....HHHSGgGG....', '....HHHSSSSS....',
-  '.....HHMMMMM....', '......AAAAA.....', '....KKCCCAAA....', '...KKKCCCCC.....', '...KKKCCCCC.....', '...KKKCCSCC.....', '...KKKCCCCC.....', '.....LLLLL......'];
-const Z_DOWN = [
-  '................', '................', '.....hhhhhh.....', '....hhhhhhhh....', '....hZZZZZZh....', '....ZZZZZZZZ....', '....ZeZZZZeZ....', '....ZZZZZZZZ....',
-  '.....ZZmmZZ.....', '.....ZZZZZZ.....', '...TTTTTTTTTT...', '..ZTTTTRTTTTTZ..', '..ZTTTTTTTTTTZ..', '..ZTTTRTTTTTTZ..', '..ZZTTTTTTTTZZ..', '...TT.TTTT.TT...'];
-const Z_UP = [
-  '................', '................', '.....hhhhhh.....', '....hhhhhhhh....', '....hhhhhhhh....', '....hhhhhhhh....', '....hZhhhhZh....', '....ZZZZZZZZ....',
-  '.....ZZZZZZ.....', '.....ZZZZZZ.....', '...TTTTTTTTTT...', '..ZTTTTTTTRTTZ..', '..ZTTTTTTTTTTZ..', '..ZTTRTTTTTTTZ..', '..ZTTTTTTTTTTZ..', '...TT.TTTT.TT...'];
-const Z_SIDE = [
-  '................', '................', '......hhhhh.....', '.....hhhhhhh....', '.....hhZZZZZ....', '.....hZZZZeZ....', '.....hZZZZZZ....', '......ZZZmmZ....',
-  '.......ZZZZ.....', '......TTTTT.....', '.....TTTTTZZZZZ.', '.....TTTTTTTTZZ.', '.....TTTTTTT....', '.....TRTTTTT....', '.....TTTTTTT....', '.....T.TTT.T....'];
-const LEGS = {
-  dStand: ['...PPPPPPPPPP...', '...PPPP..PPPP...', '...PPPP..PPPP...', '...PPP....PPP...', '...BBB....BBB...', '..BBBB....BBBB..'],
-  dWalk: ['...PPPPPPPPPP...', '...PPPP..PPPP...', '...PPPP..PPPP...', '...BBBB...PPP...', '..BBBB....BBB...', '..........BBBB..'],
-  sStand: ['.....PPPPP......', '.....PP.PP......', '.....PP.PP......', '.....PP.PP......', '.....BB.BBB.....', '....BBB.BBBB....'],
-  sStride: ['.....PPPPP......', '....PP...PP.....', '....PP...PP.....', '...PP.....PP....', '..BBB.....BBB...', '..BB.......BBB..'],
-  sPass: ['.....PPPPP......', '......PPP.......', '......PPP.......', '.....PPPP.......', '.....BBBBB......', '......BBBB......'],
+// ---- hens (16 wide x 22 tall: 18 body rows + 4 leg rows). Proportions taken from the hens.farm base-hen
+// reference sheet (front / back / right-profile): round white body, big red comb, yellow beak, red wattle, orange legs.
+const HEN_DOWN = [
+  '................', '................', '.......RR.......', '......RRRR......', '.....RRRRRR.....', '.....WWWWWW.....',
+  '....WWWWWWWW....', '....WkWWWWkW....', '....WWWYYWWW....', '....WWWRRWWW....', '..wWWAAAAAAWWw..', '.wWWWWAAAAWWWWw.',
+  '.wWWWWWWWWWWWWw.', '.wwWWWWWWWWWWww.', '..wwWWWWWWWWww..', '..wwWWWWWWWWww..', '...wwWWWWWWww...', '.....wwwwww.....'];
+const HEN_UP = [
+  '................', '................', '.......RR.......', '......RRRR......', '.....RRRRRR.....', '.....WWWWWW.....',
+  '....WWWWWWWW....', '....WWWWWWWW....', '....WWWWWWWW....', '.....WWWWWW.....', '..wWWAAAAAAWWw..', '.wWWWWWAAWWWWWw.',
+  '.wWWwWWAAWWwWWw.', '.wwWWwWWWWwWWww.', '..wwWWwWWwWWww..', '..wwWWWWWWWWww..', '...wwWWWWWWww...', '.....wwwwww.....'];
+const HEN_SIDE = [
+  '................', '................', '..........RR....', '.........RRRR...', '.........RRRRR..', '........WWWWWW..',
+  '........WWWWkW..', '..ww....WWWWWWY.', '.wWWw...WWWWWWY.', '.wWWWw..WWWWRR..', '.wWWWWwAAAAAW...', '..wWWWWWWWWWWW..',
+  '..wWWWWwwwwWWWW.', '..wWWWWWwwwWWWW.', '...wWWWWWWWWWWW.', '....wWWWWWWWWW..', '.....wwWWWWWw...', '.......wwwww....'];
+const HLEGS = {
+  dStand: ['......O..O......', '......O..O......', '.....OO..OO.....', '....OOO..OOO....'],
+  dWalk: ['......O..O......', '......O..O......', '.....OO..OO.....', '....OOO.........'],
+  sStand: ['........O.......', '........O.......', '........OO......', '.......OOOO.....'],
+  sStride: ['.......O..O.....', '......O....O....', '......OO...OO...', '.....OOO...OOOO.'],
+  sPass: ['.........O......', '.........O......', '........OOO.....', '........OOOO....'],
 };
-const bob = (upper) => ['.'.repeat(16), ...upper.slice(0, 15)];
-function humanFrames(down, up, side) {
-  const dW2 = LEGS.dWalk.map(flipRow);
-  const D = [[...down, ...LEGS.dStand], [...bob(down), ...LEGS.dWalk], [...down, ...LEGS.dStand], [...bob(down), ...dW2]];
-  const U = [[...up, ...LEGS.dStand], [...bob(up), ...LEGS.dWalk], [...up, ...LEGS.dStand], [...bob(up), ...dW2]];
-  const R = [[...side, ...LEGS.sStand], [...bob(side), ...LEGS.sStride], [...side, ...LEGS.sPass], [...bob(side), ...LEGS.sStride]];
+const bob = (upper) => ['.'.repeat(upper[0].length), ...upper.slice(0, upper.length - 1)];
+function henFrames(down, up, side) {
+  const dW2 = HLEGS.dWalk.map(flipRow);
+  const D = [[...down, ...HLEGS.dStand], [...bob(down), ...HLEGS.dWalk], [...down, ...HLEGS.dStand], [...bob(down), ...dW2]];
+  const U = [[...up, ...HLEGS.dStand], [...bob(up), ...HLEGS.dWalk], [...up, ...HLEGS.dStand], [...bob(up), ...dW2]];
+  const R = [[...side, ...HLEGS.sStand], [...bob(side), ...HLEGS.sStride], [...side, ...HLEGS.sPass], [...bob(side), ...HLEGS.sStride]];
   const Lf = R.map((f) => f.map(flipRow));
   return [D, U, Lf, R]; // rows: down, up, left, right
 }
-function widen(f) { // bulkier "brute" variant: duplicate the centre columns and a torso row
+// undead flock: glowing eyes, no bandana, droopy torn comb, goo stains, plucked gaps along the wing edge
+function zombify(rows, seed) {
+  const r = rng(seed);
+  return rows.map((row, y) => {
+    let s = row.replace(/k/g, 'e').replace(/A/g, 'W');
+    if (y >= 2 && y <= 4) s = s.replace(/R/g, (m, i) => (r() < 0.3 ? '.' : m)); // torn comb
+    s = [...s].map((c, x) => {
+      if (c === 'W' && y > 10 && r() < 0.07) return 'g';                         // goo
+      if (c === 'w' && y > 9 && r() < 0.18) return '.';                         // plucked
+      return c;
+    }).join('');
+    return s;
+  });
+}
+function widen(f) { // bulkier "roostr" variant: duplicate the centre columns and a torso row
   const w = f.map((r) => r.slice(0, 8) + r.slice(7, 9) + r.slice(8)); w.splice(12, 0, w[12]); return w;
 }
 function atlas(frames, mats, opt) {
@@ -193,33 +203,34 @@ function atlas(frames, mats, opt) {
   // silhouette version (outline recoloured bright, body faint) for the "never hidden" pass
   const [s, sx] = mk(c.width, c.height); sx.drawImage(c, 0, 0);
   const id = sx.getImageData(0, 0, c.width, c.height), d = id.data, [or, og, ob] = hex(OUT);
-  for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; if (d[i] === or && d[i + 1] === og && d[i + 2] === ob) { d[i] = 255; d[i + 1] = 236; d[i + 2] = 170; } else { d[i] = 255; d[i + 1] = 236; d[i + 2] = 170; d[i + 3] = 70; } }
+  for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; if (d[i] === or && d[i + 1] === og && d[i + 2] === ob) { d[i] = 255; d[i + 1] = 214; d[i + 2] = 60; } else { d[i] = 255; d[i + 1] = 250; d[i + 2] = 230; d[i + 3] = 80; } }
   sx.putImageData(id, 0, 0);
   return { img: c, sil: s, cw, ch };
 }
-const PLAYER_MATS = { H: 'hood', S: 'pskin', G: 'gog', g: 'glint', M: 'gog', A: 'scarf', C: 'coat', L: 'boots', P: 'pants', B: 'boots', K: 'pack', k: 'wood' };
+const zFrames = (seed) => henFrames(zombify(HEN_DOWN, seed), zombify(HEN_UP, seed + 1), zombify(HEN_SIDE, seed + 2));
+const HEN_MATS = { R: 'comb', W: 'feather', w: 'fshade', k: 'ink', Y: 'beak', O: 'leg', A: 'bandana' };
 const SPR = {
-  player: atlas(humanFrames(P_DOWN, P_UP, P_SIDE), PLAYER_MATS, { flat: 'gG', noFold: 'gGS' }),
-  zombies: ['zshirt1', 'zshirt2', 'zshirt3'].map((sh) => atlas(humanFrames(Z_DOWN, Z_UP, Z_SIDE), { h: 'zhair', Z: 'zskin', e: 'eyeZ', m: 'mouth', T: sh, R: 'blood', P: 'zpants', B: 'boots' }, { flat: 'em' })),
-  brute: atlas(humanFrames(Z_DOWN, Z_UP, Z_SIDE).map((row) => row.map(widen)), { h: 'zhair', Z: 'zskin', e: 'eyeB', m: 'mouth', T: 'bvest', R: 'bshirt', P: 'zpants', B: 'boots' }, { flat: 'em' }),
+  player: atlas(henFrames(HEN_DOWN, HEN_UP, HEN_SIDE), HEN_MATS, { flat: 'RkYOAw', noFold: 'kYRA' }),
+  zombies: ['zf1', 'zf2', 'zf3'].map((f, i) => atlas(zFrames(11 + i * 7), { R: 'zcomb', W: f, w: f, e: 'eyeZ', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', dark: 'w', noFold: 'eY' })),
+  brute: atlas(zFrames(99).map((row) => row.map(widen)), { R: 'comb', W: 'rooster', w: 'rtail', e: 'eyeB', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', noFold: 'eY' }),
 };
-// ---- items (16x16 cells)
+// ---- items (16x16 cells): chikn pantry and farm arsenal
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water'];
 const ITEM_ART = {
-  food: [['.....', '..cccccc..', '.cwwwwwwc.', '.cwwwwwwc.', '.crrrrrrc.', '.crYYrrrc.', '.crrrrrrc.', '.cwwwwwwc.', '.cwwwwwwc.', '..cccccc..'], { c: 'metal', w: 'metal', r: 'brick', Y: 'lit' }],
-  mre: [['', '.oooooooo.', 'oOOOOOOOOo', 'oOOOOOOOOo', 'oOOttttOOo', 'oOOOOOOOOo', 'oOOOOOOOOo', '.oooooooo.'], { o: 'hood', O: 'hood', t: 'zpants' }],
-  med: [['....hh....', '..hh..hh..', '.wwwwwwwww', '.wwwwrwwww', '.wwwrrrwww', '.wwwwrwwww', '.wwwwwwwww', '.wwwwwwwww'], { h: 'metal', w: 'walk', r: 'blood' }],
-  ammo: [['', '.gggggggg.', 'gGGGGGGGGg', 'gGyGyGyGGg', 'gGyGyGyGGg', 'gGGGGGGGGg', '.gggggggg.'], { g: 'coat', G: 'coat', y: 'hazard' }],
-  shells: [['', '.rrrrrrrr.', 'rRRRRRRRRr', 'rRsRsRsRRr', 'rRsRsRsRRr', 'rRyRyRyRRr', '.rrrrrrrr.'], { r: 'car2', R: 'car2', s: 'blood', y: 'hazard' }],
-  pipe: [['.........mm', '........mm.', '.......mm..', '......mm...', '.....mm....', '....mm.....', '...mm......', '..ww.......', '.ww........'], { m: 'metal', w: 'rust' }],
-  machete: [['........ss', '.......sss', '......sss.', '.....sss..', '....sss...', '...sss....', '..bb......', '.bb.......'], { s: 'metal', b: 'wood' }],
-  pistol: [['', '', '..gggggggg', '..gggggggg', '..ggggg...', '..gw......', '..ww......', '..ww......'], { g: 'gog', w: 'wood' }],
-  shotgun: [['', '', 'ggggggggg..', 'ggggggwwwww', '......wwwww', '.......ww..'], { g: 'gog', w: 'wood' }],
-  water: [['....cc....', '...wwww...', '...wwww...', '..wWWWWw..', '..wWWWWw..', '..wWWWWw..', '..wWWWWw..', '..wwwwww..'], { c: 'metal', w: 'glass', W: 'water' }],
+  food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
+  mre: [['..t....t..', '...tttt...', '..ssssss..', '.ssssssss.', '.sBBBBBBs.', '.sBssssBs.', '.sBBBBBBs.', '.ssssssss.', '..ssssss..'], { s: 'tower', t: 'wood', B: 'brick' }],            // $FEED sack
+  med: [['...GGGG...', '..GgGGGG..', '.GgGGGGGG.', '.GGGGGGGG.', 'GGGGGGGGGG', 'GGGGGGGGGG', 'GGGGGGGGGG', '.GGGGGGGG.', '..GGGGGG..'], { G: 'hazard', g: 'glint' }],              // golden HEGG
+  ammo: [['.ee...ee...ee.', 'eeee.eeee.eeee', 'eeee.eeee.eeee', 'cccccccccccccc', 'cCcCcCcCcCcCcc'], { e: 'feather', c: 'tower', C: 'wood' }],                                         // eggs
+  shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
+  pipe: [['......m.m.m', '......mmmmm', '........w..', '.......w...', '......w....', '.....w.....', '....w......', '...w.......', '..w........', '.w.........'], { m: 'metal', w: 'wood' }], // rake
+  machete: [['.....m.m.m', '.....m.m.m', '.....mmmmm', '.......w..', '......w...', '.....w....', '....w.....', '...w......', '..w.......', '.w........'], { m: 'metal', w: 'wood' }],    // pitchfork
+  pistol: [['...ee......', '..eeeegggg.', '.gggggggggg', '.gggggg....', '.gb........', '.bb........'], { e: 'feather', g: 'car2', b: 'wood' }],                                         // egg blaster
+  shotgun: [['...YYYY.....', '..YyYyY.....', 'gggggggggwww', 'gggggggwwwww', '.......wwwww', '........ww..'], { g: 'car1', w: 'wood', Y: 'hazard', y: 'rust' }],                       // corn shotgun
+  water: [['....pp......', '...pppp..pp.', '..pp..pppppp', '.pp....pp...', 'pp..........'], { p: 'worm' }],                                                                              // juicy worm
 };
 const ITEM_IMG = (() => {
   const [c, x] = mk(16 * ITEMS.length, 16);
-  ITEMS.forEach((k, i) => { const [g, m] = ITEM_ART[k]; const p = paint(['', ...g.map((r) => '.' + r)], m); x.drawImage(p, i * 16 + Math.floor((16 - p.width) / 2), 16 - p.height - 1); });
+  ITEMS.forEach((k, i) => { const [g, m] = ITEM_ART[k]; const p = paint(['', ...g.map((r) => '.' + r)], m, { flat: 'gyCtBe' }); x.drawImage(p, i * 16 + Math.floor((16 - p.width) / 2), 16 - p.height - 1); });
   return c;
 })();
 
@@ -327,154 +338,172 @@ function spk(x0, y0, w, h, n, cols, r) { for (let i = 0; i < n; i++) R_(x0 + Mat
 function drawTile(tx, ty) {
   const i = id(tx, ty), k = kind[i], X = tx * TS, Y = ty * TS, r = rng(i * 7919 + 13);
   const ground = (ramp, n = 10) => { R_(X, Y, TS, TS, ramp[1]); spk(X, Y, TS, TS, n, [ramp[0], ramp[2]], r); };
+  const straw = (H, n) => { for (let s = 0; s < n; s++) { const sx = X + Math.floor(r() * 14), sy = Y + Math.floor(r() * 15), c = r() < 0.5 ? H[0] : H[2]; R_(sx, sy, 2, 1, c); R_(sx + 2, sy - (r() < 0.5 ? 1 : 0), 1, 1, c); } };
   switch (k) {
-    case K.ASPH: case K.CAR: case K.PROP: {
-      const A = RAMP.asphalt; ground(A, 9);
-      if (r() < 0.12) { let px = X + Math.floor(r() * 16), py = Y; for (let s = 0; s < 16; s++) { R_(px, py + s, 1, 1, A[3]); R_(px + 1, py + s, 1, 1, A[0]); px += r() < 0.3 ? (r() < 0.5 ? -1 : 1) : 0; px = clamp(px, X, X + 14); } }
-      // dashed centre lines
-      const cx = tx % 16, cy = ty % 16, crossing = cx < 3 && cy < 3;
-      if (!crossing && cx === 1 && ty % 2 === 0) { R_(X + 15, Y + 2, 2, 10, RAMP.hazard[2]); R_(X + 15, Y + 2, 1, 10, RAMP.hazard[1]); }
-      if (!crossing && cy === 1 && tx % 2 === 0) { R_(X + 2, Y + 15, 10, 2, RAMP.hazard[2]); R_(X + 2, Y + 15, 10, 1, RAMP.hazard[1]); }
-      if (r() < 0.05) { R_(X + 3, Y + 6, 10, 5, RAMP.water[2]); R_(X + 2, Y + 7, 12, 3, RAMP.water[2]); R_(X + 4, Y + 7, 5, 1, RAMP.water[0]); } // puddle
-      if (r() < 0.03) { R_(X + 4, Y + 4, 8, 8, A[3]); R_(X + 5, Y + 5, 6, 6, A[2]); R_(X + 5, Y + 7, 6, 1, A[3]); R_(X + 5, Y + 9, 6, 1, A[3]); } // manhole
+    case K.ASPH: case K.CAR: case K.PROP: { // farm track: packed earth with tractor ruts and pebbles
+      const A = RAMP.asphalt; ground(A, 8);
+      const cx = tx % 16, cy = ty % 16, vert = cx < 3, horiz = cy < 3;
+      if (vert && !horiz) { if (cx === 0) { R_(X + 10, Y, 2, TS, A[2]); R_(X + 10, Y, 1, TS, A[3]); } if (cx === 2) { R_(X + 4, Y, 2, TS, A[2]); R_(X + 4, Y, 1, TS, A[3]); } }
+      if (horiz && !vert) { if (cy === 0) { R_(X, Y + 10, TS, 2, A[2]); R_(X, Y + 10, TS, 1, A[3]); } if (cy === 2) { R_(X, Y + 4, TS, 2, A[2]); R_(X, Y + 4, TS, 1, A[3]); } }
+      if (r() < 0.25) { const px0 = X + Math.floor(r() * 13), py0 = Y + Math.floor(r() * 13); R_(px0, py0, 3, 2, RAMP.conc[2]); R_(px0, py0, 2, 1, RAMP.conc[0]); R_(px0, py0 + 2, 3, 1, A[3]); } // pebble
+      if (r() < 0.05) { R_(X + 3, Y + 6, 10, 5, RAMP.dirt[2]); R_(X + 2, Y + 7, 12, 3, RAMP.dirt[2]); R_(X + 4, Y + 7, 5, 1, RAMP.dirt[1]); } // mud puddle
+      if (r() < 0.05) { const gx = X + 3 + Math.floor(r() * 9), gy = Y + 4 + Math.floor(r() * 8); R_(gx, gy, 1, 3, RAMP.grass[1]); R_(gx + 2, gy - 1, 1, 4, RAMP.grass[2]); R_(gx + 4, gy, 1, 3, RAMP.grass[1]); } // weed tuft
       break; }
-    case K.WALK: {
-      const W = RAMP.walk;
-      for (let sx = 0; sx < 16; sx += 8) for (let sy = 0; sy < 16; sy += 8) {
-        const cracked = r() < 0.12;
-        R_(X + sx, Y + sy, 8, 8, W[1]); R_(X + sx, Y + sy, 8, 1, W[0]); R_(X + sx, Y + sy, 1, 8, W[0]); R_(X + sx, Y + sy + 7, 8, 1, W[2]); R_(X + sx + 7, Y + sy, 1, 8, W[2]);
-        if (cracked) { R_(X + sx + 2, Y + sy + 2, 1, 3, W[3]); R_(X + sx + 3, Y + sy + 4, 2, 1, W[3]); }
-        if (r() < 0.1) { R_(X + sx + 7, Y + sy + 6, 1, 2, RAMP.grass[0]); R_(X + sx + 6, Y + sy + 7, 1, 1, RAMP.grass[1]); }
-      }
+    case K.WALK: { const H = RAMP.hay; ground(H, 4); straw(H, 9); if (r() < 0.08) { R_(X + 6, Y + 6, 3, 3, '#ffffff'); R_(X + 7, Y + 7, 1, 1, RAMP.hazard[1]); } break; } // straw verge, daisies
+    case K.PLAZA: { // cream farmyard: scratched earth, feathers and chikn footprints
+      const P = RAMP.plaza; ground(P, 8);
+      if (r() < 0.35) { const fx = X + 3 + Math.floor(r() * 8), fy = Y + 3 + Math.floor(r() * 8), c = P[3]; R_(fx + 2, fy, 1, 3, c); R_(fx, fy, 1, 1, c); R_(fx + 1, fy + 1, 1, 1, c); R_(fx + 4, fy, 1, 1, c); R_(fx + 3, fy + 1, 1, 1, c); } // footprint
+      if (r() < 0.12) { const fx = X + 2 + Math.floor(r() * 10), fy = Y + 2 + Math.floor(r() * 10); R_(fx, fy, 4, 1, '#ffffff'); R_(fx + 1, fy + 1, 3, 1, P[2]); } // feather
+      if (r() < 0.06) { R_(X + 5, Y + 6, 5, 3, RAMP.hay[1]); R_(X + 6, Y + 6, 3, 1, RAMP.hay[0]); } // spilled corn
       break; }
-    case K.PLAZA: { // large flagstones, staggered, lit edges top-left
-      const P = RAMP.plaza;
-      for (let row = 0; row < 2; row++) for (let b = -1; b < 2; b++) { const bx = X + b * 12 + (row % 2) * 6 + ((ty % 2) * 3), by = Y + row * 8; const x0 = Math.max(X, bx), x1 = Math.min(X + 16, bx + 12); if (x1 <= x0) continue; const v = r() < 0.18 ? P[2] : P[1]; R_(x0, by, x1 - x0, 8, v); R_(x0, by, x1 - x0, 1, P[0]); R_(x0, by + 7, x1 - x0, 1, P[3]); if (bx >= X) R_(bx, by, 1, 8, P[0]); if (bx + 11 < X + 16 && bx + 11 >= X) R_(bx + 11, by, 1, 8, P[3]); }
-      spk(X, Y, 16, 16, 6, [P[2], P[0]], r);
-      if (r() < 0.06) { R_(X + 5, Y + 6, 6, 3, RAMP.blood[2]); R_(X + 7, Y + 9, 3, 2, RAMP.blood[2]); }
+    case K.GRASS: { const G = RAMP.grass; ground(G, 6); for (let n = 0; n < 4; n++) { const gx = X + 1 + Math.floor(r() * 13), gy = Y + 2 + Math.floor(r() * 12); R_(gx, gy, 1, 2, G[0]); R_(gx + 2, gy, 1, 2, G[0]); R_(gx + 1, gy + 1, 1, 2, G[3]); }
+      if (r() < 0.12) { const fx = X + 3 + Math.floor(r() * 9), fy = Y + 3 + Math.floor(r() * 9), c = r() < 0.5 ? '#ffffff' : RAMP.hazard[1]; R_(fx, fy, 3, 3, c); R_(fx + 1, fy + 1, 1, 1, r() < 0.5 ? RAMP.hazard[2] : RAMP.brick[1]); } break; }
+    case K.DIRT: { // tilled field rows with sprouts
+      const D = RAMP.dirt; R_(X, Y, TS, TS, D[1]);
+      for (let yy = 0; yy < TS; yy += 4) { R_(X, Y + yy, TS, 1, D[0]); R_(X, Y + yy + 3, TS, 1, D[2]); }
+      spk(X, Y, TS, TS, 6, [D[0], D[2]], r);
+      if ((tx + ty * 3) % 5 === 0 || r() < 0.2) for (let s = 0; s < 3; s++) { const gx = X + 2 + s * 5, gy = Y + 1 + 4 * Math.floor(r() * 4); R_(gx, gy, 1, 2, RAMP.grass[2]); R_(gx - 1, gy, 1, 1, RAMP.grass[1]); R_(gx + 1, gy, 1, 1, RAMP.grass[1]); }
       break; }
-    case K.GRASS: { const G = RAMP.grass; ground(G, 6); for (let n = 0; n < 5; n++) { const gx = X + 1 + Math.floor(r() * 13), gy = Y + 2 + Math.floor(r() * 12); R_(gx, gy, 1, 2, G[0]); R_(gx + 2, gy, 1, 2, G[0]); R_(gx + 1, gy + 1, 1, 2, G[0]); R_(gx, gy + 2, 3, 1, G[2]); } break; }
-    case K.DIRT: { const D = RAMP.dirt; ground(D, 12); for (let n = 0; n < 3; n++) { const gx = X + 1 + Math.floor(r() * 12), gy = Y + 1 + Math.floor(r() * 12); R_(gx, gy, 2, 2, D[0]); R_(gx + 1, gy + 1, 2, 1, D[2]); } break; }
-    case K.RUBTOP: case K.RFACE: case K.BED: {
-      const D = RAMP.dirt, C = RAMP.conc; ground(D, 10);
-      for (let n = 0; n < 4; n++) { const gx = X + Math.floor(r() * 12), gy = Y + Math.floor(r() * 12), w = 2 + Math.floor(r() * 3); R_(gx, gy + 2, w + 1, 1, OUT); R_(gx, gy, w, 2, C[1]); R_(gx, gy, w, 1, C[0]); R_(gx + w, gy, 1, 2, OUT); }
-      if (r() < 0.2) { R_(X + 2, Y + 8, 12, 1, RAMP.rust[2]); R_(X + 2, Y + 7, 12, 1, RAMP.rust[0]); } // rebar
+    case K.RUBTOP: case K.RFACE: case K.BED: { const H = RAMP.hay; ground(H, 5); straw(H, 12); break; } // hay mound top
+    case K.TROOF: { // coop loft floor: planks under straw
+      const T = RAMP.tower; R_(X, Y, TS, TS, T[1]);
+      for (let yy = 0; yy < TS; yy += 4) { R_(X, Y + yy, TS, 1, T[0]); R_(X, Y + yy + 3, TS, 1, T[2]); R_(X + ((ty * 4 + yy) * 5) % 16, Y + yy, 1, 4, T[3]); }
+      if (r() < 0.6) straw(RAMP.hay, 5);
       break; }
-    case K.TROOF: { const T = RAMP.tower; R_(X, Y, TS, TS, T[1]); R_(X, Y, TS, 1, T[0]); R_(X, Y, 1, TS, T[0]); R_(X, Y + 15, TS, 1, T[2]); R_(X + 15, Y, 1, TS, T[2]); spk(X, Y, TS, TS, 8, [T[2], T[0]], r); if (r() < 0.2) { R_(X + 4, Y + 5, 7, 4, T[2]); R_(X + 5, Y + 6, 4, 1, T[3]); } break; }
-    case K.BARRIER: { const C = RAMP.conc, Ru = RAMP.rust; R_(X, Y, TS, TS, C[2]); R_(X, Y, TS, 6, C[0]); R_(X, Y + 6, TS, 1, C[1]); R_(X, Y + 15, TS, 1, OUT); for (let n = 0; n < 2; n++) R_(X + Math.floor(r() * 14), Y + 7, 2, 8, Ru[2]); R_(X + 2, Y + 9, 12, 2, (tx + ty) % 2 ? RAMP.hazard[1] : C[3]); break; }
+    case K.BARRIER: { // farm fence on grass
+      const G = RAMP.grass, W = RAMP.wood; R_(X, Y, TS, TS, G[1]); spk(X, Y, TS, TS, 6, [G[0], G[2]], r);
+      R_(X, Y + 4, TS, 3, W[0]); R_(X, Y + 6, TS, 1, W[2]); R_(X, Y + 9, TS, 3, W[0]); R_(X, Y + 11, TS, 1, W[2]);
+      for (const px0 of [2, 10]) { R_(X + px0 - 1, Y + 1, 5, 14, OUT); R_(X + px0, Y + 2, 3, 12, W[1]); R_(X + px0, Y + 2, 1, 12, W[0]); }
+      R_(X, Y + 3, TS, 1, OUT); R_(X, Y + 13, TS, 1, 'rgba(9,11,10,.35)');
+      break; }
     default: R_(X, Y, TS, TS, RAMP.asphalt[1]);
   }
 }
-function drawBuilding(b) {
-  const r = rng(b.seed), X = b.x0 * TS, Y = b.y0 * TS, W = b.w * TS, RH = (b.h - b.wallRows) * TS, WH = b.wallRows * TS, Rf = RAMP.roof;
-  // roof (top surface)
-  R_(X, Y, W, RH, Rf[1]); spk(X, Y, W, RH, W * RH / 40, [Rf[2], Rf[0], Rf[3]], r);
-  R_(X, Y, W, RH, 'rgba(0,0,0,0)');
-  // parapet rim: lit top-left, shadowed bottom-right, outer outline
-  R_(X, Y, W, 3, Rf[0]); R_(X, Y, 3, RH, Rf[0]); R_(X, Y + RH - 3, W, 3, Rf[2]); R_(X + W - 3, Y, 3, RH, Rf[2]);
-  R_(X + 3, Y + 3, W - 6, 1, Rf[3]); R_(X + 3, Y + 3, 1, RH - 6, Rf[3]);
+function drawBuilding(b) { // barns (red) and farmhouses (whitewash): slate roof with a ridge, plank walls, white trim
+  const r = rng(b.seed), X = b.x0 * TS, Y = b.y0 * TS, W = b.w * TS, RH = (b.h - b.wallRows) * TS, WH = b.wallRows * TS, Rf = b.mat === 'brick' ? RAMP.roof : RAMP.brick;
+  // roof: shingle rows, ridge line across the middle, lit top-left
+  R_(X, Y, W, RH, Rf[1]);
+  for (let yy = 4; yy < RH; yy += 5) { R_(X, Y + yy, W, 1, Rf[2]); for (let xx = ((yy / 5) % 2) * 4; xx < W; xx += 8) R_(X + xx, Y + yy - 4, 1, 4, Rf[2]); }
+  const ry = Y + Math.floor(RH / 2) - 2; R_(X, ry, W, 3, Rf[0]); R_(X, ry + 3, W, 1, Rf[3]);
+  R_(X, Y, W, 2, Rf[0]); R_(X, Y, 2, RH, Rf[0]); R_(X + W - 2, Y, 2, RH, Rf[3]); R_(X, Y + RH - 2, W, 2, Rf[3]);
   R_(X, Y, W, 1, OUT); R_(X, Y, 1, RH + WH, OUT); R_(X + W - 1, Y, 1, RH + WH, OUT);
-  // roof furniture (each a little 3/4 box: lit top, darker front, outline)
-  const n = Math.floor(b.w * (b.h - b.wallRows) / 18) + 1;
+  // roof furniture: hay bale, chimney, skylight, cupola
+  const n = Math.floor(b.w * (b.h - b.wallRows) / 22) + 1;
   for (let i = 0; i < n; i++) {
     const t = r(), fx = X + 6 + Math.floor(r() * (W - 26)), fy = Y + 6 + Math.floor(r() * Math.max(1, RH - 26));
-    if (t < 0.35) box3(fx, fy, 10, 5, 5, RAMP.metal);              // vent
-    else if (t < 0.6) { box3(fx, fy, 14, 6, 8, RAMP.conc); for (let g = 0; g < 4; g++) R_(fx + 2 + g * 3, fy + 8, 2, 4, RAMP.conc[3]); } // AC unit
-    else if (t < 0.75) { R_(fx - 1, fy - 1, 14, 10, OUT); R_(fx, fy, 12, 8, RAMP.glass[2]); R_(fx, fy, 12, 1, RAMP.glass[0]); R_(fx + 3, fy + 3, 5, 3, RAMP.glass[3]); } // broken skylight
-    else if (t < 0.88) { R_(fx, fy, 14, 9, Rf[3]); R_(fx + 2, fy + 2, 10, 6, '#0c0810'); R_(fx + 3, fy + 6, 3, 2, RAMP.conc[2]); } // collapsed hole
-    else { box3(fx, fy, 14, 10, 14, RAMP.rust); R_(fx + 2, fy + 24, 2, 4, OUT); R_(fx + 10, fy + 24, 2, 4, OUT); } // water tank
+    if (t < 0.35) { box3(fx, fy, 14, 6, 7, RAMP.hay); R_(fx + 4, fy, 1, 13, RAMP.hay[3]); R_(fx + 9, fy, 1, 13, RAMP.hay[3]); }
+    else if (t < 0.6) { box3(fx, fy, 8, 5, 10, RAMP.brick); R_(fx + 2, fy + 1, 4, 3, OUT); }
+    else if (t < 0.8) { R_(fx - 1, fy - 1, 14, 10, OUT); R_(fx, fy, 12, 8, RAMP.glass[1]); R_(fx, fy, 12, 1, RAMP.glass[0]); R_(fx + 6, fy, 1, 8, '#ffffff'); R_(fx, fy + 4, 12, 1, '#ffffff'); }
+    else { box3(fx, fy, 12, 6, 9, RAMP.conc); R_(fx + 3, fy + 8, 6, 5, OUT); R_(fx + 4, fy + 9, 4, 4, RAMP.glass[2]); }
   }
   // wall (south face)
-  const Wm = RAMP[b.mat], WY = Y + RH;
+  const barn = b.mat === 'brick', Wm = barn ? RAMP.brick : RAMP.conc, WY = Y + RH, trim = barn ? '#ffffff' : RAMP.wood[1];
   R_(X, WY, W, WH, Wm[1]);
-  if (b.mat === 'brick') for (let yy = 0; yy < WH; yy += 4) { R_(X, WY + yy + 3, W, 1, Wm[2]); for (let xx = ((yy / 4) % 2) * 4; xx < W; xx += 8) R_(X + xx, WY + yy, 1, 3, Wm[2]); }
-  else for (let xx = 0; xx < W; xx += 16) { R_(X + xx, WY, 1, WH, Wm[2]); R_(X + xx + 1, WY, 1, WH, Wm[0]); }
-  spk(X, WY, W, WH, W * WH / 30, [Wm[0], Wm[2]], r);
-  R_(X, WY, W, 2, Wm[3]); R_(X, WY + 2, W, 1, Wm[2]);                     // shadow under roof lip
-  R_(X + 1, WY, 1, WH, Wm[0]); R_(X + W - 3, WY, 2, WH, Wm[2]);          // light from top-left
+  if (barn) for (let xx = 0; xx < W; xx += 4) { R_(X + xx, WY, 1, WH, Wm[2]); R_(X + xx + 1, WY, 1, WH, Wm[0]); }
+  else for (let yy = 0; yy < WH; yy += 4) { R_(X, WY + yy + 3, W, 1, Wm[2]); R_(X, WY + yy, W, 1, Wm[0]); }
+  R_(X, WY, W, 2, OUT); R_(X, WY + 2, W, 2, trim); R_(X + 1, WY, 2, WH, trim); R_(X + W - 3, WY, 2, WH, trim); // white trim under the eave and at corners
+  R_(X, WY + 4, W, 1, Wm[3]);
   for (let row = 0; row < b.wallRows; row++) for (let col = 0; col < b.w; col++) {
-    const wx = X + col * TS, wy = WY + row * TS, ground = row === b.wallRows - 1;
-    if (ground) {
+    const wx = X + col * TS, wy = WY + row * TS, groundRow = row === b.wallRows - 1;
+    if (col === 0 || col === b.w - 1) continue;
+    if (groundRow) {
       const t = r();
-      if (t < 0.3) { R_(wx + 3, wy + 3, 10, 13, OUT); R_(wx + 4, wy + 4, 8, 12, RAMP.wood[2]); R_(wx + 4, wy + 4, 8, 1, RAMP.wood[0]); R_(wx + 10, wy + 10, 1, 1, RAMP.hazard[0]); }
-      else if (t < 0.6) { R_(wx + 1, wy + 3, 14, 13, OUT); R_(wx + 2, wy + 4, 12, 12, RAMP.metal[2]); for (let s = 0; s < 12; s += 2) R_(wx + 2, wy + 4 + s, 12, 1, RAMP.metal[1]); if (r() < 0.5) R_(wx + 4, wy + 11, 7, 5, '#0c0810'); }
-      else if (t < 0.75) { R_(wx + 1, wy + 3, 14, 12, OUT); R_(wx + 2, wy + 4, 12, 10, RAMP.glass[3]); R_(wx + 2, wy + 4, 3, 2, RAMP.glass[1]); R_(wx + 10, wy + 11, 4, 3, RAMP.glass[1]); }
-      if (r() < 0.25) { const gc = [RAMP.scarf[1], RAMP.hazard[1], RAMP.zshirt1[0], RAMP.conc[0]][Math.floor(r() * 4)]; for (let g = 0; g < 6; g++) R_(wx + 2 + g * 2, wy + 6 + Math.round(Math.sin(g * 1.7 + col) * 2), 2, 2, gc); }
+      if (t < 0.3 && col < b.w - 2) { // big barn door with the white X brace (2 tiles wide)
+        R_(wx + 1, wy + 2, 30, 14, OUT); R_(wx + 2, wy + 3, 28, 13, Wm[2]); R_(wx + 2, wy + 3, 28, 2, trim); R_(wx + 2, wy + 3, 2, 13, trim); R_(wx + 28, wy + 3, 2, 13, trim); R_(wx + 15, wy + 3, 2, 13, trim);
+        for (let s = 0; s < 11; s++) { R_(wx + 4 + s, wy + 5 + s, 2, 1, trim); R_(wx + 14 - s, wy + 5 + s, 2, 1, trim); R_(wx + 17 + s, wy + 5 + s, 2, 1, trim); R_(wx + 27 - s, wy + 5 + s, 2, 1, trim); }
+        col++; }
+      else if (t < 0.55) { R_(wx + 3, wy + 3, 10, 13, OUT); R_(wx + 4, wy + 4, 8, 12, RAMP.wood[1]); R_(wx + 4, wy + 9, 8, 1, RAMP.wood[3]); R_(wx + 4, wy + 4, 8, 1, RAMP.wood[0]); R_(wx + 10, wy + 11, 1, 1, RAMP.hazard[1]); } // stable door
+      else if (t < 0.8) { R_(wx + 2, wy + 3, 12, 9, OUT); R_(wx + 3, wy + 4, 10, 7, RAMP.glass[1]); R_(wx + 3, wy + 4, 10, 1, RAMP.glass[0]); R_(wx + 8, wy + 4, 1, 7, trim); R_(wx + 2, wy + 12, 12, 3, RAMP.wood[1]); R_(wx + 3, wy + 11, 2, 1, RAMP.brick[1]); R_(wx + 7, wy + 11, 2, 1, '#ffffff'); R_(wx + 11, wy + 11, 2, 1, RAMP.hazard[1]); } // window + flower box
     } else {
       const t = r(); R_(wx + 3, wy + 3, 10, 10, OUT);
-      if (t < 0.22) { R_(wx + 4, wy + 4, 8, 8, RAMP.lit[1]); R_(wx + 4, wy + 4, 8, 1, RAMP.lit[0]); R_(wx + 4, wy + 4, 1, 8, RAMP.lit[0]); R_(wx + 8, wy + 4, 1, 8, RAMP.lit[2]); R_(wx + 4, wy + 8, 8, 1, RAMP.lit[2]); b.lit = (b.lit || []).concat([[wx + 8, wy + 8]]); }
-      else if (t < 0.45) { R_(wx + 4, wy + 4, 8, 8, RAMP.wood[1]); R_(wx + 4, wy + 6, 8, 1, RAMP.wood[3]); R_(wx + 4, wy + 9, 8, 1, RAMP.wood[3]); R_(wx + 4, wy + 4, 8, 1, RAMP.wood[0]); }
-      else { R_(wx + 4, wy + 4, 8, 8, RAMP.glass[3]); R_(wx + 4, wy + 4, 2, 1, RAMP.glass[0]); R_(wx + 4, wy + 5, 1, 1, RAMP.glass[0]); if (t > 0.8) { R_(wx + 6, wy + 6, 3, 3, '#0c0810'); } }
-      R_(wx + 3, wy + 13, 10, 1, Wm[0]);
-      if (r() < 0.3) for (let s = 0; s < 6 + r() * 8; s++) R_(wx + 6 + (s % 2), wy + 14 + s, 1, 1, RAMP.rust[2]);
+      if (t < 0.22) { R_(wx + 4, wy + 4, 8, 8, RAMP.lit[1]); R_(wx + 4, wy + 4, 8, 1, RAMP.lit[0]); R_(wx + 8, wy + 4, 1, 8, trim); R_(wx + 4, wy + 8, 8, 1, trim); b.lit = (b.lit || []).concat([[wx + 8, wy + 8]]); }
+      else if (t < 0.45) { R_(wx + 4, wy + 4, 8, 8, RAMP.wood[1]); for (let s = 0; s < 3; s++) R_(wx + 4, wy + 5 + s * 3, 8, 1, RAMP.wood[3]); R_(wx + 4, wy + 4, 8, 1, RAMP.wood[0]); } // hay-loft shutter
+      else { R_(wx + 4, wy + 4, 8, 8, RAMP.glass[1]); R_(wx + 4, wy + 4, 3, 1, RAMP.glass[0]); R_(wx + 8, wy + 4, 1, 8, trim); R_(wx + 4, wy + 8, 8, 1, trim); }
+      R_(wx + 3, wy + 13, 10, 1, trim);
     }
   }
   R_(X, WY + WH - 1, W, 1, OUT);
 }
 function box3(x, y, w, top, front, ramp) { R_(x - 1, y - 1, w + 2, top + front + 2, OUT); R_(x, y, w, top, ramp[0]); R_(x, y + top, w, front, ramp[2]); R_(x, y + top, w, 1, ramp[3]); R_(x, y, 1, top, ramp[0]); R_(x + w - 1, y, 1, top + front, ramp[3]); R_(x + 1, y + 1, w - 2, top - 2, ramp[1]); }
-function drawTower() {
-  const T = TOWER, X = T.x0 * TS, W = (T.x1 - T.x0 + 1) * TS, FY = T.fy0 * TS, FH = (T.fy1 - T.fy0 + 1) * TS, C = RAMP.tower, r = rng(77);
+function drawTower() { // THE COOP: tall plank hen-house face, white trim, nest-box holes, chikn ramp up the middle
+  const T = TOWER, X = T.x0 * TS, W = (T.x1 - T.x0 + 1) * TS, FY = T.fy0 * TS, FH = (T.fy1 - T.fy0 + 1) * TS, C = RAMP.brick, r = rng(77);
   R_(X, FY, W, FH, C[1]);
-  for (let yy = 0; yy < FH; yy += 16) { R_(X, FY + yy, W, 1, C[0]); R_(X, FY + yy + 15, W, 1, C[2]); }
-  for (let xx = 0; xx < W; xx += 32) { R_(X + xx, FY, 1, FH, C[2]); R_(X + xx + 1, FY, 1, FH, C[0]); }
-  spk(X, FY, W, FH, W * FH / 22, [C[0], C[2], C[3]], r);
-  for (let row = 1; row < (T.fy1 - T.fy0 + 1); row += 2) for (let col = 0; col < 12; col += 2) { const wx = X + col * TS + 10, wy = FY + row * TS + 3; R_(wx - 1, wy - 1, 12, 10, OUT); const lit = r() < 0.15; R_(wx, wy, 10, 8, lit ? RAMP.lit[1] : RAMP.glass[3]); R_(wx, wy, 10, 1, lit ? RAMP.lit[0] : RAMP.glass[2]); if (!lit && r() < 0.4) { R_(wx, wy + 3, 10, 1, RAMP.wood[1]); R_(wx, wy + 5, 10, 1, RAMP.wood[1]); } for (let s = 0; s < 4 + r() * 10; s++) R_(wx + 4, wy + 9 + s, 1, 1, RAMP.rust[2]); }
-  // hazard band at the top of the face, grime at the base, light top-left
-  for (let xx = 0; xx < W; xx += 8) { R_(X + xx, FY + 2, 4, 4, RAMP.hazard[1]); R_(X + xx + 4, FY + 2, 4, 4, OUT); }
-  R_(X, FY, W, 2, C[3]);
-  R_(X, FY + FH - 6, W, 6, C[2]); R_(X, FY + FH - 2, W, 2, C[3]);
-  R_(X, FY, 2, FH, C[0]); R_(X + W - 4, FY, 4, FH, C[2]); R_(X - 1, FY, 1, FH, OUT); R_(X + W, FY, 1, FH, OUT); R_(X, FY + FH - 1, W, 1, OUT);
-  // the ladder: dark recess behind it, two outlined rails, rungs every 5 px, top-left lit
-  { const lx = LADDER.x0 * TS + 2, lw = (LADDER.x1 - LADDER.x0 + 1) * TS - 4, ly = FY - 2, lh = (LADDER.y1 + 1) * TS - ly, Mt = RAMP.metal;
-    R_(lx - 2, ly, lw + 4, lh, OUT); R_(lx, ly, lw, lh, C[3]);
-    for (let yy = ly + 3; yy < ly + lh - 1; yy += 5) { R_(lx + 3, yy, lw - 6, 2, Mt[1]); R_(lx + 3, yy, lw - 6, 1, Mt[0]); R_(lx + 3, yy + 2, lw - 6, 1, OUT); }
-    for (const rx of [lx + 1, lx + lw - 4]) { R_(rx - 1, ly, 5, lh, OUT); R_(rx, ly, 3, lh, Mt[1]); R_(rx, ly, 1, lh, Mt[0]); R_(rx + 2, ly, 1, lh, Mt[2]); }
-    // painted UP arrows beside the ladder
-    for (const ax of [lx - 9, lx + lw + 8]) for (const ay of [FY + FH - 70, FY + 70]) { R_(ax - 1, ay - 10, 3, 9, RAMP.scarf[1]); R_(ax - 4, ay - 7, 9, 2, RAMP.scarf[1]); R_(ax - 3, ay - 8, 7, 1, RAMP.scarf[1]); } }
-  // ledges: metal grating platforms with a hazard lip, cast shadow on the wall below, struts
+  for (let xx = 0; xx < W; xx += 4) { R_(X + xx, FY, 1, FH, C[2]); R_(X + xx + 1, FY, 1, FH, C[0]); }
+  for (let yy = 48; yy < FH - 8; yy += 64) { R_(X, FY + yy, W, 3, '#ffffff'); R_(X, FY + yy + 3, W, 1, C[3]); } // white floor bands
+  // nest-box holes with straw lips, a few with an egg or a sleepy hen glow
+  for (let row = 1; row < (T.fy1 - T.fy0 + 1) - 1; row += 2) for (let col = 0; col < 12; col += 2) {
+    const wx = X + col * TS + 9, wy = FY + row * TS + 2; if (Math.abs(wx + 6 - LADDER.cx) < 24) continue;
+    R_(wx, wy, 14, 11, OUT); R_(wx + 1, wy + 1, 12, 9, '#ffffff'); R_(wx + 2, wy + 2, 10, 7, '#2a1c14');
+    const lit = r() < 0.18; if (lit) { R_(wx + 2, wy + 2, 10, 7, RAMP.lit[1]); R_(wx + 2, wy + 2, 10, 1, RAMP.lit[0]); }
+    R_(wx + 2, wy + 7, 10, 2, RAMP.hay[1]); R_(wx + 3, wy + 6, 2, 1, RAMP.hay[0]); R_(wx + 8, wy + 6, 3, 1, RAMP.hay[2]);
+    if (!lit && r() < 0.3) { R_(wx + 5, wy + 4, 3, 3, '#ffffff'); R_(wx + 5, wy + 4, 1, 1, RAMP.hazard[0]); }
+  }
+  // trim: white eave + corner boards, ink outline, light from top-left
+  R_(X, FY, W, 5, '#ffffff'); R_(X, FY + 5, W, 1, C[3]); R_(X, FY, W, 1, OUT);
+  R_(X + 1, FY, 3, FH, '#ffffff'); R_(X + W - 4, FY, 3, FH, '#e4e7ea');
+  R_(X, FY + FH - 5, W, 5, RAMP.wood[2]); R_(X, FY + FH - 5, W, 1, RAMP.wood[0]);
+  R_(X - 1, FY, 1, FH, OUT); R_(X + W, FY, 1, FH, OUT); R_(X, FY + FH - 1, W, 1, OUT);
+  // the chikn ramp: one wide plank with cross slats (a classic hen-house ladder)
+  { const lx = LADDER.x0 * TS + 2, lw = (LADDER.x1 - LADDER.x0 + 1) * TS - 4, ly = FY - 2, lh = (LADDER.y1 + 1) * TS - ly, Wd = RAMP.wood;
+    R_(lx - 1, ly, lw + 2, lh, OUT); R_(lx, ly, lw, lh, Wd[1]); R_(lx, ly, 2, lh, Wd[0]); R_(lx + lw - 2, ly, 2, lh, Wd[2]);
+    for (let xx = lx + 9; xx < lx + lw - 4; xx += 9) R_(xx, ly, 1, lh, Wd[2]);
+    for (let yy = ly + 3; yy < ly + lh - 1; yy += 6) { R_(lx + 1, yy, lw - 2, 3, Wd[0]); R_(lx + 1, yy + 2, lw - 2, 1, Wd[3]); R_(lx + 1, yy + 3, lw - 2, 1, OUT); }
+    // painted gold UP arrows beside the ramp
+    for (const ax of [lx - 9, lx + lw + 8]) for (const ay of [FY + FH - 70, FY + 70]) { R_(ax - 2, ay - 11, 5, 11, OUT); R_(ax - 5, ay - 8, 11, 4, OUT); R_(ax - 1, ay - 10, 3, 9, RAMP.hazard[1]); R_(ax - 4, ay - 7, 9, 2, RAMP.hazard[1]); R_(ax - 3, ay - 8, 7, 1, RAMP.hazard[1]); } }
+  // the perch step: a sturdy plank platform with a gold edge
   for (const L of ledges) {
-    const lx = L.x * TS, ly = L.y * TS, lw = L.w * TS, lh = 2 * TS, Mt = RAMP.metal;
-    R_(lx, ly + lh, lw, 6, DARK_SHADOW); R_(lx + 2, ly + lh + 6, 3, 8, OUT); R_(lx + lw - 5, ly + lh + 6, 3, 8, OUT);
-    R_(lx, ly, lw, lh - 4, Mt[1]);
-    for (let gx = 0; gx < lw; gx += 4) R_(lx + gx, ly, 1, lh - 4, Mt[2]);
-    for (let gy = 0; gy < lh - 4; gy += 4) R_(lx, ly + gy, lw, 1, Mt[2]);
-    R_(lx, ly, lw, 1, Mt[0]); R_(lx, ly, 1, lh - 4, Mt[0]);
-    for (let s = 0; s < lw; s += 6) { R_(lx + s, ly + lh - 4, 3, 4, RAMP.hazard[1]); R_(lx + s + 3, ly + lh - 4, 3, 4, OUT); }
+    const lx = L.x * TS, ly = L.y * TS, lw = L.w * TS, lh = 2 * TS, Wd = RAMP.wood;
+    R_(lx, ly + lh, lw, 6, DARK_SHADOW); R_(lx + 3, ly + lh, 4, 7, OUT); R_(lx + lw - 7, ly + lh, 4, 7, OUT);
+    R_(lx, ly, lw, lh - 4, Wd[1]);
+    for (let gy = 0; gy < lh - 4; gy += 4) { R_(lx, ly + gy, lw, 1, Wd[0]); R_(lx, ly + gy + 3, lw, 1, Wd[2]); }
+    for (let gx = 12; gx < lw; gx += 24) R_(lx + gx, ly, 1, lh - 4, Wd[3]);
+    R_(lx, ly + lh - 4, lw, 4, RAMP.hazard[1]); R_(lx, ly + lh - 2, lw, 2, RAMP.hazard[2]);
     R_(lx - 1, ly - 1, lw + 2, 1, OUT); R_(lx - 1, ly - 1, 1, lh + 1, OUT); R_(lx + lw, ly - 1, 1, lh + 1, OUT); R_(lx - 1, ly + lh, lw + 2, 1, OUT);
   }
   // east cast shadow (light from top-left)
   R_(X + W + 1, T.ry0 * TS + 4, 7, (T.fy1 - T.ry0 + 1) * TS - 4, DARK_SHADOW);
 }
-function drawParapet(tx, ty) { const X = tx * TS, Y = ty * TS, C = RAMP.tower; R_(X, Y, TS, TS, C[2]); R_(X, Y, TS, 9, C[0]); R_(X, Y + 1, TS, 7, C[1]); R_(X, Y + 9, TS, 1, C[3]); R_(X, Y + 15, TS, 1, OUT); if ((tx + ty) % 3 === 0) R_(X + 6, Y + 10, 2, 5, RAMP.rust[2]); }
-function drawRuin(p) { // the front face of a rubble plateau: broken brick wall with jagged top
-  const B = RAMP.brick, r = rng(p.x0 * 31 + p.y0), X = p.x0 * TS, FY = (p.y0 + p.h - 1) * TS, W = p.w * TS;
-  R_(X, FY, W, TS, B[1]);
-  for (let yy = 0; yy < TS; yy += 4) { R_(X, FY + yy + 3, W, 1, B[2]); for (let xx = ((yy / 4) % 2) * 4; xx < W; xx += 8) R_(X + xx, FY + yy, 1, 3, B[2]); }
-  for (let xx = 0; xx < W; xx += 2) { const j = Math.floor(r() * 3); R_(X + xx, FY, 2, j, RAMP.dirt[1]); R_(X + xx, FY + j, 2, 1, B[0]); }
-  R_(X, FY + TS - 2, W, 2, B[3]); R_(X - 1, FY, 1, TS, OUT); R_(X + W, FY, 1, TS, OUT); R_(X, FY + TS - 1, W, 1, OUT);
-  // outline the top rim of the plateau so the height reads
+function drawParapet(tx, ty) { // white picket rail around the coop loft
+  const X = tx * TS, Y = ty * TS, T = RAMP.tower; R_(X, Y, TS, TS, T[2]);
+  R_(X, Y + 4, TS, 3, '#ffffff'); R_(X, Y + 10, TS, 3, '#ffffff'); R_(X, Y + 7, TS, 1, '#c2c8ce'); R_(X, Y + 13, TS, 1, '#c2c8ce');
+  for (const px0 of [1, 9]) { R_(X + px0, Y, 6, 15, OUT); R_(X + px0 + 1, Y + 1, 4, 13, '#ffffff'); R_(X + px0 + 4, Y + 1, 1, 13, '#d9dde1'); }
+  R_(X, Y + 15, TS, 1, OUT);
+}
+function drawRuin(p) { // the front face of a hay-bale stack: gold bales with twine
+  const H = RAMP.hay, r = rng(p.x0 * 31 + p.y0), X = p.x0 * TS, FY = (p.y0 + p.h - 1) * TS, W = p.w * TS;
+  R_(X, FY, W, TS, H[1]);
+  for (let xx = 0; xx < W; xx += 16) { R_(X + xx, FY, 1, TS, OUT); R_(X + xx + 1, FY, 1, TS, H[0]); R_(X + xx + 5, FY, 1, TS, RAMP.wood[2]); R_(X + xx + 11, FY, 1, TS, RAMP.wood[2]); }
+  for (let s = 0; s < W / 3; s++) { const sx = X + Math.floor(r() * W), sy = FY + 1 + Math.floor(r() * 13); R_(sx, sy, 2, 1, r() < 0.5 ? H[2] : H[0]); }
+  R_(X, FY, W, 1, H[0]); R_(X, FY + TS - 2, W, 2, H[3]); R_(X - 1, FY, 1, TS, OUT); R_(X + W, FY, 1, TS, OUT); R_(X, FY + TS - 1, W, 1, OUT);
   const TY = p.y0 * TS; R_(X - 1, TY - 1, W + 2, 1, OUT); R_(X - 1, TY, 1, FY - TY, OUT); R_(X + W, TY, 1, FY - TY, OUT);
-  R_(X, TY, W, 1, RAMP.dirt[0]); R_(X, TY, 1, FY - TY, RAMP.dirt[0]);
+  R_(X, TY, W, 1, H[0]); R_(X, TY, 1, FY - TY, H[0]);
   R_(X + W + 1, TY + 3, 5, (p.h) * TS - 3, DARK_SHADOW);
 }
-function carCanvas(car) {
-  const r = rng(car.seed), Cr = RAMP[car.c], G = RAMP.glass, Ru = RAMP.rust;
+function carCanvas(car) { // abandoned tractors and hay wagons
+  const r = rng(car.seed), Cr = RAMP[car.c], G = RAMP.glass, wagon = (car.seed % 10) < 3;
   const w = car.w * TS - 2, h = car.h * TS - 2, [c, x] = mk(w + 2, h + 2), P = (a, b, cw, ch, col) => { x.fillStyle = col; x.fillRect(a + 1, b + 1, cw, ch); };
-  if (car.horiz) { // seen from above-front: top (roof, hood, trunk) then the south side with wheels
-    const top = 18;
-    P(2, 2, w - 4, top, Cr[1]); P(2, 2, w - 4, 1, Cr[0]); P(2, 2, 1, top, Cr[0]);
-    P(12, 4, w - 26, top - 5, Cr[0]); P(12, 4, 4, top - 5, G[1]); P(w - 18, 4, 4, top - 5, G[2]); P(17, 5, w - 36, top - 7, Cr[1]);
-    P(0, top + 2, w, h - top - 6, Cr[2]); P(0, top + 2, w, 1, Cr[1]); P(14, top + 4, 8, 5, G[2]); P(w - 24, top + 4, 8, 5, G[3]);
-    for (const wx of [6, w - 14]) { P(wx, h - 8, 9, 8, OUT); P(wx + 2, h - 6, 5, 4, RAMP.gog[0]); }
-    P(0, top + 2, 2, 5, RAMP.lit[2]);
-  } else { // pointing at the camera: hood at the bottom, front face with lights
+  const wheel = (a, b, d) => { P(a, b, d, d, OUT); P(a + 1, b + 1, d - 2, d - 2, '#2a2e32'); for (let k = 2; k < d - 2; k += 3) P(a + 1, b + k, d - 2, 1, '#14171a'); P(a + d / 2 - 2, b + d / 2 - 2, 4, 4, RAMP.hazard[1]); };
+  if (wagon) { const Wd = RAMP.wood, H = RAMP.hay;
+    P(1, 3, w - 2, h - 9, Wd[1]); for (let k = 3; k < h - 6; k += 4) P(1, k, w - 2, 1, Wd[2]);
+    P(4, 1, w - 8, h - 14, H[1]); for (let s = 0; s < 30; s++) P(4 + Math.floor(r() * (w - 10)), 1 + Math.floor(r() * (h - 15)), 2, 1, r() < 0.5 ? H[0] : H[2]);
+    if (car.horiz) { wheel(4, h - 9, 9); wheel(w - 13, h - 9, 9); } else { wheel(0, h - 10, 8); wheel(w - 8, h - 10, 8); }
+    return outline(c); }
+  if (car.horiz) { // side-on: long hood, cab at the back, giant rear wheel
+    const top = 14;
+    P(2, 4, w - 18, top - 2, Cr[1]); P(2, 4, w - 18, 1, Cr[0]); P(2, 4, 1, top - 2, Cr[0]);                 // hood top
+    P(8, 0, 3, 6, RAMP.metal[2]); P(8, 0, 1, 6, RAMP.metal[0]);                                              // exhaust
+    P(w - 18, 0, 16, top + 4, '#ffffff'); P(w - 16, 2, 12, top - 2, G[1]); P(w - 16, 2, 12, 1, G[0]);        // cab
+    P(0, top + 2, w - 14, h - top - 8, Cr[2]); P(0, top + 2, w - 14, 1, Cr[0]); P(2, top + 4, 6, 3, RAMP.conc[2]); // body side, grille
+    wheel(w - 17, h - 15, 15); wheel(4, h - 9, 9);
+  } else { // facing the camera: cab at the top, hood and grille at the bottom, wheels at the sides
     const face = 9;
-    P(2, 0, w - 4, h - face, Cr[1]); P(2, 0, w - 4, 1, Cr[0]); P(2, 0, 1, h - face, Cr[0]); P(w - 3, 0, 1, h - face, Cr[2]);
-    P(4, 8, w - 8, 18, Cr[0]); P(4, 8, w - 8, 4, G[2]); P(4, 22, w - 8, 5, G[1]); P(5, 12, w - 10, 10, Cr[1]);
-    P(0, h - face, w, face, Cr[2]); P(3, h - face + 2, 5, 3, RAMP.lit[1]); P(w - 8, h - face + 2, 5, 3, G[3]); P(10, h - face + 2, w - 20, 4, RAMP.gog[1]);
-    P(0, h - face - 6, 3, 8, OUT); P(w - 3, h - face - 6, 3, 8, OUT);
+    P(5, 0, w - 10, 14, '#ffffff'); P(7, 2, w - 14, 9, G[1]); P(7, 2, w - 14, 1, G[0]);
+    P(7, 14, w - 14, h - face - 14, Cr[1]); P(7, 14, 1, h - face - 14, Cr[0]); P(w - 8, 14, 1, h - face - 14, Cr[2]);
+    P(7, h - face, w - 14, face, Cr[2]); P(9, h - face + 2, w - 18, 4, RAMP.conc[2]); P(9, h - face + 2, 3, 3, RAMP.lit[1]); P(w - 12, h - face + 2, 3, 3, RAMP.lit[1]);
+    wheel(0, 2, 7); P(0, 2, 6, 16, OUT); P(1, 3, 4, 14, '#2a2e32'); P(w - 6, 2, 6, 16, OUT); P(w - 5, 3, 4, 14, '#2a2e32');
+    P(0, h - 12, 6, 10, OUT); P(w - 6, h - 12, 6, 10, OUT);
   }
-  for (let n = 0; n < 5; n++) { const a = Math.floor(r() * (w - 6)), b = Math.floor(r() * (h - 6)); x.fillStyle = Ru[r() < 0.5 ? 1 : 2]; x.fillRect(a + 1, b + 1, 2 + Math.floor(r() * 4), 2); }
+  for (let n = 0; n < 3; n++) { const a = Math.floor(r() * (w - 6)), b = Math.floor(r() * (h - 6)); x.fillStyle = RAMP.dirt[r() < 0.5 ? 1 : 2]; x.fillRect(a + 1, b + 1, 2 + Math.floor(r() * 3), 2); } // mud
   return outline(c);
 }
 let MAPC = null;
@@ -487,9 +516,10 @@ function renderMap() {
   drawTower();
   for (const c of cars) { M.drawImage(carCanvas(c), c.x * TS, c.y * TS); R_((c.x + c.w) * TS, c.y * TS + 4, 3, c.h * TS - 6, DARK_SHADOW); }
   // static props: bedroll and crate on the roof, barrels
-  { const X = 36 * TS + 2, Y = 27 * TS + 2; R_(X - 1, Y - 1, 14, 30, OUT); R_(X, Y, 12, 28, RAMP.zshirt2[1]); R_(X, Y, 12, 7, RAMP.walk[0]); R_(X, Y + 8, 12, 1, RAMP.zshirt2[2]); R_(X, Y, 1, 28, RAMP.zshirt2[0]); }
-  box3(43 * TS + 1, 26 * TS + 2, 14, 6, 7, RAMP.wood);
-  for (const p of props) if (p.type === 'barrel') { const X = p.tx * TS + 3, Y = p.ty * TS + 1; R_(X - 1, Y - 1, 12, 16, OUT); R_(X, Y, 10, 14, RAMP.rust[1]); R_(X, Y, 10, 3, RAMP.rust[3]); R_(X + 1, Y + 1, 8, 1, '#1a0c08'); R_(X, Y + 3, 2, 11, RAMP.rust[0]); R_(X + 8, Y + 3, 2, 11, RAMP.rust[2]); R_(X, Y + 7, 10, 1, RAMP.rust[3]); }
+  { const X = 36 * TS + 1, Y = 27 * TS + 4, H = RAMP.hay; R_(X - 1, Y - 1, 16, 26, OUT); R_(X, Y, 14, 24, H[1]); R_(X, Y, 14, 2, H[0]); R_(X, Y + 22, 14, 2, H[2]); R_(X + 3, Y + 4, 8, 16, H[2]); R_(X + 3, Y + 4, 8, 1, H[3]);
+    for (const [ex, ey] of [[4, 7], [7, 10], [4, 13]]) { R_(X + ex - 1, Y + ey - 1, 6, 7, OUT); R_(X + ex, Y + ey, 4, 5, ey === 10 ? RAMP.hazard[1] : '#ffffff'); R_(X + ex, Y + ey, 1, 1, '#ffffff'); } } // straw nest with eggs (one golden)
+  box3(43 * TS + 1, 26 * TS + 2, 14, 6, 7, RAMP.wood); R_(43 * TS + 4, 26 * TS + 10, 8, 3, RAMP.brick[1]); // $FEED crate
+  for (const p of props) if (p.type === 'barrel') { const X = p.tx * TS + 3, Y = p.ty * TS + 1; R_(X - 1, Y - 1, 12, 16, OUT); R_(X, Y, 10, 14, RAMP.metal[2]); R_(X, Y, 10, 3, RAMP.metal[3]); R_(X + 1, Y + 1, 8, 1, '#1a0c08'); R_(X, Y + 3, 2, 11, RAMP.metal[0]); R_(X + 8, Y + 3, 2, 11, RAMP.metal[3]); R_(X, Y + 5, 10, 1, RAMP.brick[1]); R_(X, Y + 10, 10, 1, RAMP.brick[1]); }
   M = null;
 }
 
@@ -497,11 +527,11 @@ function renderMap() {
 const BEST_KEY = 'lasttower.best';
 let best = { days: 0, kills: 0 }; try { best = JSON.parse(localStorage.getItem(BEST_KEY)) || best; } catch (e) {}
 const WEAPONS = {
-  fists:   { name: 'FISTS',   kind: 'melee', dmg: 1, reach: 15, arc: 1.5, cd: 0.36, stam: 7, icon: -1 },
-  pipe:    { name: 'PIPE',    kind: 'melee', dmg: 2, reach: 20, arc: 1.8, cd: 0.48, stam: 11, icon: 5 },
-  machete: { name: 'MACHETE', kind: 'melee', dmg: 3.5, reach: 22, arc: 2.0, cd: 0.42, stam: 12, icon: 6 },
-  pistol:  { name: 'PISTOL',  kind: 'gun', dmg: 3, range: 200, cd: 0.32, ammo: 'ammo', pellets: 1, spread: 0, icon: 7 },
-  shotgun: { name: 'SHOTGUN', kind: 'gun', dmg: 2.2, range: 120, cd: 0.85, ammo: 'shells', pellets: 6, spread: 0.55, icon: 8 },
+  fists:   { name: 'PECK',    kind: 'melee', dmg: 1, reach: 15, arc: 1.5, cd: 0.36, stam: 7, icon: -1 },
+  pipe:    { name: 'RAKE',    kind: 'melee', dmg: 2, reach: 20, arc: 1.8, cd: 0.48, stam: 11, icon: 5 },
+  machete: { name: 'PITCHFORK', kind: 'melee', dmg: 3.5, reach: 22, arc: 2.0, cd: 0.42, stam: 12, icon: 6 },
+  pistol:  { name: 'EGG BLASTER', kind: 'gun', dmg: 3, range: 200, cd: 0.32, ammo: 'ammo', pellets: 1, spread: 0, icon: 7 },
+  shotgun: { name: 'CORN SHOTGUN', kind: 'gun', dmg: 2.2, range: 120, cd: 0.85, ammo: 'shells', pellets: 6, spread: 0.55, icon: 8 },
 };
 const ORDER = ['fists', 'pipe', 'machete', 'pistol', 'shotgun'];
 const DAY_LEN = 180, NIGHT_LEN = 120, CYCLE = DAY_LEN + NIGHT_LEN;
@@ -517,8 +547,8 @@ function newGame() {
   Object.assign(player, { x: 38 * TS + 8, y: 29 * TS + 8, level: TOWER.ROOF, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0] });
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
   scatterLoot(40, true);
-  say('THE CITY IS DEAD. SCAVENGE.', 4);
-  say('GET BACK UP THE TOWER BY NIGHT.', 4);
+  say('THE FARM HAS TURNED. FORAGE.', 4);
+  say('BE BACK IN THE COOP BY NIGHT.', 4);
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
@@ -543,7 +573,7 @@ const JUMP_V = 110, GRAV = 420, HOP_V = 60;
 function jump() {
   if (player.climb) return;
   if (player.air) { player.jumpBuf = 0.12; return; }
-  if (G.stam < 4) { say('TOO TIRED TO JUMP', 1); return; }
+  if (G.stam < 4) { say('TOO TIRED TO FLAP', 1); return; }
   Object.assign(player, { air: true, vz: JUMP_V, jz: 0, maxL: player.level + 1, sx: player.x, sy: player.y });
   G.stam = Math.max(0, G.stam - 4); sfx('jump');
 }
@@ -569,7 +599,7 @@ function land() {
   }
   const L2 = lvl[tileAt(player.x, player.y - 2)], drop = player.level - L2;
   player.level = L2; player.air = false; player.jz = 0; player.vz = 0;
-  if (drop >= 3) hurtPlayer((drop - 2) * 10, null, 'A BAD FALL'); else if (drop > 0 || guard) sfx('land');
+  if (drop >= 3) hurtPlayer((drop - 2) * 10, null, 'A BAD FLAP'); else if (drop > 0 || guard) sfx('land');
   if (player.jumpBuf > 0) { player.jumpBuf = 0; jump(); }
 }
 function findLanding(x, y) { // nudge a few px to the nearest spot the feet fit
@@ -601,13 +631,13 @@ function scatterLoot(n, first) {
 }
 function pickup(it) {
   const k = it.kind; it.alive = false; sfx('pick');
-  if (WEAPONS[k]) { if (!G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } G.weapon = k; say('FOUND ' + WEAPONS[k].name + (k === 'pistol' ? ' +6 AMMO' : k === 'shotgun' ? ' +4 SHELLS' : '')); if (k === 'pistol') G.inv.ammo += 6; if (k === 'shotgun') G.inv.shells += 4; return; }
-  if (k === 'food') { G.inv.food++; say('+1 CANNED FOOD'); }
-  else if (k === 'mre') { G.inv.mre++; say('+1 MRE RATION'); }
-  else if (k === 'water') { G.inv.food++; G.stam = 100; say('+1 WATER (COUNTS AS FOOD)'); }
-  else if (k === 'med') { G.inv.med++; say('+1 MEDKIT'); }
-  else if (k === 'ammo') { const n = 5 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' PISTOL AMMO'); }
-  else if (k === 'shells') { const n = 3 + Math.floor(Math.random() * 3); G.inv.shells += n; say('+' + n + ' SHELLS'); }
+  if (WEAPONS[k]) { if (!G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } G.weapon = k; say('FOUND ' + WEAPONS[k].name + (k === 'pistol' ? ' +6 EGGS' : k === 'shotgun' ? ' +4 KERNELS' : '')); if (k === 'pistol') G.inv.ammo += 6; if (k === 'shotgun') G.inv.shells += 4; return; }
+  if (k === 'food') { G.inv.food++; say('+1 CORN COB'); }
+  else if (k === 'mre') { G.inv.mre++; say('+1 SACK OF $FEED'); }
+  else if (k === 'water') { G.inv.food++; G.stam = 100; say('+1 JUICY WORM. STAMINA FULL'); }
+  else if (k === 'med') { G.inv.med++; say('+1 GOLDEN HEGG'); }
+  else if (k === 'ammo') { const n = 5 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' EGGS'); }
+  else if (k === 'shells') { const n = 3 + Math.floor(Math.random() * 3); G.inv.shells += n; say('+' + n + ' CORN KERNELS'); }
 }
 
 // ================================================================ zombies: flow-field pathing on the ground level
@@ -668,7 +698,7 @@ function updateZombies(dt) {
     if (hit && z.state === 'wander') z.wt = 0;
     z.kb[0] *= Math.pow(0.001, dt); z.kb[1] *= Math.pow(0.001, dt);
     if (sp > 1) { z.anim += dt * 6 * (sp / 24); z.fx = vx; z.fy = vy; }
-    if (z.atk > 0) { z.atk -= dt; if (z.atk <= 0 && !z.struck) { z.struck = true; z.cool = 1.1; if (Math.abs(player.x - z.x) < 16 && Math.abs(player.y - z.y) < 12 && player.level - z.level <= 1 && G.state !== 'dead') hurtPlayer(z.brute ? 17 : 8, z, z.brute ? 'A BRUTE' : 'THE HORDE'); } }
+    if (z.atk > 0) { z.atk -= dt; if (z.atk <= 0 && !z.struck) { z.struck = true; z.cool = 1.1; if (Math.abs(player.x - z.x) < 16 && Math.abs(player.y - z.y) < 12 && player.level - z.level <= 1 && G.state !== 'dead') hurtPlayer(z.brute ? 17 : 8, z, z.brute ? 'A ZOMBIE ROOSTR' : 'THE UNDEAD FLOCK'); } }
     else { z.cool -= dt; if (reach && z.cool <= 0 && G.state !== 'dead') { z.atk = 0.4; z.struck = false; z.fx = dx; z.fy = dy; } }
     z.groan -= dt; if (z.groan <= 0) { z.groan = 4 + Math.random() * 9; if (d < 12 * TS) sfx('groan'); }
   }
@@ -686,7 +716,7 @@ function attack() {
   const w = WEAPONS[G.weapon]; if (G.cdT > 0) return;
   const [fx, fy] = dirVec();
   if (w.kind === 'gun') {
-    if (G.inv[w.ammo] <= 0) { sfx('click'); say('OUT OF ' + (w.ammo === 'ammo' ? 'AMMO' : 'SHELLS') + (L('SELECT') === 'SWAP' ? ' - TAP SWAP' : ' - ' + L('SELECT') + ' TO SWAP'), 1.6); G.cdT = 0.3; return; }
+    if (G.inv[w.ammo] <= 0) { sfx('click'); say('OUT OF ' + (w.ammo === 'ammo' ? 'EGGS' : 'KERNELS') + (L('SELECT') === 'SWAP' ? ' - TAP SWAP' : ' - ' + L('SELECT') + ' TO SWAP'), 1.6); G.cdT = 0.3; return; }
     G.inv[w.ammo]--; G.cdT = w.cd; player.atkT = 0.18; G.shake = w.pellets > 1 ? 3 : 1.5; G.flash = 0.05; sfx(w.pellets > 1 ? 'shotgun' : 'pistol');
     let ax = fx, ay = fy, bestD = 1e9;
     for (const z of zombiePool) { if (!z.alive) continue; const dx = z.x - player.x, dy = (z.y - 8) - (player.y - 8), d = Math.hypot(dx, dy); if (d > w.range) continue; const dot = (dx * fx + dy * fy) / (d || 1); if (dot > 0.86 && d < bestD) { bestD = d; ax = dx / d; ay = dy / d; } }
@@ -695,13 +725,13 @@ function attack() {
       let hitD = w.range, hitZ = null;
       for (let s = 8; s < hitD; s += 4) { const k = kind[tileAt(player.x + dx * s, player.y - 8 + dy * s)]; if (k === K.BROOF || k === K.BWALL || k === K.BARRIER) { hitD = s; break; } }
       for (const z of zombiePool) { if (!z.alive) continue; const rx = z.x - player.x, ry = (z.y - 8) - (player.y - 8), t = rx * dx + ry * dy; if (t < 0 || t > hitD) continue; if (Math.abs(rx * dy - ry * dx) < (z.brute ? 9 : 7)) { hitD = t; hitZ = z; } }
-      G.tracers.push({ x0: player.x + dx * 8, y0: player.y - 10 - player.jz + dy * 8, x1: player.x + dx * hitD, y1: player.y - 10 - player.jz + dy * hitD, t: 0.07 });
+      G.tracers.push({ k: G.weapon, x0: player.x + dx * 8, y0: player.y - 10 - player.jz + dy * 8, x1: player.x + dx * hitD, y1: player.y - 10 - player.jz + dy * hitD, t: 0.12 });
       if (hitZ) hurtZombie(hitZ, w.dmg, dx, dy);
     }
     for (const z of zombiePool) if (z.alive && Math.hypot(z.x - player.x, z.y - player.y) < 20 * TS) z.state = 'chase';
     return;
   }
-  if (G.stam < w.stam * 0.5) { say('TOO TIRED - REST OR WAIT', 1.2); G.cdT = 0.3; return; }
+  if (G.stam < w.stam * 0.5) { say('TOO TIRED - ROOST OR WAIT', 1.2); G.cdT = 0.3; return; }
   G.stam = Math.max(0, G.stam - w.stam); G.cdT = w.cd; player.atkT = 0.2; sfx('swing');
   G.swing = { t: 0.16, a: Math.atan2(fy, fx), reach: w.reach, w: G.weapon };
   for (const z of zombiePool) {
@@ -738,7 +768,7 @@ function updatePlayer(dt) {
     player.kb[0] = player.kb[1] = 0; player.dir = 1; player.moving = Math.abs(my) > 0.2; player.fx = 0; player.fy = -1;
     if (player.moving) { player.y += Math.sign(my) * 60 * dt; player.anim += dt * 7; if (Math.random() < dt * 5) sfx('rung'); }
     if (player.y >= LADDER.bot) { player.y = LADDER.bot; player.climb = false; player.level = 1; }
-    else if (player.y <= LADDER.top) { player.y = LADDER.top; player.climb = false; player.level = TOWER.ROOF; say('SAFE ON THE ROOF', 2); }
+    else if (player.y <= LADDER.top) { player.y = LADDER.top; player.climb = false; player.level = TOWER.ROOF; say('SAFE IN THE COOP. BOK.', 2); }
     else player.level = player.y > (LADDER.y1 - 1) * TS ? 1 : TOWER.ROOF - 1; // zombies can only reach your heels at the bottom
     player.atkT = Math.max(0, player.atkT - dt); player.hurtT = Math.max(0, player.hurtT - dt); G.cdT = Math.max(0, G.cdT - dt);
     return;
@@ -856,18 +886,18 @@ const MENUS = {
     const top = onTower();
     return [
       { t: 'RESUME', go: () => closeMenu() },
-      { t: 'MEDKIT x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); say('PATCHED UP'); closeMenu(); } },
-      { t: top ? 'EAT CAN x' + G.inv.food + '  (+30 FOOD)' : 'EAT: ONLY SAFE IN THE TOWER', dis: !top || !G.inv.food, go: () => eat('food') },
-      { t: top ? 'EAT MRE x' + G.inv.mre + '  (+60 FOOD)' : 'CLIMB THE TOWER TO EAT', dis: !top || !G.inv.mre, go: () => eat('mre') },
+      { t: 'GOLDEN HEGG x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); say('GOLDEN HEGG. FEELING BOK.'); closeMenu(); } },
+      { t: top ? 'PECK CORN x' + G.inv.food + '  (+30 FEED)' : 'EAT: ONLY SAFE IN THE COOP', dis: !top || !G.inv.food, go: () => eat('food') },
+      { t: top ? 'EAT $FEED x' + G.inv.mre + '  (+60 FEED)' : 'CLIMB TO THE COOP TO EAT', dis: !top || !G.inv.mre, go: () => eat('mre') },
       { t: 'WEAPON: ' + WEAPONS[G.weapon].name + '  (SWAP)', go: () => { swapWeapon(); } },
     ];
   },
   camp: () => [
-    { t: 'REST ' + (isNight() ? 'UNTIL DAWN' : 'A WHILE') + '  (HEAL)', go: () => { closeMenu(); G.resting = true; G.restT = 0; say('RESTING BY THE FIRE...'); } },
-    { t: 'EAT CAN x' + G.inv.food + '  (+30 FOOD)', dis: !G.inv.food, go: () => eat('food') },
-    { t: 'EAT MRE x' + G.inv.mre + '  (+60 FOOD)', dis: !G.inv.mre, go: () => eat('mre') },
-    { t: 'MEDKIT x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); } },
-    { t: 'LEAVE', go: () => closeMenu() },
+    { t: 'ROOST ' + (isNight() ? 'UNTIL DAWN' : 'A WHILE') + '  (HEAL)', go: () => { closeMenu(); G.resting = true; G.restT = 0; say('ROOSTING BY THE FIRE...'); } },
+    { t: 'PECK CORN x' + G.inv.food + '  (+30 FEED)', dis: !G.inv.food, go: () => eat('food') },
+    { t: 'EAT $FEED x' + G.inv.mre + '  (+60 FEED)', dis: !G.inv.mre, go: () => eat('mre') },
+    { t: 'GOLDEN HEGG x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); } },
+    { t: 'BACK TO THE FARM', go: () => closeMenu() },
   ],
 };
 function openMenu(m) { G.state = m; G.menuI = 0; sfx('menu'); }
@@ -875,7 +905,7 @@ function closeMenu() { G.state = 'play'; }
 function eat(k) {
   if (k === 'food' && G.inv.food) { G.inv.food--; G.hunger = Math.min(100, G.hunger + 30); G.hp = Math.min(100, G.hp + 6); }
   else if (k === 'mre' && G.inv.mre) { G.inv.mre--; G.hunger = Math.min(100, G.hunger + 60); G.hp = Math.min(100, G.hp + 15); }
-  else return; sfx('eat'); say('EATEN. HUNGER ' + Math.round(G.hunger) + '%');
+  else return; sfx('eat'); say('NOM. FEED ' + Math.round(G.hunger) + '%  +KG');
 }
 function swapWeapon() { const i = G.owned.indexOf(G.weapon); G.weapon = G.owned[(i + 1) % G.owned.length]; sfx('menu'); say(WEAPONS[G.weapon].name + (WEAPONS[G.weapon].kind === 'gun' ? '  AMMO ' + G.inv[WEAPONS[G.weapon].ammo] : ''), 1.5); }
 function nearFire() { return onTower() && Math.hypot(player.x - NEST.x, player.y - NEST.y) < 28; }
@@ -907,22 +937,22 @@ let _alive = 0;
 function updateSurvival(dt, gdt) {
   const hungerRate = 100 / 420;
   G.hunger = Math.max(0, G.hunger - hungerRate * dt * (G.resting ? 3 : 1));
-  if (G.hunger <= 0) { G.hp -= 1.1 * dt; if (Math.random() < dt * 0.3) say('STARVING... EAT IN THE TOWER', 1.5); if (G.hp <= 0) die('STARVATION'); }
+  if (G.hunger <= 0) { G.hp -= 1.1 * dt; if (Math.random() < dt * 0.3) say('EMPTY CROP... EAT IN THE COOP', 1.5); if (G.hp <= 0) die('AN EMPTY CROP'); }
   const regen = (G.hunger < 15 ? 6 : 15) * (G.resting ? 3 : 1);
   if (G.cdT <= 0) G.stam = Math.min(100, G.stam + regen * dt);
   if (G.resting) {
     G.restT += dt; G.hp = Math.min(100, G.hp + (G.hunger > 0 ? 5 : 0) * dt);
     const ph = G.t % CYCLE;
-    if (!isNight() && G.restT > 1.5 && (G.hp >= 100 || G.restT > 14)) { G.resting = false; say('RESTED. HP ' + Math.round(G.hp)); }
+    if (!isNight() && G.restT > 1.5 && (G.hp >= 100 || G.restT > 14)) { G.resting = false; say('ROOSTED. HP ' + Math.round(G.hp)); }
   } else if (onTower() && G.hunger > 50) G.hp = Math.min(100, G.hp + 0.35 * dt); // slow recovery at the nest when fed
 }
 let lastPhaseNight = false;
 function updateClock(dt) {
   const scale = G.resting ? (isNight() ? 12 : 8) : 1;
   const before = G.t % CYCLE; G.t += dt * scale; const ph = G.t % CYCLE;
-  if (before < DAY_LEN - 30 && ph >= DAY_LEN - 30) say('DUSK SOON. HEAD FOR THE TOWER.', 4);
-  if (before < DAY_LEN && ph >= DAY_LEN) { say('NIGHT FALLS. THEY ARE RESTLESS.', 4); sfx('dusk'); }
-  if (ph < before) { G.day++; say('DAY ' + G.day + '. YOU MADE IT.', 4); sfx('dawn'); if (G.resting) { G.resting = false; } const n = itemPool.filter((i) => i.alive).length; scatterLoot(Math.max(0, 34 - n)); }
+  if (before < DAY_LEN - 30 && ph >= DAY_LEN - 30) say('DUSK SOON. HEAD FOR THE COOP.', 4);
+  if (before < DAY_LEN && ph >= DAY_LEN) { say('NIGHT FALLS. THE UNDEAD FLOCK STIRS.', 4); sfx('dusk'); }
+  if (ph < before) { G.day++; say('DAY ' + G.day + '. GM. YOU MADE IT.', 4); sfx('dawn'); if (G.resting) { G.resting = false; } const n = itemPool.filter((i) => i.alive).length; scatterLoot(Math.max(0, 34 - n)); }
   return scale;
 }
 function clockStr() { const ph = G ? G.t % CYCLE : 40; let h; if (ph < DAY_LEN) h = 6 + ph / DAY_LEN * 14; else h = 20 + (ph - DAY_LEN) / NIGHT_LEN * 10; h %= 24; const hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
@@ -935,37 +965,45 @@ function daylight() {
 }
 
 // ================================================================ HUD
-const ICONS = (() => { // tiny 7x7 pixel icons: heart, food, bolt, sun, moon, skull
+const ICONS = (() => { // tiny 7x6 pixel icons. chars: # main, o second, k ink, y beak
   const defs = {
-    heart: ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'], food: ['..###..', '.#####.', '.#ooo#.', '.#ooo#.', '.#####.', '..###..'],
-    bolt: ['...##..', '..##...', '.#####.', '...##..', '..##...', '.##....'], sun: ['#..#..#', '.#####.', '.#####.', '#######', '.#####.', '#..#..#'],
-    moon: ['..###..', '.##....', '##.....', '##.....', '.##....', '..###..'], skull: ['.#####.', '#######', '#.##.##', '#######', '.##.##.', '.#.#.#.'],
+    heart: ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'],
+    food: ['...##..', '..####.', '..#o##.', '.####..', 'kk##...', 'k......'],          // corn
+    bolt: ['...##..', '..##...', '.#####.', '...##..', '..##...', '.##....'],
+    sun: ['#..#..#', '.#####.', '.#####.', '#######', '.#####.', '#..#..#'], moon: ['..###..', '.##....', '##.....', '##.....', '.##....', '..###..'],
+    skull: ['..oo...', '.####..', '.#k##yy', '.####y.', '..##...', '.o..o..'],          // zombie chikn head
   };
-  const cols = { heart: '#d8402e', food: '#d8a040', bolt: '#a8d850', sun: '#f0c050', moon: '#a8b8e8', skull: '#d8d0c0' }, out = {};
-  for (const k in defs) { const [c, x] = mk(7, 6); defs[k].forEach((row, y) => [...row].forEach((ch, X) => { if (ch === '#') px(x, cols[k], X, y); else if (ch === 'o') px(x, '#6a4a2a', X, y); })); out[k] = c; }
+  const cols = { heart: ['#ff3347'], food: ['#ffc42f', '#d89a14'], bolt: ['#22d457'], sun: ['#ffc42f'], moon: ['#8ed8ff'], skull: ['#c2d99a', '#94384a'] }, out = {};
+  for (const k in defs) { const [c, x] = mk(7, 6); defs[k].forEach((row, y) => [...row].forEach((ch, X) => { const col = ch === '#' ? cols[k][0] : ch === 'o' ? (cols[k][1] || '#6a4a2a') : ch === 'k' ? '#090b0a' : ch === 'y' ? '#ffc42f' : null; if (col) px(x, col, X, y); })); out[k] = c; }
   return out;
 })();
+const INK = '#090b0a', CREAM = '#f8f5e9', HGREEN = '#08d14a', HRED = '#ff3347', HGOLD = '#ffc42f';
+// real hens.farm art (permission from the community), pixelated to the game grid: title hen, plucked hen, golden HEGG
+const ART = {}; for (const k of ['hen-title', 'hen-plucked', 'hegg']) { const im = new Image(); im.src = k + '.png'; ART[k] = im; }
+const artOk = (k) => ART[k].complete && ART[k].naturalWidth > 0;
 function bar(x, y, w, v, col, icon) {
   hx.drawImage(ICONS[icon], x, y);
-  hx.fillStyle = '#0e0a0c'; hx.fillRect(x + 9, y, w + 2, 6);
-  hx.fillStyle = '#2a2024'; hx.fillRect(x + 10, y + 1, w, 4);
+  hx.fillStyle = INK; hx.fillRect(x + 9, y, w + 2, 6);
+  hx.fillStyle = '#e8e2cc'; hx.fillRect(x + 10, y + 1, w, 4);
   const f = Math.round(w * clamp(v / 100, 0, 1)); hx.fillStyle = col; hx.fillRect(x + 10, y + 1, f, 4);
-  hx.fillStyle = 'rgba(255,255,255,.25)'; hx.fillRect(x + 10, y + 1, f, 1);
+  hx.fillStyle = 'rgba(255,255,255,.45)'; hx.fillRect(x + 10, y + 1, f, 1);
 }
-function panel(x, y, w, h, a = 0.78) { hx.fillStyle = `rgba(14,10,12,${a})`; hx.fillRect(x, y, w, h); hx.fillStyle = '#c8642a'; hx.fillRect(x, y, w, 1); hx.fillRect(x, y + h - 1, w, 1); hx.fillStyle = '#5a3a2a'; hx.fillRect(x, y + 1, 1, h - 2); hx.fillRect(x + w - 1, y + 1, 1, h - 2); }
+// hens.farm card: cream fill, 1px ink border, hard ink offset shadow
+function panel(x, y, w, h, a = 0.92) { hx.fillStyle = 'rgba(9,11,10,.55)'; hx.fillRect(x + 2, y + 2, w, h); hx.fillStyle = `rgba(248,245,233,${Math.max(a, 0.86)})`; hx.fillRect(x, y, w, h); hx.fillStyle = INK; hx.fillRect(x, y, w, 1); hx.fillRect(x, y + h - 1, w, 1); hx.fillRect(x, y, 1, h); hx.fillRect(x + w - 1, y, 1, h); }
+const inkText = (s, x, y, col = INK, align = 'left') => text(s, x, y, 8, col, align, false);
 function drawItemIcon(i, x, y) { hx.drawImage(ITEM_IMG, i * 16, 0, 16, 16, x - 2, y - 3, 16, 16); }
 function hintText() {
   const mv = L('move'), A = L('A'), B = L('B'), S = L('START'), SE = L('SELECT'), bag = S === 'BAG' ? 'BAG' : S + ' BAG', swp = SE === 'SWAP' ? 'SWAP WEAPON' : SE + ' SWAP WEAPON';
-  if (G.resting) return 'RESTING - ' + A + ' / ' + B + ' TO GET UP';
-  if (nearFire()) return B + ' CAMP: EAT / REST    ' + bag;
-  if (G.t < 34 && G.day === 1) return mv + ' MOVE  ' + A + ' JUMP  ' + B + ' ATTACK';
+  if (G.resting) return 'ROOSTING - ' + A + ' / ' + B + ' TO GET UP';
+  if (nearFire()) return B + ' NEST: EAT / ROOST    ' + bag;
+  if (G.t < 34 && G.day === 1) return mv + ' MOVE  ' + A + ' FLAP  ' + B + ' PECK';
   if (G.t < 48 && G.day === 1) return bag + ' / PAUSE   ' + swp;
   if (player.climb) return 'HOLD ' + L('up') + ' TO CLIMB  (DOWN TO DESCEND)';
-  if (player.level === 1 && !player.air) return Math.abs(player.x - LADDER.cx) < 12 ? 'HOLD ' + L('up') + ' TO CLIMB THE LADDER' : 'WALK TO THE LADDER, HOLD ' + L('up');
+  if (player.level === 1 && !player.air) return Math.abs(player.x - LADDER.cx) < 12 ? 'HOLD ' + L('up') + ' TO CLIMB THE CHIKN RAMP' : 'WALK TO THE RAMP, HOLD ' + L('up');
   const nearTower = player.level === 0 && Math.abs(player.x / TS - 40) < 9 && player.y / TS > 44 && player.y / TS < 52;
-  if (nearTower) return A + ' JUMP ONTO THE STEP, THEN CLIMB';
+  if (nearTower) return A + ' FLAP ONTO THE PERCH, THEN CLIMB';
   if (onTower() && Math.abs(player.x - LADDER.cx) < 12 && player.y > 30 * TS) return 'HOLD DOWN TO CLIMB DOWN';
-  const w = WEAPONS[G.weapon]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) return 'NO AMMO - ' + swp;
+  const w = WEAPONS[G.weapon]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) return 'OUT OF AMMO - ' + swp;
   return '';
 }
 function drawHUD(dt, t) {
@@ -976,32 +1014,34 @@ function drawHUD(dt, t) {
   if (G.resting) { hx.fillStyle = 'rgba(8,6,12,.45)'; hx.fillRect(0, 0, N, N); }
   // stat bars (top-left)
   const bw = Math.round(N * 0.2);
-  panel(2, 2, bw + 16, 26, 0.6);
-  bar(5, 5, bw, G.hp, G.hp < 30 ? '#ff4030' : '#c8302a', 'heart');
-  bar(5, 13, bw, G.hunger, G.hunger < 20 ? '#ff8a20' : '#c8902a', 'food');
-  bar(5, 21, bw, G.stam, '#8ab83a', 'bolt'); // 21+6 = 27
+  panel(2, 2, bw + 16, 26);
+  bar(5, 5, bw, G.hp, HRED, 'heart');
+  bar(5, 13, bw, G.hunger, G.hunger < 20 ? '#ff9d00' : HGOLD, 'food');
+  bar(5, 21, bw, G.stam, HGREEN, 'bolt'); // 21+6 = 27
   // clock (top-right)
   const night = isNight(); const ct = clockStr();
-  panel(N - 56, 2, 54, 18, 0.6);
+  panel(N - 56, 2, 54, 18);
   hx.drawImage(ICONS[night ? 'moon' : 'sun'], N - 52, 8);
-  text('DAY ' + G.day, N - 5, 2, 8, '#e8d6a8', 'right'); text(ct, N - 5, 10, 8, night ? '#a8b8e8' : '#f0c050', 'right');
+  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(ct, N - 5, 10, night ? '#2e6c96' : '#c06a16', 'right');
   // weapon + ammo (bottom-left)
-  const w = WEAPONS[G.weapon];
-  panel(2, N - 20, 74, 18, 0.6);
-  if (w.icon >= 0) drawItemIcon(w.icon, 5, N - 17); else { hx.fillStyle = '#c89a78'; hx.fillRect(8, N - 13, 5, 4); hx.fillStyle = '#0e0a0c'; hx.fillRect(9, N - 12, 1, 1); hx.fillRect(11, N - 12, 1, 1); }
-  text(w.name, 19, N - 19, 8, '#e8d6a8');
-  if (w.kind === 'gun') text((w.ammo === 'ammo' ? 'AMMO ' : 'SHELLS ') + G.inv[w.ammo], 19, N - 11, 8, G.inv[w.ammo] ? '#f0c050' : '#d8402e');
-  else { const sx = 19; hx.fillStyle = '#2a2024'; hx.fillRect(sx, N - 7, 40, 2); hx.fillStyle = G.cdT > 0 ? '#5a4a3a' : '#c8642a'; hx.fillRect(sx, N - 7, Math.round(40 * (1 - G.cdT / w.cd)), 2); }
-  // supplies (bottom-right)
-  panel(N - 58, N - 20, 56, 18, 0.6);
-  drawItemIcon(0, N - 56, N - 17); text('' + (G.inv.food + G.inv.mre), N - 43, N - 15, 8);
-  drawItemIcon(2, N - 30, N - 17); text('' + G.inv.med, N - 17, N - 15, 8);
+  const w = WEAPONS[G.weapon], ww = Math.max(74, 22 + w.name.length * 6);
+  panel(2, N - 22, ww, 20);
+  if (w.icon >= 0) drawItemIcon(w.icon, 5, N - 19); else { hx.fillStyle = INK; hx.fillRect(7, N - 14, 7, 5); hx.fillStyle = HGOLD; hx.fillRect(8, N - 13, 5, 3); hx.fillRect(13, N - 12, 2, 1); } // beak
+  inkText(w.name, 19, N - 20);
+  if (w.kind === 'gun') inkText((w.ammo === 'ammo' ? 'EGGS ' : 'KERNELS ') + G.inv[w.ammo], 19, N - 11, G.inv[w.ammo] ? '#c06a16' : HRED);
+  else { const sx = 19; hx.fillStyle = INK; hx.fillRect(sx, N - 7, 40, 3); hx.fillStyle = G.cdT > 0 ? '#b9c0c6' : HGREEN; hx.fillRect(sx + 1, N - 6, Math.round(38 * (1 - G.cdT / w.cd)), 1); }
+  // supplies (bottom-right): corn + $FEED, golden HEGGs
+  panel(N - 58, N - 20, 56, 18);
+  drawItemIcon(0, N - 56, N - 17); inkText('' + (G.inv.food + G.inv.mre), N - 43, N - 14);
+  if (artOk('hegg')) hx.drawImage(ART.hegg, N - 29, N - 18); else drawItemIcon(2, N - 30, N - 17);
+  inkText('' + G.inv.med, N - 15, N - 14);
   // kill count + safe marker
-  hx.drawImage(ICONS.skull, 5, 31); text('' + G.kills, 14, 29, 8, '#d8d0c0');
-  if (onTower()) text('SAFE', 30, 29, 8, '#8ab83a');
-  else { // compass arrow to the tower when it is off-screen
+  panel(2, 31, 22 + String(G.kills).length * 6 + (onTower() ? 32 : 0), 11);
+  hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
+  if (onTower()) inkText('SAFE', 22 + String(G.kills).length * 6, 32, '#0a8a3a');
+  else { // compass arrow to the coop when it is off-screen
     const p = w2s(LADDER.cx, 45 * TS);
-    if (p[0] < 6 || p[0] > N - 6 || p[1] < 6 || p[1] > N - 6) { const c = N / 2, a = Math.atan2(p[1] - c, p[0] - c), r = N / 2 - 34; const ax = c + Math.cos(a) * r, ay = c + Math.sin(a) * r; hx.fillStyle = night ? '#ff5a3a' : '#f0c050'; for (let k = 0; k < 4; k++) { const bx = ax - Math.cos(a) * k * 2, by = ay - Math.sin(a) * k * 2; hx.fillRect(Math.round(bx - (3 - k) / 2), Math.round(by - (3 - k) / 2), 4 - k, 4 - k); } text('TOWER', Math.round(ax), Math.round(ay + 4), 8, night ? '#ff5a3a' : '#f0c050', 'center'); }
+    if (p[0] < 6 || p[0] > N - 6 || p[1] < 6 || p[1] > N - 6) { const c = N / 2, a = Math.atan2(p[1] - c, p[0] - c), r = N / 2 - 34; const ax = c + Math.cos(a) * r, ay = c + Math.sin(a) * r; const ac = night ? HRED : HGOLD; for (let k = 0; k < 4; k++) { const bx = ax - Math.cos(a) * k * 2, by = ay - Math.sin(a) * k * 2; hx.fillStyle = INK; hx.fillRect(Math.round(bx - (3 - k) / 2) - 1, Math.round(by - (3 - k) / 2) - 1, 6 - k, 6 - k); hx.fillStyle = ac; hx.fillRect(Math.round(bx - (3 - k) / 2), Math.round(by - (3 - k) / 2), 4 - k, 4 - k); } text('COOP', Math.round(ax), Math.round(ay + 4), 8, ac, 'center'); }
   }
   // messages
   let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, '#e8d6a8', 'center'); my += 9; m.t -= dt; }
@@ -1014,58 +1054,70 @@ function drawHUD(dt, t) {
 function pixLine(x0, y0, x1, y1, col) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy, n = 0; hx.fillStyle = col; while (n++ < 600) { hx.fillRect(x0, y0, 1, 1); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
 function drawMenu() {
   const items = MENUS[G.state](), w = Math.min(N - 16, 200), h = 26 + items.length * 11, x = Math.round((N - w) / 2), y = Math.round((N - h) / 2) - 6;
-  hx.fillStyle = 'rgba(8,6,10,.45)'; hx.fillRect(0, 0, N, N);
-  panel(x, y, w, h, 0.92);
-  text(G.state === 'camp' ? 'THE NEST' : 'BAG  -  PAUSED', N / 2, y + 3, 8, '#c8642a', 'center');
-  items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = '#3a2420'; hx.fillRect(x + 3, yy, w - 6, 10); text('>', x + 6, yy, 8, '#f0c050'); } text(it.t, x + 14, yy, 8, it.dis ? '#6a5a50' : sel ? '#f0c050' : '#e8d6a8'); });
-  const inv = 'CANS ' + G.inv.food + '  MRE ' + G.inv.mre + '  AMMO ' + G.inv.ammo + '  SHELLS ' + G.inv.shells;
-  text(inv, N / 2, y + h - 10, 8, '#a89a88', 'center');
-  text(L('A') + ' SELECT   ' + L('B') + ' BACK   ' + L('move') + ' CHOOSE', N / 2, y + h + 3, 8, '#e8d6a8', 'center');
+  hx.fillStyle = 'rgba(9,11,10,.4)'; hx.fillRect(0, 0, N, N);
+  panel(x, y, w, h, 0.97);
+  inkText(G.state === 'camp' ? 'THE NEST' : 'BAG  -  PAUSED', N / 2, y + 3, '#bd2232', 'center');
+  items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
+  const inv = 'CORN ' + G.inv.food + '  $FEED ' + G.inv.mre + '  EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells;
+  inkText(inv, N / 2, y + h - 10, '#855a36', 'center');
+  text(L('A') + ' SELECT   ' + L('B') + ' BACK   ' + L('move') + ' CHOOSE', N / 2, y + h + 4, 8, CREAM, 'center');
 }
 function drawDead(t) {
   G.deadT += 1 / 60;
-  hx.fillStyle = `rgba(40,4,6,${Math.min(0.6, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
-  const y = N / 2 - 40;
-  text('YOU DIED', N / 2, y, 16, '#d8402e', 'center');
-  text('TAKEN BY ' + G.deathCause, N / 2, y + 22, 8, '#e8d6a8', 'center');
-  text('DAY ' + G.day + '   KILLS ' + G.kills, N / 2, y + 34, 8, '#f0c050', 'center');
-  text((G.newBest ? 'NEW BEST: ' : 'BEST: ') + 'DAY ' + best.days + '  /  ' + best.kills + ' KILLS', N / 2, y + 46, 8, G.newBest ? '#8ab83a' : '#a89a88', 'center');
-  if (G.deadT > 1.2 && (t % 1) < 0.65) text(L('A') + ' TO TRY AGAIN', N / 2, y + 64, 8, '#e8d6a8', 'center');
+  hx.fillStyle = `rgba(9,11,10,${Math.min(0.55, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
+  const y = N / 2 - 46, pw = Math.min(N - 12, 196), px0 = Math.round(N / 2 - pw / 2);
+  panel(px0, y - 6, pw, 94);
+  if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34);
+  text('PLUCKED', N / 2, y, 16, HRED, 'center');
+  inkText('TAKEN BY ' + G.deathCause, N / 2, y + 22, INK, 'center');
+  inkText('DAY ' + G.day + '  PECKED ' + G.kills, N / 2 + 26, y + 38, '#c06a16', 'center');
+  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + 'DAY ' + best.days + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#0a8a3a' : '#855a36', 'center');
+  inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
+  if (G.deadT > 1.2 && (t % 1) < 0.65) text(L('A') + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
 }
 function drawTitle(t) {
-  hx.fillStyle = 'rgba(8,6,10,.35)'; hx.fillRect(0, 0, N, N);
-  const y = Math.round(N * 0.16);
-  text('LAST', N / 2, y, 16, '#c8642a', 'center');
-  text('TOWER', N / 2, y + 17, 16, '#e8d6a8', 'center');
-  text('SCAVENGE BY DAY.', N / 2, y + 38, 8, '#a89a88', 'center'); text('HOLD THE TOWER BY NIGHT.', N / 2, y + 47, 8, '#a89a88', 'center');
-  const m = mode(), cy = Math.round(N * 0.56);
-  panel(Math.round(N / 2 - 78), cy - 4, 156, 52, 0.7);
-  const rows = [[L('move'), 'MOVE'], [L('A'), 'JUMP / CONFIRM'], [L('B'), 'ATTACK / USE / BACK'], [L('START'), 'PAUSE & ITEMS'], [L('SELECT'), 'NEXT WEAPON']];
-  rows.forEach(([k, v], i) => { text(k, N / 2 - 8, cy + i * 9, 8, '#f0c050', 'right'); text(v, N / 2 - 2, cy + i * 9, 8, '#e8d6a8'); });
-  if ((t % 1) < 0.65) text('PRESS ' + (m === 'keys' ? 'SPACE' : 'A') + ' TO START', N / 2, N - 32, 8, '#f0c050', 'center');
-  if (best.days) text('BEST: DAY ' + best.days + '  /  ' + best.kills + ' KILLS', N / 2, N - 20, 8, '#a89a88', 'center');
+  hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
+  const y = Math.round(N * 0.08), cw = Math.min(N - 16, 210), cx0 = Math.round(N / 2 - cw / 2);
+  panel(cx0, y - 4, cw, 86);
+  if (artOk('hen-title')) { const bobY = Math.round(Math.sin(t * 3) * 1); hx.drawImage(ART['hen-title'], cx0 + cw - 52, y + 10 + bobY); }
+  const tx = cx0 + Math.round((cw - 56) / 2);
+  text('LAST', tx, y, 16, HRED, 'center');
+  text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
+  inkText('CHIKN EDITION', tx, y + 38, '#0a8a3a', 'center');
+  inkText('FORAGE BY DAY.', tx, y + 50, INK, 'center'); inkText('ROOST BY NIGHT.', tx, y + 59, INK, 'center');
+  inkText('BILLIONS MUST BOK.', tx, y + 70, '#855a36', 'center');
+  const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
+  panel(Math.round(N / 2 - 82), cy - 5, 164, 53);
+  const rows = [[L('move'), 'MOVE'], [L('A'), 'FLAP / CONFIRM'], [L('B'), 'PECK / USE / BACK'], [L('START'), 'PAUSE & ITEMS'], [L('SELECT'), 'NEXT WEAPON']];
+  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 30, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 24, cy + i * 9); });
+  if ((t % 1) < 0.65) text('PRESS ' + (m === 'keys' ? 'SPACE' : 'A') + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
+  if (best.days) text('BEST: DAY ' + best.days + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
-
 
 // ================================================================ dynamic props (tall things that can stand in front of the player: they fade)
 const PROP_IMG = (() => {
-  const lamp = (lit) => { const [c, x] = mk(16, 48), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
-    P(6, 10, 3, 36, RAMP.metal[2]); P(6, 10, 1, 36, RAMP.metal[0]); P(5, 44, 5, 3, RAMP.metal[3]); P(6, 6, 7, 2, RAMP.metal[2]); P(9, 7, 6, 4, RAMP.metal[3]); P(10, 11, 4, 2, lit ? RAMP.lit[0] : RAMP.glass[3]);
+  const lamp = (lit) => { const [c, x] = mk(16, 48), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); }, Wd = RAMP.wood; // wooden pole with a hanging farm lantern
+    P(5, 8, 3, 38, Wd[1]); P(5, 8, 1, 38, Wd[0]); P(4, 44, 5, 3, Wd[2]); P(5, 6, 9, 2, Wd[2]); P(11, 8, 1, 2, OUT);
+    P(9, 10, 5, 7, RAMP.metal[3]); P(10, 11, 3, 5, lit ? RAMP.lit[0] : RAMP.glass[2]); P(10, 9, 3, 1, RAMP.brick[1]);
     return outline(c); };
-  const tree = () => { const [c, x] = mk(32, 44), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); }, W = RAMP.wood;
-    P(14, 18, 4, 25, W[2]); P(14, 18, 1, 25, W[1]); P(13, 40, 6, 3, W[3]);
-    const br = (x0, y0, dx, dy, n) => { let a = x0, b = y0; for (let i = 0; i < n; i++) { P(Math.round(a), Math.round(b), 2, 2, i < 3 ? W[2] : W[1]); a += dx; b += dy; } };
-    br(15, 20, -1, -1.2, 9); br(16, 22, 1.1, -1, 10); br(15, 14, -0.4, -1.3, 8); br(10, 12, -1, -0.6, 5); br(23, 13, 0.9, -0.8, 5); br(16, 16, 0.3, -1.4, 9); br(12, 26, -1, -0.4, 6);
+  const tree = () => { const [c, x] = mk(32, 44), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); }, W = RAMP.wood, Lf = RAMP.leaf, r = rng(4); // cartoon round tree
+    P(14, 24, 5, 19, W[1]); P(14, 24, 1, 19, W[0]); P(18, 24, 1, 19, W[2]); P(12, 40, 9, 3, W[2]);
+    const blob = (cx, cy, rad, col) => { for (let y = -rad; y <= rad; y++) { const hw = Math.round(Math.sqrt(rad * rad - y * y)); P(cx - hw, cy + y, hw * 2, 1, col); } };
+    blob(16, 15, 13, Lf[2]); blob(14, 13, 11, Lf[1]); blob(12, 10, 6, Lf[0]); blob(22, 20, 6, Lf[2]);
+    for (let n = 0; n < 5; n++) { const ax = 7 + Math.floor(r() * 18), ay = 6 + Math.floor(r() * 16); P(ax, ay, 3, 3, OUT); P(ax, ay, 2, 2, RAMP.brick[1]); } // apples
     return outline(c); };
-  const antenna = () => { const [c, x] = mk(12, 44), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
-    P(5, 4, 2, 40, RAMP.metal[2]); P(5, 4, 1, 40, RAMP.metal[0]); for (let y = 10; y < 40; y += 8) P(2, y, 8, 1, RAMP.metal[2]); P(3, 40, 6, 3, RAMP.metal[3]);
+  const antenna = () => { const [c, x] = mk(16, 44), P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); }; // rooster weathervane
+    P(7, 12, 2, 32, RAMP.metal[2]); P(7, 12, 1, 32, RAMP.metal[0]); P(5, 41, 6, 3, RAMP.metal[3]);
+    P(1, 16, 14, 1, RAMP.metal[2]); P(0, 15, 2, 3, RAMP.metal[2]); P(14, 15, 2, 3, RAMP.metal[2]);           // E-W arrow
+    P(4, 4, 9, 5, OUT); P(10, 1, 3, 4, OUT); P(12, 2, 2, 1, RAMP.hazard[1]); P(2, 2, 3, 5, OUT); P(6, 9, 1, 3, OUT); P(9, 9, 1, 3, OUT); // rooster silhouette
+    P(10, 0, 2, 1, RAMP.brick[1]);
     return outline(c); };
   const fire = (f) => { const [c, x] = mk(12, 14), r = rng(5 + f * 31);
     for (let y = 0; y < 14; y++) for (let X = 0; X < 12; X++) { const dx = (X - 5.5) / 6, dy = (13 - y) / 14, w = (1 - dy) * (1 - Math.abs(dx) * 1.5) + (r() - 0.5) * 0.3 + Math.sin(y * 0.9 + f * 2.1 + X) * 0.12; if (w > 0.15) { x.fillStyle = w > 0.6 ? RAMP.fire[0] : w > 0.4 ? RAMP.fire[1] : RAMP.fire[2]; x.fillRect(X, y, 1, 1); } }
     return c; };
   return { lamp: lamp(true), lampOff: lamp(false), tree: tree(), antenna: antenna(), fire: [0, 1, 2].map(fire) };
 })();
-const SHADOW = (() => { const mkS = (w, h) => { const [c, x] = mk(w, h); x.fillStyle = 'rgba(20,10,30,0.45)'; for (let y = 0; y < h; y++) { const t = (y + 0.5) / h * 2 - 1, half = Math.round(w / 2 * Math.sqrt(1 - t * t)); x.fillRect(w / 2 - half, y, half * 2, 1); } return c; }; return { s: mkS(12, 5), b: mkS(16, 6), i: mkS(10, 4) }; })();
+const SHADOW = (() => { const mkS = (w, h) => { const [c, x] = mk(w, h); x.fillStyle = 'rgba(9,11,10,0.32)'; for (let y = 0; y < h; y++) { const t = (y + 0.5) / h * 2 - 1, half = Math.round(w / 2 * Math.sqrt(1 - t * t)); x.fillRect(w / 2 - half, y, half * 2, 1); } return c; }; return { s: mkS(12, 5), b: mkS(16, 6), i: mkS(10, 4) }; })();
 
 // ================================================================ light map ("colour math"): ambient + banded light pools, multiplied over the scene
 const discCache = new Map();
@@ -1097,7 +1149,7 @@ function applyLight(t) {
     if (p.type === 'lamp' && p.lit && (!p.flick || ((t * 3 + p.seed) % 7) > 0.5)) add(p.tx * TS + 12, p.ty * TS + 10, 36, '#c8b080');
     else if (p.type === 'barrel') add(p.tx * TS + 8, p.ty * TS + 4, fl ? 34 : 32, '#e08840');
     else if (p.type === 'campfire') add(p.tx * TS + 8, p.ty * TS + 8, fl ? 52 : 50, '#f09048');
-    else if (p.type === 'antenna' && (t % 1.6) < 0.5) add(p.tx * TS + 6, p.ty * TS - 26, 10, '#ff3020');
+    
   }
   for (const bd of buildings) if (bd.lit) for (const [wx, wy] of bd.lit) add(wx, wy + 10, 14, '#a07038');
   L.globalAlpha = 1; L.globalCompositeOperation = 'source-over';
@@ -1105,11 +1157,11 @@ function applyLight(t) {
 }
 // screen-space rain: thin diagonal streaks
 const drops = Array.from({ length: 150 }, () => ({ x: Math.random(), y: Math.random(), s: 0.6 + Math.random() * 0.8 }));
-let rainAmt = 0.5;
+let rainAmt = 0;
 function drawWeather(dt) {
-  const night = isNight(); rainAmt += ((night ? 1 : 0.45) - rainAmt) * dt * 0.2;
+  const night = isNight(); rainAmt += ((night ? 0.55 : 0) - rainAmt) * dt * 0.2; // sunny farm days, drizzly nights
   const n = Math.floor(drops.length * rainAmt);
-  hx.fillStyle = night ? '#6a7aa8' : '#a8acc0';
+  hx.fillStyle = night ? '#7a8ab8' : '#c8d8f0';
   for (let i = 0; i < n; i++) { const d = drops[i]; d.y += dt * 1.5 * d.s; d.x -= dt * 0.35 * d.s; if (d.y > 1) { d.y -= 1; d.x = Math.random() * 1.3; } if (d.x < 0) d.x += 1.3; const X = Math.floor(d.x * N), Y = Math.floor(d.y * N); for (let k = 0; k < 4; k++) hx.fillRect(X - (k >> 1), Y + k, 1, 1); }
   for (let i = 0; i < 5 * rainAmt; i++) { const X = Math.floor(Math.random() * N), Y = Math.floor(Math.random() * N); hx.fillRect(X - 1, Y, 1, 1); hx.fillRect(X + 1, Y, 1, 1); }
 }
@@ -1165,7 +1217,7 @@ function renderWorld(dt, t) {
     list.push({ y: baseY, rect, prop: true, draw: (fade) => {
       if (p.type === 'campfire') { const [sx, sy] = w2s(p.tx * TS, p.ty * TS); hx.fillStyle = RAMP.wood[2]; hx.fillRect(sx + 2, sy + 11, 12, 3); hx.fillStyle = OUT; hx.fillRect(sx + 2, sy + 14, 12, 1); for (let k = 0; k < 6; k++) { hx.fillStyle = RAMP.conc[k % 2]; hx.fillRect(sx + 1 + k * 2 + (k > 2 ? 2 : 0), sy + 13, 2, 2); } }
       hx.globalAlpha = fade ? 0.3 : 1; hx.drawImage(img, wx - camX, wy - camY); hx.globalAlpha = 1;
-      if (p.type === 'antenna' && (t % 1.6) < 0.5) { hx.fillStyle = '#ff4030'; hx.fillRect(wx - camX + 4, wy - camY + 1, 4, 4); hx.fillStyle = '#ffd0b0'; hx.fillRect(wx - camX + 5, wy - camY + 2, 1, 1); }
+      
     } });
   }
   list.sort((a, b) => a.y - b.y);
@@ -1181,8 +1233,11 @@ function renderWorld(dt, t) {
   // effects
   if (G && G.swing && G.swing.t > 0) { const sw = G.swing; sw.t -= dt; const prog = 1 - sw.t / 0.16, [px0, py0] = w2s(player.x, player.y - 10 - player.jz);
     for (let k = 0; k <= 8; k++) { const a = sw.a - 1.0 + Math.min(prog, 1) * 2.0 * (k / 8); const rr = sw.reach; hx.fillStyle = k > 6 ? '#fff4c0' : '#c8c0b0'; hx.fillRect(Math.round(px0 + Math.cos(a) * rr), Math.round(py0 + Math.sin(a) * rr * 0.85), 2, 2); } }
-  if (G && G.tracers) { for (const tr of G.tracers) { const a = w2s(tr.x0, tr.y0), b = w2s(tr.x1, tr.y1); pixLine(a[0], a[1], b[0], b[1], '#ffe9a0'); tr.t -= dt; } G.tracers = G.tracers.filter((q) => q.t > 0); }
-  if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); hx.fillStyle = RAMP.blood[0]; for (let k = 0; k < 5; k++) hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 8), p[1] + Math.round((Math.random() - 0.5) * 8), 1, 1); hx.fillStyle = '#ffe9a0'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
+  if (G && G.tracers) { for (const tr of G.tracers) { const a = w2s(tr.x0, tr.y0), b = w2s(tr.x1, tr.y1);
+    if (tr.k === 'shotgun') { const n = Math.max(2, Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / 11)); for (let q = 1; q <= n; q++) { const qx = Math.round(a[0] + (b[0] - a[0]) * q / n), qy = Math.round(a[1] + (b[1] - a[1]) * q / n); hx.fillStyle = OUT; hx.fillRect(qx - 1, qy - 1, 4, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(qx, qy, 2, 2); } } // corn kernels
+    else if (tr.k === 'pistol') { pixLine(a[0], a[1], b[0], b[1], 'rgba(255,255,255,.55)'); hx.fillStyle = OUT; hx.fillRect(b[0] - 2, b[1] - 3, 5, 6); hx.fillStyle = '#ffffff'; hx.fillRect(b[0] - 1, b[1] - 2, 3, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(b[0], b[1] - 1, 1, 2); } // egg
+    else pixLine(a[0], a[1], b[0], b[1], '#ffe9a0'); tr.t -= dt; } G.tracers = G.tracers.filter((q) => q.t > 0); }
+  if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); for (let k = 0; k < 6; k++) { hx.fillStyle = k % 2 ? '#ffffff' : RAMP.blood[0]; hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 9), p[1] + Math.round((Math.random() - 0.5) * 9), 2, 1); } hx.fillStyle = '#ffc42f'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
   applyLight(t);
   drawWeather(dt);
   return covered;

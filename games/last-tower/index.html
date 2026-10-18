@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="A ruined, rain-soaked city full of the dead. Scavenge food and weapons, then climb back up the last tower before night falls.">
+<meta name="description" content="Last Tower: Chikn Edition. The farm has turned. Forage corn, $FEED and eggs by day, flap up the perch and climb the chikn ramp to the coop before the undead flock wakes. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Last Tower">
-<meta name="twitter:description" content="Scavenge a ruined zombie city by day. Hop the ledges up the last tower to survive the night.">
+<meta name="twitter:title" content="Last Tower: Chikn Edition">
+<meta name="twitter:description" content="Chikn Edition: forage the zombie farm by day, climb the chikn ramp into the coop by night. Billions must bok.">
 <meta name="twitter:image" content="https://membersonly.cc/last-tower/previ.png">
-<meta property="og:title" content="Last Tower">
-<meta property="og:description" content="Scavenge a ruined zombie city by day. Hop the ledges up the last tower to survive the night.">
+<meta property="og:title" content="Last Tower: Chikn Edition">
+<meta property="og:description" content="Chikn Edition: forage the zombie farm by day, climb the chikn ramp into the coop by night. Billions must bok.">
 <meta property="og:image" content="https://membersonly.cc/last-tower/previ.png">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0c0a0e; overscroll-behavior: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #08d14a; overscroll-behavior: none; }
   body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   /* #stage is the square game screen: a centred square by default; the handheld shell moves it into its screen. */
   #stage { position: fixed; left: 50%; top: 50%; width: min(100vw, 100vh); height: min(100vw, 100vh); transform: translate(-50%, -50%); overflow: hidden; background: #000; }
@@ -26,11 +26,11 @@
   #touch { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: none; }
   html.lt-touch:not(.lt-shell) #touch { display: block; }
   #tStick { position: absolute; left: 0; bottom: 0; width: 55%; height: 45%; pointer-events: auto; touch-action: none; }
-  #tBase { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 3px solid rgba(232,214,168,.5); background: rgba(20,14,18,.35); left: 90px; top: 60%; }
-  #tKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: rgba(200,90,40,.85); border: 3px solid #e8d6a8; }
-  .tb { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; border: 3px solid #e8d6a8; color: #e8d6a8; font: 700 22px ui-monospace, Menlo, monospace; background: rgba(40,24,22,.6); padding: 0; }
-  .tb.on { background: rgba(232,214,168,.85); color: #1a1014; }
-  #tA { width: 84px; height: 84px; right: calc(18px + env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom)); background: rgba(190,70,40,.6); }
+  #tBase { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 3px solid #090b0a; background: rgba(248,245,233,.35); left: 90px; top: 60%; }
+  #tKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: #ffc42f; border: 3px solid #090b0a; }
+  .tb { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; border: 3px solid #090b0a; color: #090b0a; font: 900 22px "Arial Black", Impact, sans-serif; background: rgba(248,245,233,.85); padding: 0; box-shadow: 3px 4px 0 #090b0a; }
+  .tb.on { background: #ffc42f; color: #090b0a; transform: translate(2px, 3px); box-shadow: 1px 1px 0 #090b0a; }
+  #tA { width: 84px; height: 84px; right: calc(18px + env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom)); background: rgba(255,51,71,.9); color: #fff; }
   #tB { width: 72px; height: 72px; right: calc(112px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); }
   #tBar { position: absolute; right: calc(12px + env(safe-area-inset-right)); bottom: calc(200px + env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: none; }
   #tBar .tb { position: static; pointer-events: auto; }
@@ -46,7 +46,7 @@
   <div id="tBar"><button id="tSwap" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">SWAP</button><button id="tBag" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">BAG</button></div>
 </div>
 <script src="game.js"></script>
-<!-- Handheld shell: D-pad = arrows (move), A = Space (jump / confirm), B = x (attack / use / back),
+<!-- Handheld shell: D-pad = arrows (move), A = Space (flap / confirm), B = x (peck / use / back),
      START = Enter (bag & pause), SELECT = q (swap weapon). ?handheld=0 opts out. -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER"
         data-keys='{"a":" ","b":"x","start":"Enter","select":"q"}'></script>
