@@ -1,4 +1,4 @@
-/* LAST TOWER v7 (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v8 (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -535,7 +535,6 @@ const TUNE = {
   eatTime: 3,            // seconds perched on a crate, holding still
   heal: { food: 25, mre: 45, med: 70 }, // corn cob / $FEED sack / golden HEGG
   zDmg: 30, bDmg: 66, zCool: 0.9,       // v7: x3 damage. zombie / brute hit, seconds between swipes
-  iFrames: 0.5,                          // v7: after a hit, 0.5 s before the next enemy hit lands (no 3-way instant deaths)
   startZ: 14,                            // v7: more on the farm at spawn (was 8; they still spawn 13+ tiles away)
   horde: 1.75, spawnK: 0.55,             // v7: horde size x1.75, spawn interval x0.55                             // zombies already on the farm at spawn
   target: (st, night) => Math.min(140, Math.round((10 + st / 5) * 1.75 * (night ? 1.5 : 1))), // horde size vs seconds survived
@@ -800,7 +799,7 @@ function attack() {
 }
 function hurtPlayer(dmg, from, cause) {
   if (!G || !['play', 'bag', 'camp'].includes(G.state)) return;
-  if (from !== 'self') { if ((G.iT || 0) > G.st) return; G.iT = G.st + TUNE.iFrames; }
+  // v8: every hit counts (no invulnerability window; several hits in one frame all land)
   G.hp -= dmg; player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT!');
   if (from && typeof from === 'object' && !player.air) { const dx = player.x - from.x, dy = player.y - from.y, d = Math.hypot(dx, dy) || 1; player.kb = [dx / d * 90, dy / d * 90]; }
   if (G.hp <= 0) die(cause);
@@ -890,6 +889,8 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
     const up = () => el.classList.remove('on'); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
   }
 }
+// v8: the touch A button reads EAT while perched with food (A eats on a crate)
+let _tALabel = ''; function updateTouchLabels() { const el = $('tA'); if (!el) return; const s = (typeof G !== 'undefined' && G && G.state === 'play' && STATE === 'game' && onCrate() && (G.eat || nextFood())) ? 'EAT' : 'A'; if (s !== _tALabel) { _tALabel = s; el.textContent = s; el.style.fontSize = s === 'EAT' ? '20px' : ''; } }
 // controls labels: every on-screen hint names the real control for the current mode
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
 const LABELS = {
@@ -983,7 +984,8 @@ function handleButtons() {
       else if (b === 'B' || b === 'START') closeMenu();
       continue;
     }
-    if (b === 'A') attack();                 // v7: A = peck / attack
+    if (b === 'A') { if (G.eat) continue;    // v8: A again mid-meal does nothing (the meal keeps going)
+      if (onCrate() && nextFood()) startEat(); else attack(); } // v8: on a crate with food A eats; otherwise A pecks (also from a crate with no food)
     else if (b === 'B') jump();              // v7: B = flap
     else if (b === 'START') openMenu('bag');
     else if (b === 'SELECT') { if (!G.eat) startEat(); } // v7: SELECT = eat (on a crate)
@@ -1048,9 +1050,9 @@ function hintText() {
   const mv = L('move'), A = L('A'), B = L('B'), S = L('START'), SE = L('SELECT'), bag = S === 'BAG' ? 'BAG' : S + ' BAG', eat = SE === 'EAT' ? 'EAT' : SE + ' EAT';
   if (G.eat) return 'EATING... HOLD STILL OR LOSE IT';
   const perched = onCrate(), food = nextFood();
-  if (perched) { if (G.proj && G.proj.length) return 'INCOMING EGG! ' + B + ' FLAP OFF TO DODGE'; return food ? eat + ' ' + FOOD_NAME[food] + ' (3S, STAY STILL)' : 'NO FOOD! GO FORAGE'; }
+  if (perched) { if (G.proj && G.proj.length) return 'INCOMING EGG! ' + B + ' FLAP OFF TO DODGE'; return food ? A + ' EAT ' + FOOD_NAME[food] + ' (3S, STAY STILL)' : 'NO FOOD! ' + A + ' PECK, GO FORAGE'; }
   if (G.st < 7) return mv + ' MOVE  ' + A + ' PECK  ' + B + ' FLAP';
-  if (G.st < 14) return 'LIFE DRAINS. ' + B + ' FLAP ONTO A CRATE, ' + eat;
+  if (G.st < 14) return 'LIFE DRAINS. ' + B + ' FLAP ONTO A CRATE, ' + A + ' EAT';
   if (G.st < 20) return bag + ' / PAUSE.  BEST WEAPON AUTO-EQUIPS';
   if (food && G.hp < 60) { const c = nearestCrate(); if (c && c.d < 5 * TS) return B + ' FLAP ONTO THE CRATE TO EAT'; }
   return '';
@@ -1141,7 +1143,7 @@ function drawTitle(t) {
   inkText('BILLIONS MUST BOK.', tx, y + 70, '#855a36', 'center');
   const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
   panel(Math.round(N / 2 - 82), cy - 5, 164, 62);
-  const rows = [[L('move'), 'MOVE'], [L('A'), 'PECK / OK'], [L('B'), 'FLAP / BACK'], [L('SELECT'), 'EAT ON A CRATE'], [L('START'), 'PAUSE & ITEMS'], ['AUTO', 'BEST WEAPON']];
+  const rows = [[L('move'), 'MOVE'], [L('A'), 'PECK / EAT ON CRATE'], [L('B'), 'FLAP / BACK'], [L('SELECT'), 'EAT (ALT)'], [L('START'), 'PAUSE & ITEMS'], ['AUTO', 'BEST WEAPON']];
   rows.forEach(([k, v], i) => { inkText(k, N / 2 - 30, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 24, cy + i * 9); });
   if ((t % 1) < 0.65) text('PRESS ' + (m === 'keys' ? 'SPACE' : 'A') + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
@@ -1343,6 +1345,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   if (!N) resize();
   const dt = Math.min(0.05, (now - last) / 1000); last = now; T0 += dt;
+  updateTouchLabels();
   handleButtons();
   if (window.__ltFreeze && STATE === 'game') { updateCamera(0, true); lastCovered = renderWorld(0, T0); drawHUD(0, T0); return; } // test hook: hold a frame
   if (STATE === 'title') {
