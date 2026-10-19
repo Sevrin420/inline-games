@@ -1,0 +1,65 @@
+/* Last Tower v11: "hens.farm" skin for the MEMBERSONLY pocket shell. Last Tower only (this file is only linked from
+   games/last-tower/index.html; other games never load it). Built on the matcha theme's variables + real hens.farm art.
+   hens.farm rules: flat fills, thick ink (#090b0a) outlines, hard offset ink shadows, hens green / cream / gold / comb red.
+   ?skin=classic turns it off. */
+html.lt-skin-hens .hh-root.hh-theme-matcha {
+  --b1: #08d14a; --b2: #08d14a; --b3: #06bd42; --b4: #05ab3b; --split: 62%;
+  --spec: rgba(255, 255, 255, .16); --edge: rgba(255, 255, 255, .45); --rim: #090b0a;
+  --bez1: #090b0a; --bez2: #090b0a; --btxt: #f8f5e9;
+  --acc1: #ffc42f; --acc2: #ff3347;
+  --a1: #ff3347; --a2: #ff3347; --aink: #f8f5e9;
+  --bb1: #ffc42f; --bb2: #ffc42f; --bink: #090b0a;
+  --pad1: #090b0a; --pad2: #090b0a; --padmark: #f8f5e9;
+  --pill1: #f8f5e9; --pill2: #f8f5e9;
+  --ink: #090b0a; --ink2: #ff3347; --embhi: rgba(255, 255, 255, .25); --emblo: transparent;
+  --well: rgba(9, 11, 10, .12); --ring: rgba(255, 196, 47, .7); --slot: #090b0a; --screw: #f8f5e9;
+  --led: #ff3347; --ledglow: rgba(255, 51, 71, .8); --batt: #ffc42f; --battglow: rgba(255, 196, 47, .7);
+  --hh-font: "Arial Black", "Arial Bold", Impact, system-ui, sans-serif;
+  background:
+    radial-gradient(70% 22% at 18% 100%, #08d14a 0 70%, transparent 71%),
+    radial-gradient(60% 18% at 88% 100%, #06bd42 0 70%, transparent 71%),
+    linear-gradient(180deg, #8ed8ff 0, #bfe9ff 70%, #f8f5e9 100%);
+}
+/* the body: flat hens green, 3px ink outline + the hens.farm hard offset card shadow (outside the box: no layout change) */
+html.lt-skin-hens .hh-theme-matcha .hh-device {
+  background: repeating-conic-gradient(rgba(255, 255, 255, .03) 0 25%, rgba(0, 0, 0, .025) 0 50%) 0 0 / 3px 3px, linear-gradient(178deg, #0ad94e, #08d14a 60%, #06bd42);
+  box-shadow: 0 0 0 3px #090b0a, 8px 9px 0 3px #090b0a;
+}
+html.lt-skin-hens .hh-theme-matcha .hh-device::before { box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35); }
+html.lt-skin-hens .hh-theme-matcha .hh-bezel { box-shadow: 0 0 0 2px #090b0a, 4px 5px 0 2px rgba(9, 11, 10, .9); }
+html.lt-skin-hens .hh-theme-matcha .hh-bezel::after { display: none; }
+html.lt-skin-hens .hh-theme-matcha .hh-rule { border-color: #ffc42f; border-bottom-color: #ff3347; }
+/* wordmark: lowercase hens.farm in Arial Black + the real base hen icon */
+html.lt-skin-hens .hh-theme-matcha .hh-brand > b, html.lt-skin-hens .hh-theme-matcha .hh-brand > i { display: none; }
+.lt-sk-word { display: flex; align-items: center; gap: 4px; font: 900 21px/1 "Arial Black", Impact, sans-serif; letter-spacing: -.04em; color: #090b0a; }
+.lt-sk-word img { height: 26px; width: auto; margin-top: -6px; filter: drop-shadow(1.5px 2px 0 rgba(9, 11, 10, .9)); }
+.lt-sk-word small { font: 900 8px/1 "Arial Black", Impact, sans-serif; letter-spacing: .08em; margin-left: 4px; opacity: .7; }
+html.lt-skin-hens .hh-theme-matcha .hh-gamename { background: #f8f5e9; color: #090b0a; opacity: 1; border-radius: 7px; box-shadow: 0 0 0 2px #090b0a, 2px 3px 0 2px #090b0a; }
+/* D-pad: solid ink cross with cream arrows */
+html.lt-skin-hens .hh-theme-matcha .hh-arm { background: #090b0a; box-shadow: 3px 4px 0 rgba(9, 11, 10, .35); }
+html.lt-skin-hens .hh-theme-matcha .hh-cross { filter: none; }
+html.lt-skin-hens .hh-theme-matcha .hh-hub { background: #1d211f; box-shadow: none; }
+/* compass SHOOT pad: comb-red caps, ink ring, hard offset shadow; pressed = egg gold */
+html.lt-skin-hens .hh-theme-matcha .hh-spad-ring { background: rgba(9, 11, 10, .10); box-shadow: inset 0 0 0 2px rgba(9, 11, 10, .55); }
+html.lt-skin-hens .hh-theme-matcha .hh-sbtn .hh-cap { background: #ff3347; box-shadow: 0 0 0 3px #090b0a, 3px 4px 0 3px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-sbtn .hh-cap::after { content: ""; position: absolute; left: 22%; top: 14%; width: 30%; height: 18%; border-radius: 50%; background: rgba(255, 255, 255, .45); }
+html.lt-skin-hens .hh-theme-matcha .hh-sbtn.hh-down .hh-cap { background: #ffc42f; transform: translate(2px, 3px); box-shadow: 0 0 0 3px #090b0a, 1px 1px 0 3px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-slbl { color: #f8f5e9; opacity: 1; font: 900 15px/1 "Arial Black", Impact, sans-serif; text-shadow: 1px 1px 0 #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-sbtn.hh-down .hh-slbl { color: #090b0a; text-shadow: none; transform: translate(2px, 3px); }
+html.lt-skin-hens .hh-theme-matcha .hh-spad-dot { background: #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-lbl { text-shadow: none; }
+/* pills + mute: cream cards with ink outlines */
+html.lt-skin-hens .hh-theme-matcha .hh-pill { background: transparent; box-shadow: none; }
+html.lt-skin-hens .hh-theme-matcha .hh-pillcap { background: #f8f5e9; box-shadow: 0 0 0 2px #090b0a, 2px 3px 0 2px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-down .hh-pillcap { background: #ffc42f; transform: translate(1px, 2px); box-shadow: 0 0 0 2px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-mute { background: #f8f5e9; box-shadow: 0 0 0 3px #090b0a, 4px 5px 0 3px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-mute.hh-down, html.lt-skin-hens .hh-theme-matcha .hh-mute:active { background: #ffc42f; transform: translate(2px, 3px); box-shadow: 0 0 0 3px #090b0a, 1px 1px 0 3px #090b0a; }
+/* speaker = the real hens.farm golden egg */
+html.lt-skin-hens .hh-theme-matcha .hh-speaker { background: none; box-shadow: none; }
+html.lt-skin-hens .hh-theme-matcha .hh-speaker > i { display: none; }
+.lt-sk-egg { position: absolute; left: 56%; top: 60%; height: 82%; width: auto; transform: translate(-50%, -50%) rotate(12deg); filter: drop-shadow(3px 4px 0 rgba(9, 11, 10, .9)); pointer-events: none; }
+html.lt-skin-hens .hh-theme-matcha .hh-screw { opacity: 1; background: #f8f5e9; box-shadow: 0 0 0 1.5px #090b0a; }
+html.lt-skin-hens .hh-theme-matcha .hh-model { opacity: .75; text-shadow: none; }
+/* the real base hen peeking over the top of the shell */
+.lt-sk-peek { position: absolute; z-index: 9; right: 30px; top: -46px; height: 62px; width: auto; pointer-events: none; filter: drop-shadow(2px 2px 0 rgba(9, 11, 10, .85)); clip-path: inset(0 0 23% 0); }
+.hh-land .lt-sk-peek { display: none; } /* landscape: the device fills the top edge */
