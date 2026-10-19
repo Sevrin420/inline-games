@@ -94,3 +94,9 @@ How these terms appear in the game:
 - **Shell:** Last Tower opts into the green `matcha` theme (`data-theme="matcha"`; the shared handheld.js now reads `data-theme`).
 - **New asset sources:** https://hens.farm/assets/base-hen-reference/base-hen-{front,back,right-profile,happy,neutral,annoyed,surprised}.png
 - **Build scripts** (on the build box): `/workspace/hens/v5/gen.py` and `/workspace/hens/v5/compare.py`.
+
+## v6: egg-slinger zombie + lost meals
+- **Thrower (egg slinger)**: same 30x33 cell grid as the zombie hens (sheet rows at y=676), but hunched (head dropped and pushed forward), sickly teal body (72,150,156) / dark (40,98,108), purple comb (140,70,190), orange eyes, dull beak, brown leather bandolier of cream eggs with green rot. Reads as a different silhouette and colour from across the screen.
+- **Tell**: stops, faces the hen, raises a rotten egg overhead with a flashing red "!" for 0.7 s.
+- **Rotten egg**: rounded pale-lime egg with green spots and ink outline, tumbling along a visible arc; a blinking red/gold ink ring marks where it will land and its shadow tracks the ground. Splat = egg goo + shell bits.
+- **Lost meal**: the food item flies off the hen, tumbles and splats; the HUD flashes FOOD LOST in red.
