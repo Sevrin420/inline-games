@@ -633,6 +633,7 @@
           keys: parsed || undefined,
           pointer: me.getAttribute('data-pointer') === 'true',
           layout: me.getAttribute('data-layout') || undefined,
+          theme: me.getAttribute('data-theme') || undefined,
         });
       } catch (e) { console.warn('handheld: ' + e.message); }
     };

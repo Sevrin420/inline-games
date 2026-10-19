@@ -1,4 +1,4 @@
-/* LAST TOWER v4 (chikn edition): 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v5 (chikn edition, survival): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -44,8 +44,8 @@ const OUT = '#090b0a';
 const RAMP = {
   asphalt: ['#e2c08a', '#d0a96e', '#b48c56', '#86643c'],   // dirt farm track
   walk: ['#ffe68a', '#f6cf55', '#d9ab38', '#9c7424'],      // straw verge
-  plaza: ['#fffdf5', '#f3ecd4', '#ddd1ac', '#a99c76'],     // cream farmyard
-  grass: ['#52e67e', '#22d457', '#0aa83f', '#036b2b'],
+  plaza: ['#fffdf5', '#f8f5e9', '#e4dcc2', '#a99c76'],     // hens.farm cream     // cream farmyard
+  grass: ['#3fe070', '#08d14a', '#06a83b', '#036b2b'],      // hens.farm green
   dirt: ['#c39260', '#a77748', '#855a36', '#5a3c26'],      // tilled field
   brick: ['#ff6470', '#ef3646', '#bd2232', '#7c1422'],     // barn red
   conc: ['#ffffff', '#efebde', '#cfc8b2', '#8f8a78'],      // whitewash
@@ -85,7 +85,7 @@ const RAMP = {
   eyeB: ['#ff5030', '#ff5030', '#ff5030', '#ff5030'],
   glint: ['#ffffff', '#ffffff', '#ffffff', '#ffffff'],
 };
-const DARK_SHADOW = 'rgba(9,11,10,0.26)'; // hard ink offset shadows, like hens.farm's 6px 7px 0 ink card shadows
+const DARK_SHADOW = 'rgba(9,11,10,0.4)'; // hard ink offset shadows, like hens.farm's 6px 7px 0 ink card shadows
 // ================================================================ crisp pixel text: built-in 5x7 bitmap font (no smoothing, no font loading)
 const FONT = {
   A: [0x7C, 0x12, 0x11, 0x12, 0x7C], B: [0x7F, 0x49, 0x49, 0x49, 0x36], C: [0x3E, 0x41, 0x41, 0x41, 0x22], D: [0x7F, 0x41, 0x41, 0x22, 0x1C],
@@ -136,7 +136,7 @@ function paint(grid, mats, opt = {}) {
     if (dn === '.' || rt === '.') t = 2;
     if (up === '.' || lf === '.') t = (dn === '.' || rt === '.') ? 1 : 0;
     if (up !== '.' && up !== m && !(opt.noFold || '').includes(m)) t = Math.max(t, 2); // fold shadow under an overlapping part
-    if ((opt.flat || '').includes(m)) t = 1;
+    if ((opt.flat || '').includes(m) || !opt.shade) t = 1; // v5: hens.farm flat fills (no SNES ramp shading) unless asked
     if ((opt.dark || '').includes(m)) t = Math.min(3, t + 1);
     const [r, gg, b] = hex(ramp[t]); const i = (Y * W + X) * 4; d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255;
   }
@@ -170,14 +170,36 @@ const HLEGS = {
   sStride: ['.......O..O.....', '......O....O....', '......OO...OO...', '.....OOO...OOOO.'],
   sPass: ['.........O......', '.........O......', '........OOO.....', '........OOOO....'],
 };
+// ---- PECK frame: the head (comb, eyes, beak, wattle) thrusts forward in the facing direction
+const over = (a, b) => [...b].map((c, i) => (a[i] && a[i] !== '.' ? a[i] : c)).join('');
+function peckDown(rows) { // toward the camera: head dips 3 rows over the chest, beak stretched
+  const out = rows.map((r, y) => (y >= 2 && y <= 9 ? '.'.repeat(r.length) : r));
+  for (let y = 9; y >= 2; y--) out[y + 3] = over(rows[y], out[y + 3]);
+  out[12] = over('.......YY.......', out[12]); out[13] = over('.......RR.......', out[13]);
+  return out;
+}
+function peckUp(rows) { // away from the camera: neck stretches up, head 3 rows higher
+  const out = rows.map((r) => r);
+  for (let y = 2; y <= 9; y++) out[y - 2] = over(rows[y], out[y - 2]);
+  out[0] = over('.......RR.......', out[0]);
+  return out;
+}
+function peckSide(rows) { // facing right: head lunges 2px forward and 2 rows down, beak spears out
+  const W = rows[0].length, out = rows.map((r, y) => (y >= 2 && y <= 10 ? r.slice(0, 8) + '.'.repeat(W - 8) : r));
+  for (let y = 10; y >= 2; y--) { const src = rows[y]; let line = out[y + 2].split(''); for (let x = 8; x < W; x++) { const c = src[x]; if (c !== '.' && x + 2 < W) line[x + 2] = c; } out[y + 2] = line.join(''); }
+  out[9] = over('..............YY', out[9]); out[10] = over('...............Y', out[10]);
+  out[6] = over('........WW......', out[6]); out[7] = over('........WWW.....', out[7]); out[8] = over('.........WW.....', out[8]); // neck
+  return out;
+}
 const bob = (upper) => ['.'.repeat(upper[0].length), ...upper.slice(0, upper.length - 1)];
-function henFrames(down, up, side) {
+function henFrames(down, up, side, peck) {
   const dW2 = HLEGS.dWalk.map(flipRow);
   const D = [[...down, ...HLEGS.dStand], [...bob(down), ...HLEGS.dWalk], [...down, ...HLEGS.dStand], [...bob(down), ...dW2]];
   const U = [[...up, ...HLEGS.dStand], [...bob(up), ...HLEGS.dWalk], [...up, ...HLEGS.dStand], [...bob(up), ...dW2]];
   const R = [[...side, ...HLEGS.sStand], [...bob(side), ...HLEGS.sStride], [...side, ...HLEGS.sPass], [...bob(side), ...HLEGS.sStride]];
+  if (peck) { D.push([...peckDown(down), ...HLEGS.dStand]); U.push([...peckUp(up), ...HLEGS.dStand]); R.push([...peckSide(side), ...HLEGS.sStand]); }
   const Lf = R.map((f) => f.map(flipRow));
-  return [D, U, Lf, R]; // rows: down, up, left, right
+  return [D, U, Lf, R]; // rows: down, up, left, right; column 4 (player only) = peck
 }
 // undead flock: glowing eyes, no bandana, droopy torn comb, goo stains, plucked gaps along the wing edge
 function zombify(rows, seed) {
@@ -198,23 +220,40 @@ function widen(f) { // bulkier "roostr" variant: duplicate the centre columns an
 }
 function atlas(frames, mats, opt) {
   const cw = frames[0][0][0].length, ch = frames[0][0].length;
-  const [c, x] = mk(cw * 4, ch * 4);
+  const [c, x] = mk(cw * frames[0].length, ch * 4);
   frames.forEach((row, ri) => row.forEach((f, fi) => x.drawImage(paint(f, mats, opt), fi * cw, ri * ch)));
+  return sheetAtlas(c, cw, ch);
+}
+function sheetAtlas(c, cw, ch) {
   // silhouette version (outline recoloured bright, body faint) for the "never hidden" pass
   const [s, sx] = mk(c.width, c.height); sx.drawImage(c, 0, 0);
   const id = sx.getImageData(0, 0, c.width, c.height), d = id.data, [or, og, ob] = hex(OUT);
   for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; if (d[i] === or && d[i + 1] === og && d[i + 2] === ob) { d[i] = 255; d[i + 1] = 214; d[i + 2] = 60; } else { d[i] = 255; d[i + 1] = 250; d[i + 2] = 230; d[i + 3] = 80; } }
   sx.putImageData(id, 0, 0);
-  return { img: c, sil: s, cw, ch };
+  // hard offset drop shadow (hens.farm card shadow): every opaque pixel -> ink
+  const [h, hxx] = mk(c.width, c.height); hxx.drawImage(c, 0, 0); hxx.globalCompositeOperation = 'source-in'; hxx.fillStyle = OUT; hxx.fillRect(0, 0, c.width, c.height);
+  return { img: c, sil: s, shd: h, cw, ch };
 }
 const zFrames = (seed) => henFrames(zombify(HEN_DOWN, seed), zombify(HEN_UP, seed + 1), zombify(HEN_SIDE, seed + 2));
 const HEN_MATS = { R: 'comb', W: 'feather', w: 'fshade', k: 'ink', Y: 'beak', O: 'leg', A: 'bandana' };
 const SPR = {
-  player: atlas(henFrames(HEN_DOWN, HEN_UP, HEN_SIDE), HEN_MATS, { flat: 'RkYOAw', noFold: 'kYRA' }),
+  player: atlas(henFrames(HEN_DOWN, HEN_UP, HEN_SIDE, true), HEN_MATS, { flat: 'RkYOAw', noFold: 'kYRA' }),
   zombies: ['zf1', 'zf2', 'zf3'].map((f, i) => atlas(zFrames(11 + i * 7), { R: 'zcomb', W: f, w: f, e: 'eyeZ', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', dark: 'w', noFold: 'eY' })),
   brute: atlas(zFrames(99).map((row) => row.map(widen)), { R: 'comb', W: 'rooster', w: 'rtail', e: 'eyeB', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', noFold: 'eY' }),
 };
 // ---- items (16x16 cells): chikn pantry and farm arsenal
+// v5: the real hens.farm characters, pixelated (hens-sprites.png, built from the hens.farm base-hen reference sheet).
+// Player 30x33 cells x5 (stand, step, stand, step, PECK) per direction; undead flock 3 recolours 30x33 x4; zombie roostr 38x37 x4.
+// The hand-pixeled 16x22 hens above stay as the fallback until the sheet loads.
+const HENS_SHEET = new Image();
+HENS_SHEET.onload = () => {
+  const cut = (x, y, w, h) => { const [c, cx] = mk(w, h); cx.drawImage(HENS_SHEET, x, y, w, h, 0, 0, w, h); return c; };
+  SPR.player = sheetAtlas(cut(0, 0, 150, 132), 30, 33);
+  SPR.zombies = [0, 1, 2].map((i) => sheetAtlas(cut(0, 132 + i * 132, 120, 132), 30, 33));
+  SPR.brute = sheetAtlas(cut(0, 528, 152, 148), 38, 37);
+  SPR.real = true;
+};
+HENS_SHEET.src = 'hens-sprites.png';
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water'];
 const ITEM_ART = {
   food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
@@ -236,20 +275,17 @@ const ITEM_IMG = (() => {
 
 // ================================================================ world: 80x80 metatiles of 16x16, with height levels (3/4 view, pre-projected)
 const TS = 16, MW = 80, MH = 80, WPX = MW * TS;
-const K = { ASPH: 0, WALK: 1, GRASS: 2, PLAZA: 3, DIRT: 4, RUBTOP: 5, LEDGE: 6, TROOF: 7, BED: 8, BROOF: 10, BWALL: 11, TFACE: 12, RFACE: 13, CAR: 14, BARRIER: 15, PROP: 16, PARAPET: 17, LADDER: 18 };
+const K = { ASPH: 0, WALK: 1, GRASS: 2, PLAZA: 3, DIRT: 4, RUBTOP: 5, LEDGE: 6, TROOF: 7, BED: 8, BROOF: 10, BWALL: 11, TFACE: 12, RFACE: 13, CAR: 14, BARRIER: 15, PROP: 16, PARAPET: 17, LADDER: 18, CRATE: 19, CFACE: 20 };
 const kind = new Uint8Array(MW * MH), lvl = new Int8Array(MW * MH);
 const id = (x, y) => (x < 0 || y < 0 || x >= MW || y >= MH ? -1 : y * MW + x);
 function setT(x, y, k, l) { const i = id(x, y); if (i < 0) return; kind[i] = k; lvl[i] = l; }
-const isFace = (i) => i >= 0 && (kind[i] === K.TFACE || kind[i] === K.RFACE || kind[i] === K.LADDER);
+const isFace = (i) => i >= 0 && (kind[i] === K.TFACE || kind[i] === K.RFACE || kind[i] === K.LADDER || kind[i] === K.CFACE);
 const WR = rng(2026);
-const buildings = [], ruins = [], cars = [], props = [], ledges = [];
-const TOWER = { x0: 34, x1: 45, ry0: 24, ry1: 31, fy0: 32, fy1: 45, ROOF: 7 };
-// v3: one step up onto the tower (A jump), then a ladder straight up the face to the roof
-const LADDER = { x0: 39, x1: 40, y0: 32, y1: 43, cx: 40 * 16, top: 31 * 16 + 12, bot: 44 * 16 + 10 };
-const NEST = { x: 40 * TS + 8, y: 27 * TS + 12 }; // campfire (world px)
+const buildings = [], ruins = [], cars = [], props = [], ledges = [], crates = [];
+// v5: no tower. Open farmyard survival; spawn in the middle of the yard. Crates (2x2: level-1 top + front face) are the only perches.
+const SPAWN = { x: 40 * 16 + 8, y: 36 * 16 + 8 };
 function genWorld() {
   kind.fill(K.ASPH); lvl.fill(0);
-  const inCenter = (x, y) => x >= 32 && x <= 49 && y >= 22 && y <= 49;
   for (let bx = 0; bx < 5; bx++) for (let by = 0; by < 5; by++) {
     const x0 = bx * 16 + 3, y0 = by * 16 + 3, x1 = bx * 16 + 15, y1 = by * 16 + 15;
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) setT(x, y, (x === x0 || y === y0 || x === x1 || y === y1) ? K.WALK : K.DIRT, 0);
@@ -258,30 +294,25 @@ function genWorld() {
     // corner lamps on the sidewalk
     if (WR() < 0.7) addProp('lamp', x0, y0); if (WR() < 0.5) addProp('lamp', x1, y1);
   }
-  // plaza around the tower
+  // open farmyard in the middle (spawn)
   for (let x = 32; x <= 49; x++) for (let y = 22; y <= 49; y++) setT(x, y, K.PLAZA, 0);
-  // the tower: roof (level 7) + tall south face; a single entrance step (level 1) and a ladder up the face
-  const T = TOWER;
-  for (let x = T.x0; x <= T.x1; x++) { for (let y = T.ry0; y <= T.ry1; y++) setT(x, y, K.TROOF, T.ROOF); for (let y = T.fy0; y <= T.fy1; y++) setT(x, y, K.TFACE, -1); }
-  for (let x = T.x0; x <= T.x1; x++) { setT(x, T.ry0, K.PARAPET, -1); if (x < LADDER.x0 || x > LADDER.x1) setT(x, T.ry1, K.PARAPET, -1); }
-  for (let y = T.ry0; y <= T.ry1; y++) { setT(T.x0, y, K.PARAPET, -1); setT(T.x1, y, K.PARAPET, -1); }
-  [[37, 44, 6]].forEach(([x, y, w], i) => { for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < 2; dy++) setT(x + dx, y + dy, K.LEDGE, i + 1); ledges.push({ x, y, w, level: i + 1 }); });
-  for (let x = LADDER.x0; x <= LADDER.x1; x++) for (let y = LADDER.y0; y <= LADDER.y1; y++) setT(x, y, K.LADDER, -1);
-  setT(40, 27, K.PROP, -1); setT(43, 26, K.PROP, -1); props.push({ type: 'campfire', tx: 40, ty: 27 }, { type: 'crate', tx: 43, ty: 26, static: true });
-  setT(36, 27, K.BED, 7); setT(36, 28, K.BED, 7);
-  setT(35, 25, K.PROP, -1); props.push({ type: 'antenna', tx: 35, ty: 25 });
   // plaza dressing
   for (const [x, y] of [[32, 47], [49, 47], [32, 23], [49, 23]]) addProp('lamp', x, y);
   addProp('barrel', 47, 47); addProp('barrel', 33, 40);
+  for (const [x, y] of [[44, 30], [35, 43], [46, 41]]) addCrate(x, y); // a few perches near the spawn
   // roads: wrecks
   for (let n = 0; n < 34; n++) {
     const horiz = WR() < 0.5;
     const x = horiz ? 4 + Math.floor(WR() * 70) : Math.floor(WR() * 5) * 16 + Math.floor(WR() * 2), y = horiz ? Math.floor(WR() * 5) * 16 + Math.floor(WR() * 2) : 4 + Math.floor(WR() * 70);
     addCar(x, y, horiz);
   }
+  // crates scattered across the farm: limited safe spots
+  for (let n = 0, tries = 0; n < 11 && tries < 900; tries++) { const x = 3 + Math.floor(WR() * 73), y = 3 + Math.floor(WR() * 73); if (Math.hypot(x - 40, y - 36) < 12) continue; if (crates.some((c) => Math.hypot(c.x - x, c.y - y) < 12)) continue; if (addCrate(x, y)) n++; }
   // border: junk barricade
   for (let i = 0; i < MW; i++) { setT(i, 0, K.BARRIER, -1); setT(i, MH - 1, K.BARRIER, -1); setT(0, i, K.BARRIER, -1); setT(MW - 1, i, K.BARRIER, -1); }
 }
+const CRATE_OK = (k) => k === K.ASPH || k === K.WALK || k === K.GRASS || k === K.PLAZA || k === K.DIRT;
+function addCrate(x, y) { if (!areaIs(x - 1, y - 1, 4, 4, CRATE_OK)) return false; for (let dx = 0; dx < 2; dx++) { setT(x + dx, y, K.CRATE, 1); setT(x + dx, y + 1, K.CFACE, -1); } crates.push({ x, y, seed: Math.floor(WR() * 1e6) }); return true; }
 function areaIs(x0, y0, w, h, ok) { for (let x = x0; x < x0 + w; x++) for (let y = y0; y < y0 + h; y++) { const i = id(x, y); if (i < 0 || !ok(kind[i], lvl[i], x, y)) return false; } return true; }
 function addCar(x, y, horiz) {
   const w = horiz ? 3 : 2, h = horiz ? 2 : 3;
@@ -334,7 +365,7 @@ function outline(c) { // 1px near-black outline around every opaque pixel (4-nei
 }
 let M = null; // map context
 const R_ = (x, y, w, h, c) => { M.fillStyle = c; M.fillRect(x, y, w, h); };
-function spk(x0, y0, w, h, n, cols, r) { for (let i = 0; i < n; i++) R_(x0 + Math.floor(r() * w), y0 + Math.floor(r() * h), 1, 1, cols[Math.floor(r() * cols.length)]); }
+function spk(x0, y0, w, h, n, cols, r) { n = Math.round(n * 0.3); for (let i = 0; i < n; i++) R_(x0 + Math.floor(r() * w), y0 + Math.floor(r() * h), 1, 1, cols[Math.floor(r() * cols.length)]); }
 function drawTile(tx, ty) {
   const i = id(tx, ty), k = kind[i], X = tx * TS, Y = ty * TS, r = rng(i * 7919 + 13);
   const ground = (ramp, n = 10) => { R_(X, Y, TS, TS, ramp[1]); spk(X, Y, TS, TS, n, [ramp[0], ramp[2]], r); };
@@ -425,43 +456,17 @@ function drawBuilding(b) { // barns (red) and farmhouses (whitewash): slate roof
   R_(X, WY + WH - 1, W, 1, OUT);
 }
 function box3(x, y, w, top, front, ramp) { R_(x - 1, y - 1, w + 2, top + front + 2, OUT); R_(x, y, w, top, ramp[0]); R_(x, y + top, w, front, ramp[2]); R_(x, y + top, w, 1, ramp[3]); R_(x, y, 1, top, ramp[0]); R_(x + w - 1, y, 1, top + front, ramp[3]); R_(x + 1, y + 1, w - 2, top - 2, ramp[1]); }
-function drawTower() { // THE COOP: tall plank hen-house face, white trim, nest-box holes, chikn ramp up the middle
-  const T = TOWER, X = T.x0 * TS, W = (T.x1 - T.x0 + 1) * TS, FY = T.fy0 * TS, FH = (T.fy1 - T.fy0 + 1) * TS, C = RAMP.brick, r = rng(77);
-  R_(X, FY, W, FH, C[1]);
-  for (let xx = 0; xx < W; xx += 4) { R_(X + xx, FY, 1, FH, C[2]); R_(X + xx + 1, FY, 1, FH, C[0]); }
-  for (let yy = 48; yy < FH - 8; yy += 64) { R_(X, FY + yy, W, 3, '#ffffff'); R_(X, FY + yy + 3, W, 1, C[3]); } // white floor bands
-  // nest-box holes with straw lips, a few with an egg or a sleepy hen glow
-  for (let row = 1; row < (T.fy1 - T.fy0 + 1) - 1; row += 2) for (let col = 0; col < 12; col += 2) {
-    const wx = X + col * TS + 9, wy = FY + row * TS + 2; if (Math.abs(wx + 6 - LADDER.cx) < 24) continue;
-    R_(wx, wy, 14, 11, OUT); R_(wx + 1, wy + 1, 12, 9, '#ffffff'); R_(wx + 2, wy + 2, 10, 7, '#2a1c14');
-    const lit = r() < 0.18; if (lit) { R_(wx + 2, wy + 2, 10, 7, RAMP.lit[1]); R_(wx + 2, wy + 2, 10, 1, RAMP.lit[0]); }
-    R_(wx + 2, wy + 7, 10, 2, RAMP.hay[1]); R_(wx + 3, wy + 6, 2, 1, RAMP.hay[0]); R_(wx + 8, wy + 6, 3, 1, RAMP.hay[2]);
-    if (!lit && r() < 0.3) { R_(wx + 5, wy + 4, 3, 3, '#ffffff'); R_(wx + 5, wy + 4, 1, 1, RAMP.hazard[0]); }
-  }
-  // trim: white eave + corner boards, ink outline, light from top-left
-  R_(X, FY, W, 5, '#ffffff'); R_(X, FY + 5, W, 1, C[3]); R_(X, FY, W, 1, OUT);
-  R_(X + 1, FY, 3, FH, '#ffffff'); R_(X + W - 4, FY, 3, FH, '#e4e7ea');
-  R_(X, FY + FH - 5, W, 5, RAMP.wood[2]); R_(X, FY + FH - 5, W, 1, RAMP.wood[0]);
-  R_(X - 1, FY, 1, FH, OUT); R_(X + W, FY, 1, FH, OUT); R_(X, FY + FH - 1, W, 1, OUT);
-  // the chikn ramp: one wide plank with cross slats (a classic hen-house ladder)
-  { const lx = LADDER.x0 * TS + 2, lw = (LADDER.x1 - LADDER.x0 + 1) * TS - 4, ly = FY - 2, lh = (LADDER.y1 + 1) * TS - ly, Wd = RAMP.wood;
-    R_(lx - 1, ly, lw + 2, lh, OUT); R_(lx, ly, lw, lh, Wd[1]); R_(lx, ly, 2, lh, Wd[0]); R_(lx + lw - 2, ly, 2, lh, Wd[2]);
-    for (let xx = lx + 9; xx < lx + lw - 4; xx += 9) R_(xx, ly, 1, lh, Wd[2]);
-    for (let yy = ly + 3; yy < ly + lh - 1; yy += 6) { R_(lx + 1, yy, lw - 2, 3, Wd[0]); R_(lx + 1, yy + 2, lw - 2, 1, Wd[3]); R_(lx + 1, yy + 3, lw - 2, 1, OUT); }
-    // painted gold UP arrows beside the ramp
-    for (const ax of [lx - 9, lx + lw + 8]) for (const ay of [FY + FH - 70, FY + 70]) { R_(ax - 2, ay - 11, 5, 11, OUT); R_(ax - 5, ay - 8, 11, 4, OUT); R_(ax - 1, ay - 10, 3, 9, RAMP.hazard[1]); R_(ax - 4, ay - 7, 9, 2, RAMP.hazard[1]); R_(ax - 3, ay - 8, 7, 1, RAMP.hazard[1]); } }
-  // the perch step: a sturdy plank platform with a gold edge
-  for (const L of ledges) {
-    const lx = L.x * TS, ly = L.y * TS, lw = L.w * TS, lh = 2 * TS, Wd = RAMP.wood;
-    R_(lx, ly + lh, lw, 6, DARK_SHADOW); R_(lx + 3, ly + lh, 4, 7, OUT); R_(lx + lw - 7, ly + lh, 4, 7, OUT);
-    R_(lx, ly, lw, lh - 4, Wd[1]);
-    for (let gy = 0; gy < lh - 4; gy += 4) { R_(lx, ly + gy, lw, 1, Wd[0]); R_(lx, ly + gy + 3, lw, 1, Wd[2]); }
-    for (let gx = 12; gx < lw; gx += 24) R_(lx + gx, ly, 1, lh - 4, Wd[3]);
-    R_(lx, ly + lh - 4, lw, 4, RAMP.hazard[1]); R_(lx, ly + lh - 2, lw, 2, RAMP.hazard[2]);
-    R_(lx - 1, ly - 1, lw + 2, 1, OUT); R_(lx - 1, ly - 1, 1, lh + 1, OUT); R_(lx + lw, ly - 1, 1, lh + 1, OUT); R_(lx - 1, ly + lh, lw + 2, 1, OUT);
-  }
-  // east cast shadow (light from top-left)
-  R_(X + W + 1, T.ry0 * TS + 4, 7, (T.fy1 - T.ry0 + 1) * TS - 4, DARK_SHADOW);
+function drawCrate(c) { // a stack of $FEED crates: plank lid (the perch) + slatted front face, ink outline, hard shadow
+  const X = c.x * TS, Y = c.y * TS, W = 2 * TS, Wd = RAMP.wood, r = rng(c.seed);
+  R_(X + W + 1, Y + 4, 5, 2 * TS - 2, DARK_SHADOW); R_(X + 2, Y + 2 * TS, W, 4, DARK_SHADOW);
+  R_(X, Y, W, TS, Wd[0]); for (let yy = 3; yy < TS; yy += 4) R_(X, Y + yy, W, 1, Wd[1]); // lid planks
+  R_(X + 1, Y + 1, W - 2, 1, '#fff3c8'); R_(X + 15, Y, 1, TS, Wd[2]);
+  for (let s2 = 0; s2 < 5; s2++) R_(X + 2 + Math.floor(r() * 26), Y + 2 + Math.floor(r() * 12), 2, 1, RAMP.hay[0]); // straw on the lid
+  const FY = Y + TS; R_(X, FY, W, TS, Wd[1]); for (let xx = 0; xx < W; xx += 5) R_(X + xx, FY, 1, TS, Wd[2]);
+  R_(X, FY, W, 2, Wd[3]); R_(X, FY + TS - 3, W, 3, Wd[3]);
+  for (let s2 = 0; s2 < 13; s2++) { R_(X + 2 + s2 * 2, FY + 2 + s2, 2, 1, Wd[0]); } // diagonal brace
+  R_(X + 9, FY + 5, 14, 6, OUT); R_(X + 10, FY + 6, 12, 4, RAMP.hazard[1]); R_(X + 12, FY + 7, 8, 2, RAMP.brick[1]); // gold $FEED label
+  R_(X - 1, Y - 1, W + 2, 1, OUT); R_(X - 1, Y - 1, 1, 2 * TS + 1, OUT); R_(X + W, Y - 1, 1, 2 * TS + 1, OUT); R_(X - 1, FY - 1, W + 2, 1, OUT); R_(X - 1, FY + TS - 1, W + 2, 1, OUT);
 }
 function drawParapet(tx, ty) { // white picket rail around the coop loft
   const X = tx * TS, Y = ty * TS, T = RAMP.tower; R_(X, Y, TS, TS, T[2]);
@@ -513,21 +518,31 @@ function renderMap() {
   for (let ty = 0; ty < MH; ty++) for (let tx = 0; tx < MW; tx++) if (kind[id(tx, ty)] === K.PARAPET) drawParapet(tx, ty);
   for (const p of ruins) drawRuin(p);
   for (const b of buildings) { drawBuilding(b); R_((b.x0 + b.w) * TS + 1, b.y0 * TS + 4, 6, b.h * TS - 4, DARK_SHADOW); }
-  drawTower();
+  for (const c of crates) drawCrate(c);
   for (const c of cars) { M.drawImage(carCanvas(c), c.x * TS, c.y * TS); R_((c.x + c.w) * TS, c.y * TS + 4, 3, c.h * TS - 6, DARK_SHADOW); }
-  // static props: bedroll and crate on the roof, barrels
-  { const X = 36 * TS + 1, Y = 27 * TS + 4, H = RAMP.hay; R_(X - 1, Y - 1, 16, 26, OUT); R_(X, Y, 14, 24, H[1]); R_(X, Y, 14, 2, H[0]); R_(X, Y + 22, 14, 2, H[2]); R_(X + 3, Y + 4, 8, 16, H[2]); R_(X + 3, Y + 4, 8, 1, H[3]);
-    for (const [ex, ey] of [[4, 7], [7, 10], [4, 13]]) { R_(X + ex - 1, Y + ey - 1, 6, 7, OUT); R_(X + ex, Y + ey, 4, 5, ey === 10 ? RAMP.hazard[1] : '#ffffff'); R_(X + ex, Y + ey, 1, 1, '#ffffff'); } } // straw nest with eggs (one golden)
-  box3(43 * TS + 1, 26 * TS + 2, 14, 6, 7, RAMP.wood); R_(43 * TS + 4, 26 * TS + 10, 8, 3, RAMP.brick[1]); // $FEED crate
   for (const p of props) if (p.type === 'barrel') { const X = p.tx * TS + 3, Y = p.ty * TS + 1; R_(X - 1, Y - 1, 12, 16, OUT); R_(X, Y, 10, 14, RAMP.metal[2]); R_(X, Y, 10, 3, RAMP.metal[3]); R_(X + 1, Y + 1, 8, 1, '#1a0c08'); R_(X, Y + 3, 2, 11, RAMP.metal[0]); R_(X + 8, Y + 3, 2, 11, RAMP.metal[3]); R_(X, Y + 5, 10, 1, RAMP.brick[1]); R_(X, Y + 10, 10, 1, RAMP.brick[1]); }
   M = null;
 }
 
 // ================================================================ game state
-const BEST_KEY = 'lasttower.best';
-let best = { days: 0, kills: 0 }; try { best = JSON.parse(localStorage.getItem(BEST_KEY)) || best; } catch (e) {}
+const BEST_KEY = 'lasttower.best5'; // v5: best = longest survival time (seconds)
+let best = { time: 0, kills: 0, days: 0 }; try { best = Object.assign(best, JSON.parse(localStorage.getItem(BEST_KEY)) || {}); } catch (e) {}
+// ---- v5 tuning (all in one place) ----
+const TUNE = {
+  drain: 1.3,            // life lost per second, always (100 -> 0 in ~77 s with no food)
+  eatTime: 3,            // seconds perched on a crate, holding still
+  heal: { food: 25, mre: 45, med: 70 }, // corn cob / $FEED sack / golden HEGG
+  zDmg: 10, bDmg: 22, zCool: 0.9,       // zombie / brute hit, seconds between swipes
+  startZ: 8,                             // zombies already on the farm at spawn
+  target: (st, night) => Math.min(90, Math.round((10 + st / 5) * (night ? 1.5 : 1))), // horde size vs seconds survived
+  spawnEvery: (st, night) => Math.max(0.12, (0.8 - st / 400) * (night ? 0.6 : 1)),
+  zSpeed: (st) => 24 + Math.min(14, st / 15),                                        // + up to 10 random
+  bruteAfter: 40, bruteEvery: 15, bruteMax: (st) => 1 + Math.floor(st / 60),
+  loot0: 30, lootFloor: 22, lootEvery: 20, lootAdd: 3, dropZ: 0.3, dropB: 0.9,
+};
+const fmtTime = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 const WEAPONS = {
-  fists:   { name: 'PECK',    kind: 'melee', dmg: 1, reach: 15, arc: 1.5, cd: 0.36, stam: 7, icon: -1 },
+  fists:   { name: 'PECK',    kind: 'melee', dmg: 1.4, reach: 16, arc: 1.2, cd: 0.3, stam: 6, icon: -1 },
   pipe:    { name: 'RAKE',    kind: 'melee', dmg: 2, reach: 20, arc: 1.8, cd: 0.48, stam: 11, icon: 5 },
   machete: { name: 'PITCHFORK', kind: 'melee', dmg: 3.5, reach: 22, arc: 2.0, cd: 0.42, stam: 12, icon: 6 },
   pistol:  { name: 'EGG BLASTER', kind: 'gun', dmg: 3, range: 200, cd: 0.32, ammo: 'ammo', pellets: 1, spread: 0, icon: 7 },
@@ -540,19 +555,21 @@ const player = { x: 0, y: 0, level: 7, air: false, jz: 0, vz: 0, maxL: 7, sx: 0,
 const itemPool = [], zombiePool = [];
 function newGame() {
   G = {
-    state: 'play', t: 20, day: 1, kills: 0, msg: [], hp: 100, hunger: 85, stam: 100,
-    inv: { food: 2, mre: 0, med: 1, ammo: 0, shells: 0 }, owned: ['fists', 'pipe'], weapon: 'pipe',
-    resting: false, menuI: 0, shake: 0, flash: 0, deathCause: '', tracers: [], hits: [], cdT: 0, lightning: 0, swing: null,
+    state: 'play', t: 20, day: 1, st: 0, kills: 0, msg: [], hp: 100, stam: 100, eat: null, lootT: TUNE.lootEvery,
+    inv: { food: 1, mre: 0, med: 0, ammo: 0, shells: 0 }, owned: ['fists'], weapon: 'fists',
+    menuI: 0, shake: 0, flash: 0, deathCause: '', tracers: [], hits: [], cdT: 0, lightning: 0, swing: null, spawnT: 2, bruteT: 0,
   };
-  Object.assign(player, { x: 38 * TS + 8, y: 29 * TS + 8, level: TOWER.ROOF, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0] });
+  Object.assign(player, { x: SPAWN.x, y: SPAWN.y, level: 0, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0], atkT: 0 });
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
-  scatterLoot(40, true);
-  say('THE FARM HAS TURNED. FORAGE.', 4);
-  say('BE BACK IN THE COOP BY NIGHT.', 4);
+  scatterLoot(TUNE.loot0, true);
+  for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
+  say('THE FARM HAS TURNED. LIFE DRAINS.', 4);
+  say('FIND FOOD. EAT IT ON A CRATE.', 4);
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
-const onTower = () => player.level === TOWER.ROOF && !player.air;
+const onCrate = () => !player.air && !player.climb && kind[tileAt(player.x, player.y - 2)] === K.CRATE; // perched: only brutes can reach you
+const onTower = onCrate;
 const tileAt = (x, y) => id(Math.floor(x / TS), Math.floor(y / TS));
 
 // ================================================================ movement with height levels (ALttP-style ledges)
@@ -572,6 +589,7 @@ function moveBody(b, dx, dy, hw) {
 const JUMP_V = 110, GRAV = 420, HOP_V = 60;
 function jump() {
   if (player.climb) return;
+  if (G.eat) cancelEat('FLAPPED - NO HEAL');
   if (player.air) { player.jumpBuf = 0.12; return; }
   if (G.stam < 4) { say('TOO TIRED TO FLAP', 1); return; }
   Object.assign(player, { air: true, vz: JUMP_V, jz: 0, maxL: player.level + 1, sx: player.x, sy: player.y });
@@ -599,6 +617,7 @@ function land() {
   }
   const L2 = lvl[tileAt(player.x, player.y - 2)], drop = player.level - L2;
   player.level = L2; player.air = false; player.jz = 0; player.vz = 0;
+  if (kind[tileAt(player.x, player.y - 2)] === K.CRATE) { player.perchT = 0.45; sfx('land'); }
   if (drop >= 3) hurtPlayer((drop - 2) * 10, null, 'A BAD FLAP'); else if (drop > 0 || guard) sfx('land');
   if (player.jumpBuf > 0) { player.jumpBuf = 0; jump(); }
 }
@@ -613,19 +632,19 @@ function findLanding(x, y) { // nudge a few px to the nearest spot the feet fit
 // ================================================================ loot
 function lootRoll() {
   const r = Math.random();
-  if (r < 0.32) return 'food'; if (r < 0.42) return 'mre'; if (r < 0.48) return 'water'; if (r < 0.58) return 'med';
-  if (r < 0.74) return 'ammo'; if (r < 0.84) return 'shells';
+  if (r < 0.28) return 'food'; if (r < 0.36) return 'mre'; if (r < 0.43) return 'water'; if (r < 0.46) return 'med';
+  if (r < 0.68) return 'ammo'; if (r < 0.9) return 'shells';
   const w = ['pipe', 'machete', 'pistol', 'shotgun'][Math.floor(Math.random() * 4)]; return G.owned.includes(w) ? (w === 'shotgun' ? 'shells' : 'ammo') : w;
 }
 function randomTile(pred, tries = 200) { for (let t = 0; t < tries; t++) { const x = 2 + Math.floor(Math.random() * (MW - 4)), y = 2 + Math.floor(Math.random() * (MH - 4)); const i = id(x, y); if (pred(i, x, y)) return [x, y]; } return null; }
 function dropItem(kind_, x, y, level) { itemPool.push({ alive: true, kind: kind_, x, y, level, ph: Math.random() * 6 }); }
 function scatterLoot(n, first) {
   for (let k = 0; k < n; k++) {
-    const p = randomTile((i, x, y) => (lvl[i] === 0 || lvl[i] === 1) && kind[i] !== K.PLAZA && Math.hypot(x - 40, y - 36) > 9);
+    const p = randomTile((i, x, y) => (lvl[i] === 0 || lvl[i] === 1) && kind[i] !== K.CRATE && kind[i] !== K.PLAZA && Math.hypot(x - player.x / TS, y - player.y / TS) > (first ? 9 : 6));
     if (p) { const i = id(p[0], p[1]); dropItem(lootRoll(), p[0] * TS + 8, p[1] * TS + 10, lvl[i]); }
   }
-  if (first) for (const [k, d] of [['pistol', 13], ['ammo', 11], ['machete', 18], ['shotgun', 26], ['shells', 22]]) {
-    const p = randomTile((i, x, y) => lvl[i] === 0 && kind[i] !== K.PLAZA && Math.abs(Math.hypot(x - 40, y - 40) - d) < 2, 600);
+  if (first) for (const [k, d] of [['food', 6], ['food', 9], ['pipe', 14], ['ammo', 16], ['pistol', 20], ['machete', 24], ['shells', 26], ['shotgun', 30]]) {
+    const p = randomTile((i, x, y) => lvl[i] === 0 && Math.abs(Math.hypot(x - 40, y - 36) - d) < 2, 600);
     if (p) dropItem(k, p[0] * TS + 8, p[1] * TS + 10, 0);
   }
 }
@@ -634,7 +653,7 @@ function pickup(it) {
   if (WEAPONS[k]) { if (!G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } G.weapon = k; say('FOUND ' + WEAPONS[k].name + (k === 'pistol' ? ' +6 EGGS' : k === 'shotgun' ? ' +4 KERNELS' : '')); if (k === 'pistol') G.inv.ammo += 6; if (k === 'shotgun') G.inv.shells += 4; return; }
   if (k === 'food') { G.inv.food++; say('+1 CORN COB'); }
   else if (k === 'mre') { G.inv.mre++; say('+1 SACK OF $FEED'); }
-  else if (k === 'water') { G.inv.food++; G.stam = 100; say('+1 JUICY WORM. STAMINA FULL'); }
+  else if (k === 'water') { G.stam = 100; G.hp = Math.min(100, G.hp + 6); say('JUICY WORM. +6 LIFE, STAMINA FULL'); }
   else if (k === 'med') { G.inv.med++; say('+1 GOLDEN HEGG'); }
   else if (k === 'ammo') { const n = 5 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' EGGS'); }
   else if (k === 'shells') { const n = 3 + Math.floor(Math.random() * 3); G.inv.shells += n; say('+' + n + ' CORN KERNELS'); }
@@ -654,21 +673,21 @@ function buildFlow() {
 }
 function spawnZombie(brute, near) {
   const night = isNight(), ptx = player.x / TS, pty = player.y / TS;
-  const p = randomTile((i, x, y) => { if (lvl[i] !== 0 || kind[i] === K.CAR) return false; const d = Math.hypot(x - ptx, y - pty); return near ? d > 6 && d < 16 : d > 13 && d < 30 && (night || Math.hypot(x - 40, y - 40) > 9); }, 60);
+  const p = randomTile((i, x, y) => { if (lvl[i] !== 0 || kind[i] === K.CAR) return false; const d = Math.hypot(x - ptx, y - pty); return near ? d > 6 && d < 16 : d > 13 && d < 30; }, 60);
   if (!p) return null;
   const z = { alive: true, brute, x: p[0] * TS + 8, y: p[1] * TS + 12, level: 0, air: false, hp: brute ? 12 : 4, max: brute ? 12 : 4,
-    speed: (brute ? 26 : 22 + Math.random() * 9) * (night ? 1.35 : 1), anim: Math.random() * 4, dir: 0, fx: 0, fy: 1, atk: 0, cool: 0, hurt: 0, kb: [0, 0],
-    state: 'wander', wx: 0, wy: 0, wt: 0, groan: 2 + Math.random() * 8, dead: 0, spr: brute ? SPR.brute : SPR.zombies[zombiePool.length % 3] };
+    speed: (brute ? 28 + Math.min(10, (G.st || 0) / 30) : TUNE.zSpeed(G.st || 0) + Math.random() * 10) * (night ? 1.25 : 1), anim: Math.random() * 4, dir: 0, fx: 0, fy: 1, atk: 0, cool: 0, hurt: 0, kb: [0, 0],
+    state: 'wander', wx: 0, wy: 0, wt: 0, groan: 2 + Math.random() * 8, dead: 0, sprI: zombiePool.length % 3 };
   zombiePool.push(z); return z;
 }
 function hurtZombie(z, dmg, kx, ky) {
   z.hp -= dmg; z.hurt = 0.18; z.kb = [kx * (z.brute ? 40 : 110), ky * (z.brute ? 40 : 110)]; z.state = 'chase';
   G.hits.push({ x: z.x, y: z.y - 12, t: 0.25 });
-  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; G.kills++; sfx('splat'); if (Math.random() < (z.brute ? 0.9 : 0.28)) dropItem(lootRoll(), z.x, z.y, z.level); }
+  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; G.kills++; sfx('splat'); if (Math.random() < (z.brute ? TUNE.dropB : TUNE.dropZ)) dropItem(lootRoll(), z.x, z.y, 0); }
   else sfx('thud');
 }
 function updateZombies(dt) {
-  const night = isNight(), sense = (night ? 14 : 9) * TS;
+  const night = isNight(), sense = (night ? 15 : 11) * TS, perched = onCrate();
   flowT -= dt; const key = Math.floor(player.x / TS) + Math.floor(player.y / TS) * MW + player.level * 9999;
   if (flowT <= 0 || key !== flowKey) { buildFlow(); flowT = 0.4; flowKey = key; }
   let alive = 0, brutes = 0;
@@ -687,32 +706,37 @@ function updateZombies(dt) {
         for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const j = id(zx + ax, zy + ay); if (j < 0 || flow[j] < 0) continue; if (ax && ay && (lvl[id(zx + ax, zy)] !== 0 || lvl[id(zx, zy + ay)] !== 0)) continue; if (flow[j] < bestD) { bestD = flow[j]; bx = zx + ax; by = zy + ay; } }
         tx = bx * TS + 8; ty = by * TS + 10; }
     } else {
-      z.wt -= dt; if (z.wt <= 0 || Math.hypot(z.wx - z.x, z.wy - z.y) < 6) { z.wt = 3 + Math.random() * 5; const a = Math.random() * 6.28; z.wx = z.x + Math.cos(a) * 70; z.wy = z.y + Math.sin(a) * 70; if (night) { z.wx = lerp(z.wx, 40 * TS, 0.3); z.wy = lerp(z.wy, 46 * TS, 0.3); } }
+      z.wt -= dt; if (z.wt <= 0 || Math.hypot(z.wx - z.x, z.wy - z.y) < 6) { z.wt = 3 + Math.random() * 5; const a = Math.random() * 6.28; z.wx = z.x + Math.cos(a) * 70; z.wy = z.y + Math.sin(a) * 70; if (night) { z.wx = lerp(z.wx, player.x, 0.3); z.wy = lerp(z.wy, player.y, 0.3); } }
       tx = z.wx; ty = z.wy; sp = z.speed * 0.4;
     }
     let vx = tx - z.x, vy = ty - z.y; const vl = Math.hypot(vx, vy) || 1; vx /= vl; vy /= vl;
-    const reach = Math.abs(dx) < 13 && Math.abs(dy) < 10 && player.level - z.level <= 1 && !(player.air && player.jz > 9);
+    const big = perched && z.brute, reach = Math.abs(dx) < (big ? 30 : 13) && Math.abs(dy) < (big ? 24 : 10) && player.level - z.level <= 1 && !(player.air && player.jz > 9); // roostrs reach up onto crates
     if (reach || z.atk > 0) sp = 0;
     if (z.hurt > 0) { z.hurt -= dt; sp *= 0.2; }
     const hit = moveBody(z, (vx * sp + z.kb[0]) * dt, (vy * sp + z.kb[1]) * dt, 4);
     if (hit && z.state === 'wander') z.wt = 0;
     z.kb[0] *= Math.pow(0.001, dt); z.kb[1] *= Math.pow(0.001, dt);
     if (sp > 1) { z.anim += dt * 6 * (sp / 24); z.fx = vx; z.fy = vy; }
-    if (z.atk > 0) { z.atk -= dt; if (z.atk <= 0 && !z.struck) { z.struck = true; z.cool = 1.1; if (Math.abs(player.x - z.x) < 16 && Math.abs(player.y - z.y) < 12 && player.level - z.level <= 1 && G.state !== 'dead') hurtPlayer(z.brute ? 17 : 8, z, z.brute ? 'A ZOMBIE ROOSTR' : 'THE UNDEAD FLOCK'); } }
+    if (z.atk > 0) { z.atk -= dt; if (z.atk <= 0 && !z.struck) { z.struck = true; z.cool = TUNE.zCool; if (Math.abs(player.x - z.x) < (big ? 32 : 16) && Math.abs(player.y - z.y) < (big ? 26 : 12) && player.level - z.level <= 1 && G.state !== 'dead') {
+        if (perched && !z.brute) { sfx('thud'); } // claws at the crate: no damage
+        else { hurtPlayer(z.brute ? TUNE.bDmg : TUNE.zDmg, z, z.brute ? 'A ZOMBIE ROOSTR' : 'THE UNDEAD FLOCK'); if (perched && z.brute && G.state !== 'dead') knockOff(z); } } } }
     else { z.cool -= dt; if (reach && z.cool <= 0 && G.state !== 'dead') { z.atk = 0.4; z.struck = false; z.fx = dx; z.fy = dy; } }
     z.groan -= dt; if (z.groan <= 0) { z.groan = 4 + Math.random() * 9; if (d < 12 * TS) sfx('groan'); }
   }
   for (let i = 0; i < zombiePool.length; i++) { const a = zombiePool[i]; if (!a.alive) continue; for (let j = i + 1; j < zombiePool.length; j++) { const b = zombiePool[j]; if (!b.alive) continue; const dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy; if (d2 < 100 && d2 > 0.01) { const d = Math.sqrt(d2), p = (10 - d) / 2, ux = dx / d * p, uy = dy / d * p; moveBody(a, -ux, -uy, 4); moveBody(b, ux, uy, 4); } } }
   for (let i = zombiePool.length - 1; i >= 0; i--) if (!zombiePool[i].alive && zombiePool[i].dead <= 0) zombiePool.splice(i, 1);
-  const target = night ? Math.min(70, 40 + G.day * 4) : Math.min(30, 14 + G.day * 2);
+  const st = G.st || 0, target = TUNE.target(st, night); G.target = target;
   G.spawnT = (G.spawnT || 0) - dt;
-  if (alive < target && G.spawnT <= 0) { G.spawnT = night ? 0.25 : 0.6; spawnZombie(G.day >= 2 && brutes < (night ? 2 + G.day : G.day - 1) && Math.random() < 0.18); }
+  if (alive < target && G.spawnT <= 0 && G.state === 'play') { G.spawnT = TUNE.spawnEvery(st, night); spawnZombie(false); }
+  G.bruteT = (G.bruteT === undefined ? 0 : G.bruteT) - dt; // zombie roostrs arrive on their own clock, even when the flock is full
+  if (st >= TUNE.bruteAfter && brutes < TUNE.bruteMax(st) && G.bruteT <= 0 && G.state === 'play') { if (spawnZombie(true)) G.bruteT = TUNE.bruteEvery; }
   _alive = alive;
 }
 
 // ================================================================ combat
 function dirVec() { const l = Math.hypot(player.fx, player.fy) || 1; return [player.fx / l, player.fy / l]; }
 function attack() {
+  if (G.eat) { cancelEat('PECKED - NO HEAL'); return; }
   const w = WEAPONS[G.weapon]; if (G.cdT > 0) return;
   const [fx, fy] = dirVec();
   if (w.kind === 'gun') {
@@ -732,53 +756,63 @@ function attack() {
     return;
   }
   if (G.stam < w.stam * 0.5) { say('TOO TIRED - ROOST OR WAIT', 1.2); G.cdT = 0.3; return; }
-  G.stam = Math.max(0, G.stam - w.stam); G.cdT = w.cd; player.atkT = 0.2; sfx('swing');
+  G.stam = Math.max(0, G.stam - w.stam); G.cdT = w.cd; player.atkT = 0.2; player.peck = G.weapon === 'fists'; sfx(player.peck ? 'peck' : 'swing');
   G.swing = { t: 0.16, a: Math.atan2(fy, fx), reach: w.reach, w: G.weapon };
   for (const z of zombiePool) {
     if (!z.alive || Math.abs(z.level - player.level) > 1) continue; const dx = z.x - player.x, dy = z.y - player.y, d = Math.hypot(dx, dy);
     if (d > w.reach + 6) continue;
     let da = Math.atan2(dy, dx) - Math.atan2(fy, fx); while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
-    if (Math.abs(da) < w.arc / 2 || d < 8) hurtZombie(z, w.dmg, dx / (d || 1), dy / (d || 1));
+    if (Math.abs(da) < w.arc / 2 || d < 8) { hurtZombie(z, w.dmg, dx / (d || 1), dy / (d || 1)); if (player.peck) G.hits.push({ x: player.x + fx * 13, y: player.y - 10 + fy * 9, t: 0.14, peck: true }); }
   }
 }
 function hurtPlayer(dmg, from, cause) {
   if (!G || !['play', 'bag', 'camp'].includes(G.state)) return;
-  G.hp -= dmg; player.hurtT = 0.3; G.shake = 3; sfx('hurt'); G.resting = false;
+  G.hp -= dmg; player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT! MEAL LOST');
   if (from && !player.air) { const dx = player.x - from.x, dy = player.y - from.y, d = Math.hypot(dx, dy) || 1; player.kb = [dx / d * 90, dy / d * 90]; }
   if (G.hp <= 0) die(cause);
 }
+function knockOff(z) { // a zombie roostr bowls you off the crate
+  const dx = player.x - z.x, dy = player.y - z.y, d = Math.hypot(dx, dy) || 1;
+  Object.assign(player, { air: true, vz: 90, jz: 0, maxL: player.level, sx: player.x, sy: player.y }); player.kb = [dx / d * 140, dy / d * 140 + 30];
+  say('KNOCKED OFF THE CRATE!', 1.5);
+}
 function die(cause) {
-  G.hp = 0; G.state = 'dead'; G.deadT = 0; G.deathCause = cause; sfx('die');
-  if (G.day > best.days || (G.day === best.days && G.kills > best.kills)) { best = { days: G.day, kills: G.kills }; try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {} G.newBest = true; }
+  G.hp = 0; G.state = 'dead'; G.deadT = 0; G.deathCause = cause; G.eat = null; sfx('die');
+  if (G.st > best.time) { best = { time: Math.floor(G.st), kills: G.kills, days: G.day }; try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {} G.newBest = true; }
+}
+// ---- eating: only perched on a crate, 3 s holding still; any interruption = nothing
+const FOOD_ORDER = ['food', 'mre', 'med'], FOOD_NAME = { food: 'CORN', mre: '$FEED', med: 'GOLDEN HEGG' };
+function nextFood() { return FOOD_ORDER.find((k) => G.inv[k] > 0) || null; }
+function startEat(k) {
+  k = k || nextFood(); if (!k) { say('NO FOOD IN THE BAG', 1.2); sfx('click'); return false; }
+  if (!onCrate()) { say(L('A') + ' FLAP ONTO A CRATE TO EAT', 1.6); sfx('click'); return false; }
+  G.eat = { k, t: 0 }; sfx('menu'); return true;
+}
+function cancelEat(why) { if (!G.eat) return; G.eat = null; G.eatFail = 1.2; say(why || 'INTERRUPTED - NO HEAL', 1.6); sfx('click'); }
+function updateEat(dt, moving) {
+  if (!G.eat) return;
+  if (moving || !onCrate()) { cancelEat(moving ? 'MOVED - NO HEAL' : 'OFF THE CRATE - NO HEAL'); return; }
+  G.eat.t += dt; if (Math.floor(G.eat.t * 3) !== Math.floor((G.eat.t - dt) * 3)) sfx('peck');
+  if (G.eat.t >= TUNE.eatTime) { const k = G.eat.k, h = TUNE.heal[k]; G.eat = null; if (G.inv[k] > 0) { G.inv[k]--; G.hp = Math.min(100, G.hp + h); G.ate = (G.ate || 0) + 1; sfx('eat'); sfx('heal'); say('NOM. ' + FOOD_NAME[k] + ' +' + h + ' LIFE  +KG', 2); } }
 }
 function updatePlayer(dt) {
   let mx = held.right - held.left, my = held.down - held.up;
   if (stick.on && Math.hypot(stick.x, stick.y) > 0.18) { mx = stick.x; my = stick.y; }
   let m = Math.hypot(mx, my); if (m > 1) { mx /= m; my /= m; m = 1; }
-  if (G.state !== 'play' || G.resting) { mx = my = 0; m = 0; }
+  if (G.state !== 'play') { mx = my = 0; m = 0; }
   player.moving = m > 0.1;
   if (player.moving) { player.fx = mx / m; player.fy = my / m; player.anim += dt * 8 * m; player.dir = Math.abs(mx) > Math.abs(my) * 1.05 ? (mx < 0 ? 2 : 3) : (my > 0 ? 0 : 1); }
-  // LADDER: hold up on the entrance step (or down at the roof gap) to grab it; climb with up/down
-  const onLadderCol = Math.abs(player.x - LADDER.cx) < 12;
-  if (!player.climb && !player.air && G.state === 'play' && onLadderCol && !G.resting) {
-    if (player.level === 1 && my < -0.5 && kind[tileAt(player.x, player.y - 9)] === K.LADDER) { player.climb = true; player.x = LADDER.cx; }
-    else if (player.level === TOWER.ROOF && my > 0.5 && kind[tileAt(player.x, player.y + 6)] === K.LADDER) { player.climb = true; player.x = LADDER.cx; player.y = LADDER.top + 2; }
-  }
-  if (player.climb) {
-    player.kb[0] = player.kb[1] = 0; player.dir = 1; player.moving = Math.abs(my) > 0.2; player.fx = 0; player.fy = -1;
-    if (player.moving) { player.y += Math.sign(my) * 60 * dt; player.anim += dt * 7; if (Math.random() < dt * 5) sfx('rung'); }
-    if (player.y >= LADDER.bot) { player.y = LADDER.bot; player.climb = false; player.level = 1; }
-    else if (player.y <= LADDER.top) { player.y = LADDER.top; player.climb = false; player.level = TOWER.ROOF; say('SAFE IN THE COOP. BOK.', 2); }
-    else player.level = player.y > (LADDER.y1 - 1) * TS ? 1 : TOWER.ROOF - 1; // zombies can only reach your heels at the bottom
-    player.atkT = Math.max(0, player.atkT - dt); player.hurtT = Math.max(0, player.hurtT - dt); G.cdT = Math.max(0, G.cdT - dt);
-    return;
-  }
-  const spd = (G.hunger <= 0 ? 52 : 70) * (player.air ? 1.2 : 1);
+  updateEat(dt, player.moving);
+  const spd = 70 * (player.air ? 1.2 : 1);
   const kb = player.kb;
   const hit = moveBody(player, (mx * spd + kb[0]) * dt, (my * spd + kb[1]) * dt, 4);
-  if (hit && !player.air && player.moving) tryAutoHop(mx, my);
+  player.perchT = Math.max(0, (player.perchT || 0) - dt);
+  if (hit && !player.air && player.moving && !(player.perchT > 0)) tryAutoHop(mx, my); // just landed on a crate: don't walk straight off it
   kb[0] *= Math.pow(0.002, dt); kb[1] *= Math.pow(0.002, dt);
-  if (player.air) { player.vz -= GRAV * dt; player.jz += player.vz * dt; if (player.jz <= 0 && player.vz < 0) land(); }
+  if (player.air) { player.vz -= GRAV * dt; player.jz += player.vz * dt;
+    // sticky perch: coming down over a crate lid lands you on it (no pixel-perfect release needed)
+    if (player.vz < 0 && player.maxL >= 1 && player.level === 0 && kind[tileAt(player.x, player.y - 2)] === K.CRATE && boxOk(player.x, player.y, { air: false, level: 1 }, 3)) { player.jz = 0; land(); }
+    else if (player.jz <= 0 && player.vz < 0) land(); }
   player.atkT = Math.max(0, player.atkT - dt); player.hurtT = Math.max(0, player.hurtT - dt); player.jumpBuf = Math.max(0, (player.jumpBuf || 0) - dt);
   G.cdT = Math.max(0, G.cdT - dt);
   for (const it of itemPool) if (it.alive && Math.abs(it.x - player.x) < 10 && Math.abs(it.y - player.y) < 10 && it.level === player.level) pickup(it);
@@ -860,6 +894,7 @@ function sfx(n) {
   switch (n) {
     case 'jump': tone(220, 420, 0.12, 'square', 0.06); break;
     case 'land': noise(0.08, 300, 0.12); break;
+    case 'peck': tone(1500, 900, 0.035, 'square', 0.06); noise(0.03, 3200, 0.12, 4); break; // sharp tok
     case 'swing': noise(0.12, 1800, 0.12, 2); break;
     case 'thud': noise(0.1, 220, 0.3); tone(110, 60, 0.1, 'square', 0.08); break;
     case 'splat': noise(0.25, 400, 0.35); tone(90, 40, 0.25, 'sawtooth', 0.08); break;
@@ -883,77 +918,56 @@ function sfx(n) {
 // ================================================================ menus
 const MENUS = {
   bag: () => {
-    const top = onTower();
+    const top = onCrate(), row = (k, label) => ({ t: (top ? 'EAT ' : '') + label + ' x' + G.inv[k] + '  (+' + TUNE.heal[k] + ' LIFE, 3S)', dis: !top || !G.inv[k], go: () => { closeMenu(); startEat(k); } });
     return [
       { t: 'RESUME', go: () => closeMenu() },
-      { t: 'GOLDEN HEGG x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); say('GOLDEN HEGG. FEELING BOK.'); closeMenu(); } },
-      { t: top ? 'PECK CORN x' + G.inv.food + '  (+30 FEED)' : 'EAT: ONLY SAFE IN THE COOP', dis: !top || !G.inv.food, go: () => eat('food') },
-      { t: top ? 'EAT $FEED x' + G.inv.mre + '  (+60 FEED)' : 'CLIMB TO THE COOP TO EAT', dis: !top || !G.inv.mre, go: () => eat('mre') },
+      row('food', 'CORN'), row('mre', '$FEED'), row('med', 'GOLDEN HEGG'),
+      { t: top ? 'PERCHED: PICK A SNACK' : 'EAT ONLY ON A CRATE', dis: true, go: () => {} },
       { t: 'WEAPON: ' + WEAPONS[G.weapon].name + '  (SWAP)', go: () => { swapWeapon(); } },
     ];
   },
-  camp: () => [
-    { t: 'ROOST ' + (isNight() ? 'UNTIL DAWN' : 'A WHILE') + '  (HEAL)', go: () => { closeMenu(); G.resting = true; G.restT = 0; say('ROOSTING BY THE FIRE...'); } },
-    { t: 'PECK CORN x' + G.inv.food + '  (+30 FEED)', dis: !G.inv.food, go: () => eat('food') },
-    { t: 'EAT $FEED x' + G.inv.mre + '  (+60 FEED)', dis: !G.inv.mre, go: () => eat('mre') },
-    { t: 'GOLDEN HEGG x' + G.inv.med + '  (+45 HP)', dis: !G.inv.med || G.hp >= 100, go: () => { G.inv.med--; G.hp = Math.min(100, G.hp + 45); sfx('heal'); } },
-    { t: 'BACK TO THE FARM', go: () => closeMenu() },
-  ],
 };
-function openMenu(m) { G.state = m; G.menuI = 0; sfx('menu'); }
+function openMenu(m) { if (G.eat) cancelEat('PAUSED - NO HEAL'); G.state = m; G.menuI = 0; sfx('menu'); }
 function closeMenu() { G.state = 'play'; }
-function eat(k) {
-  if (k === 'food' && G.inv.food) { G.inv.food--; G.hunger = Math.min(100, G.hunger + 30); G.hp = Math.min(100, G.hp + 6); }
-  else if (k === 'mre' && G.inv.mre) { G.inv.mre--; G.hunger = Math.min(100, G.hunger + 60); G.hp = Math.min(100, G.hp + 15); }
-  else return; sfx('eat'); say('NOM. FEED ' + Math.round(G.hunger) + '%  +KG');
-}
-function swapWeapon() { const i = G.owned.indexOf(G.weapon); G.weapon = G.owned[(i + 1) % G.owned.length]; sfx('menu'); say(WEAPONS[G.weapon].name + (WEAPONS[G.weapon].kind === 'gun' ? '  AMMO ' + G.inv[WEAPONS[G.weapon].ammo] : ''), 1.5); }
-function nearFire() { return onTower() && Math.hypot(player.x - NEST.x, player.y - NEST.y) < 28; }
-
+function swapWeapon() { if (G.eat) cancelEat('SWAPPED - NO HEAL'); const i = G.owned.indexOf(G.weapon); G.weapon = G.owned[(i + 1) % G.owned.length]; sfx('menu'); say(WEAPONS[G.weapon].name + (WEAPONS[G.weapon].kind === 'gun' ? '  AMMO ' + G.inv[WEAPONS[G.weapon].ammo] : ''), 1.5); }
 function handleButtons() {
   while (queue.length) {
     const b = queue.shift();
     if (STATE === 'title') { if (b === 'A' || b === 'START') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
     if (G.state === 'dead') { if ((b === 'A' || b === 'START') && G.deadT > 1.2) { newGame(); } continue; }
-    if (G.resting) { if (b === 'A' || b === 'B' || b === 'START') { G.resting = false; say('UP AND READY'); } continue; }
-    if (G.state === 'bag' || G.state === 'camp') {
+    if (G.state === 'bag') {
       const items = MENUS[G.state]();
       if (b === 'up') { G.menuI = (G.menuI + items.length - 1) % items.length; sfx('menu'); }
       else if (b === 'down') { G.menuI = (G.menuI + 1) % items.length; sfx('menu'); }
       else if (b === 'A') { const it = items[G.menuI]; if (it.dis) sfx('click'); else it.go(); }
-      else if (b === 'B' || (b === 'START' && G.state === 'bag')) closeMenu();
-      else if (b === 'START' && G.state === 'camp') openMenu('bag');
+      else if (b === 'B' || b === 'START') closeMenu();
       else if (b === 'SELECT') swapWeapon();
       continue;
     }
-    if (player.climb && (b === 'A' || b === 'B')) continue; // hands full on the ladder
     if (b === 'A') jump();
-    else if (b === 'B') { if (nearFire()) openMenu('camp'); else attack(); }
+    else if (b === 'B') { if (G.eat) cancelEat('PECKED - NO HEAL'); else if (onCrate() && nextFood()) startEat(); else attack(); }
     else if (b === 'START') openMenu('bag');
     else if (b === 'SELECT') swapWeapon();
   }
 }
 let _alive = 0;
-function updateSurvival(dt, gdt) {
-  const hungerRate = 100 / 420;
-  G.hunger = Math.max(0, G.hunger - hungerRate * dt * (G.resting ? 3 : 1));
-  if (G.hunger <= 0) { G.hp -= 1.1 * dt; if (Math.random() < dt * 0.3) say('EMPTY CROP... EAT IN THE COOP', 1.5); if (G.hp <= 0) die('AN EMPTY CROP'); }
-  const regen = (G.hunger < 15 ? 6 : 15) * (G.resting ? 3 : 1);
-  if (G.cdT <= 0) G.stam = Math.min(100, G.stam + regen * dt);
-  if (G.resting) {
-    G.restT += dt; G.hp = Math.min(100, G.hp + (G.hunger > 0 ? 5 : 0) * dt);
-    const ph = G.t % CYCLE;
-    if (!isNight() && G.restT > 1.5 && (G.hp >= 100 || G.restT > 14)) { G.resting = false; say('ROOSTED. HP ' + Math.round(G.hp)); }
-  } else if (onTower() && G.hunger > 50) G.hp = Math.min(100, G.hp + 0.35 * dt); // slow recovery at the nest when fed
+// v5: no hunger meter and no resting. Life drains all the time; food (eaten on a crate) is the only way back up.
+function updateSurvival(dt) {
+  G.st += dt;
+  G.hp -= TUNE.drain * dt;
+  if (G.hp < 25 && Math.random() < dt * 0.25) say('STARVING... FIND FOOD, FIND A CRATE', 1.5);
+  if (G.hp <= 0) { die('AN EMPTY CROP'); return; }
+  if (G.cdT <= 0) G.stam = Math.min(100, G.stam + 16 * dt);
+  G.lootT -= dt;
+  if (G.lootT <= 0) { G.lootT = TUNE.lootEvery; const n = itemPool.filter((i) => i.alive).length; if (n < TUNE.lootFloor) scatterLoot(TUNE.lootAdd); }
 }
 let lastPhaseNight = false;
 function updateClock(dt) {
-  const scale = G.resting ? (isNight() ? 12 : 8) : 1;
-  const before = G.t % CYCLE; G.t += dt * scale; const ph = G.t % CYCLE;
-  if (before < DAY_LEN - 30 && ph >= DAY_LEN - 30) say('DUSK SOON. HEAD FOR THE COOP.', 4);
+  const before = G.t % CYCLE; G.t += dt; const ph = G.t % CYCLE;
+  if (before < DAY_LEN - 30 && ph >= DAY_LEN - 30) say('DUSK SOON. THE FLOCK GETS HUNGRY.', 4);
   if (before < DAY_LEN && ph >= DAY_LEN) { say('NIGHT FALLS. THE UNDEAD FLOCK STIRS.', 4); sfx('dusk'); }
-  if (ph < before) { G.day++; say('DAY ' + G.day + '. GM. YOU MADE IT.', 4); sfx('dawn'); if (G.resting) { G.resting = false; } const n = itemPool.filter((i) => i.alive).length; scatterLoot(Math.max(0, 34 - n)); }
-  return scale;
+  if (ph < before) { G.day++; say('DAY ' + G.day + '. GM. STILL BOKING.', 4); sfx('dawn'); }
+  return 1;
 }
 function clockStr() { const ph = G ? G.t % CYCLE : 40; let h; if (ph < DAY_LEN) h = 6 + ph / DAY_LEN * 14; else h = 20 + (ph - DAY_LEN) / NIGHT_LEN * 10; h %= 24; const hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
 function daylight() {
@@ -963,7 +977,6 @@ function daylight() {
   if (ph < DAY_LEN) return (DAY_LEN - ph) / tr;      // dusk
   return 0;
 }
-
 // ================================================================ HUD
 const ICONS = (() => { // tiny 7x6 pixel icons. chars: # main, o second, k ink, y beak
   const defs = {
@@ -979,7 +992,7 @@ const ICONS = (() => { // tiny 7x6 pixel icons. chars: # main, o second, k ink, 
 })();
 const INK = '#090b0a', CREAM = '#f8f5e9', HGREEN = '#08d14a', HRED = '#ff3347', HGOLD = '#ffc42f';
 // real hens.farm art (permission from the community), pixelated to the game grid: title hen, plucked hen, golden HEGG
-const ART = {}; for (const k of ['hen-title', 'hen-plucked', 'hegg']) { const im = new Image(); im.src = k + '.png'; ART[k] = im; }
+const ART = {}; for (const k of ['hen-title', 'hen-plucked', 'hegg', 'hen-faces']) { const im = new Image(); im.src = k + '.png'; ART[k] = im; }
 const artOk = (k) => ART[k].complete && ART[k].naturalWidth > 0;
 function bar(x, y, w, v, col, icon) {
   hx.drawImage(ICONS[icon], x, y);
@@ -994,35 +1007,37 @@ const inkText = (s, x, y, col = INK, align = 'left') => text(s, x, y, 8, col, al
 function drawItemIcon(i, x, y) { hx.drawImage(ITEM_IMG, i * 16, 0, 16, 16, x - 2, y - 3, 16, 16); }
 function hintText() {
   const mv = L('move'), A = L('A'), B = L('B'), S = L('START'), SE = L('SELECT'), bag = S === 'BAG' ? 'BAG' : S + ' BAG', swp = SE === 'SWAP' ? 'SWAP WEAPON' : SE + ' SWAP WEAPON';
-  if (G.resting) return 'ROOSTING - ' + A + ' / ' + B + ' TO GET UP';
-  if (nearFire()) return B + ' NEST: EAT / ROOST    ' + bag;
-  if (G.t < 34 && G.day === 1) return mv + ' MOVE  ' + A + ' FLAP  ' + B + ' PECK';
-  if (G.t < 48 && G.day === 1) return bag + ' / PAUSE   ' + swp;
-  if (player.climb) return 'HOLD ' + L('up') + ' TO CLIMB  (DOWN TO DESCEND)';
-  if (player.level === 1 && !player.air) return Math.abs(player.x - LADDER.cx) < 12 ? 'HOLD ' + L('up') + ' TO CLIMB THE CHIKN RAMP' : 'WALK TO THE RAMP, HOLD ' + L('up');
-  const nearTower = player.level === 0 && Math.abs(player.x / TS - 40) < 9 && player.y / TS > 44 && player.y / TS < 52;
-  if (nearTower) return A + ' FLAP ONTO THE PERCH, THEN CLIMB';
-  if (onTower() && Math.abs(player.x - LADDER.cx) < 12 && player.y > 30 * TS) return 'HOLD DOWN TO CLIMB DOWN';
+  if (G.eat) return 'EATING... HOLD STILL (' + B + ' / MOVE CANCELS)';
+  const perched = onCrate(), food = nextFood();
+  if (perched) return food ? B + ' EAT ' + FOOD_NAME[food] + ' (3S)   ' + bag : 'NO FOOD! GO FORAGE';
+  if (G.st < 7) return mv + ' MOVE  ' + A + ' FLAP  ' + B + ' PECK';
+  if (G.st < 14) return 'LIFE DRAINS. EAT ON A CRATE: ' + A + ' FLAP UP';
+  if (G.st < 20 && G.owned.length > 1) return bag + ' / PAUSE   ' + swp;
+  if (food && G.hp < 60) { const c = nearestCrate(); if (c && c.d < 5 * TS) return A + ' FLAP ONTO THE CRATE TO EAT'; }
   const w = WEAPONS[G.weapon]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) return 'OUT OF AMMO - ' + swp;
   return '';
 }
+function nearestCrate() { let best = null; for (const c of crates) { const x = (c.x + 1) * TS, y = c.y * TS + 10, d = Math.hypot(x - player.x, y - player.y); if (!best || d < best.d) best = { x, y, d }; } return best; }
 function drawHUD(dt, t) {
     if (STATE === 'title') { drawTitle(t); return; }
   // low-HP vignette / hurt flash
   if (G.hp < 30 || player.hurtT > 0) { const a = player.hurtT > 0 ? 0.35 : (0.15 + Math.sin(t * 5) * 0.08); hx.fillStyle = `rgba(160,20,20,${a})`; hx.fillRect(0, 0, N, 3); hx.fillRect(0, N - 3, N, 3); hx.fillRect(0, 0, 3, N); hx.fillRect(N - 3, 0, 3, N); }
   if (G.flash > 0) { hx.fillStyle = `rgba(255,230,180,${G.flash * 2})`; hx.fillRect(0, 0, N, N); G.flash -= dt; }
-  if (G.resting) { hx.fillStyle = 'rgba(8,6,12,.45)'; hx.fillRect(0, 0, N, N); }
   // stat bars (top-left)
   const bw = Math.round(N * 0.2);
-  panel(2, 2, bw + 16, 26);
-  bar(5, 5, bw, G.hp, HRED, 'heart');
-  bar(5, 13, bw, G.hunger, G.hunger < 20 ? '#ff9d00' : HGOLD, 'food');
-  bar(5, 21, bw, G.stam, HGREEN, 'bolt'); // 21+6 = 27
+  const FX = artOk('hen-faces') ? 31 : 0; panel(2, 2, bw + 16 + FX, 26);
+  if (FX) { const fi = player.hurtT > 0 ? 3 : G.eat ? 0 : G.hp < 35 ? 2 : G.hp > 65 ? 0 : 1; hx.drawImage(ART['hen-faces'], fi * 30, 0, 30, 24, 3, 3, 30, 24); } // real hens.farm hen, mood follows LIFE
+  // LIFE: one big draining bar (no separate hunger). The ticking stripe shows it is always going down.
+  const bx = 5 + FX; hx.drawImage(ICONS.heart, bx, 5 + (Math.floor(t * 2) % 2)); hx.fillStyle = INK; hx.fillRect(bx + 9, 5, bw + 2, 10); hx.fillStyle = '#e8e2cc'; hx.fillRect(bx + 10, 6, bw, 8);
+  { const f = Math.round(bw * clamp(G.hp / 100, 0, 1)); hx.fillStyle = G.hp < 30 && Math.floor(t * 4) % 2 ? '#ff9d00' : HRED; hx.fillRect(bx + 10, 6, f, 8); hx.fillStyle = 'rgba(255,255,255,.45)'; hx.fillRect(bx + 10, 6, f, 1);
+    if (f > 2) { hx.fillStyle = '#ffffff'; hx.fillRect(bx + 10 + f - 1 - (Math.floor(t * 8) % 2), 7, 1, 6); } }
+  inkText('LIFE', bx + 11 + bw - 1, 6, G.hp < 30 ? '#ffffff' : 'rgba(9,11,10,.75)', 'right');
+  bar(bx, 19, bw, G.stam, HGREEN, 'bolt'); // 19+6 = 25
   // clock (top-right)
   const night = isNight(); const ct = clockStr();
   panel(N - 56, 2, 54, 18);
   hx.drawImage(ICONS[night ? 'moon' : 'sun'], N - 52, 8);
-  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(ct, N - 5, 10, night ? '#2e6c96' : '#c06a16', 'right');
+  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(fmtTime(G.st), N - 5, 10, night ? '#2e6c96' : '#c06a16', 'right'); // time survived
   // weapon + ammo (bottom-left)
   const w = WEAPONS[G.weapon], ww = Math.max(74, 22 + w.name.length * 6);
   panel(2, N - 22, ww, 20);
@@ -1036,19 +1051,17 @@ function drawHUD(dt, t) {
   if (artOk('hegg')) hx.drawImage(ART.hegg, N - 29, N - 18); else drawItemIcon(2, N - 30, N - 17);
   inkText('' + G.inv.med, N - 15, N - 14);
   // kill count + safe marker
-  panel(2, 31, 22 + String(G.kills).length * 6 + (onTower() ? 32 : 0), 11);
+  const perched = onCrate();
+  panel(2, 31, 22 + String(G.kills).length * 6 + (perched ? 44 : 0), 11);
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
-  if (onTower()) inkText('SAFE', 22 + String(G.kills).length * 6, 32, '#0a8a3a');
-  else { // compass arrow to the coop when it is off-screen
-    const p = w2s(LADDER.cx, 45 * TS);
-    if (p[0] < 6 || p[0] > N - 6 || p[1] < 6 || p[1] > N - 6) { const c = N / 2, a = Math.atan2(p[1] - c, p[0] - c), r = N / 2 - 34; const ax = c + Math.cos(a) * r, ay = c + Math.sin(a) * r; const ac = night ? HRED : HGOLD; for (let k = 0; k < 4; k++) { const bx = ax - Math.cos(a) * k * 2, by = ay - Math.sin(a) * k * 2; hx.fillStyle = INK; hx.fillRect(Math.round(bx - (3 - k) / 2) - 1, Math.round(by - (3 - k) / 2) - 1, 6 - k, 6 - k); hx.fillStyle = ac; hx.fillRect(Math.round(bx - (3 - k) / 2), Math.round(by - (3 - k) / 2), 4 - k, 4 - k); } text('COOP', Math.round(ax), Math.round(ay + 4), 8, ac, 'center'); }
-  }
+  if (perched) inkText('PERCHED', 22 + String(G.kills).length * 6, 32, '#0a8a3a');
   // messages
   let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, '#e8d6a8', 'center'); my += 9; m.t -= dt; }
   G.msg = G.msg.filter((m) => m.t > 0);
   // context hint
   const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, '#f0c050', 'center');
-  if (G.state === 'bag' || G.state === 'camp') drawMenu();
+  if (G.eatFail > 0) { G.eatFail -= dt; if (Math.floor(t * 8) % 2) text('NO HEAL', N / 2, N / 2 - 40, 16, HRED, 'center'); }
+  if (G.state === 'bag') drawMenu();
   if (G.state === 'dead') drawDead(t);
 }
 function pixLine(x0, y0, x1, y1, col) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy, n = 0; hx.fillStyle = col; while (n++ < 600) { hx.fillRect(x0, y0, 1, 1); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
@@ -1056,7 +1069,7 @@ function drawMenu() {
   const items = MENUS[G.state](), w = Math.min(N - 16, 200), h = 26 + items.length * 11, x = Math.round((N - w) / 2), y = Math.round((N - h) / 2) - 6;
   hx.fillStyle = 'rgba(9,11,10,.4)'; hx.fillRect(0, 0, N, N);
   panel(x, y, w, h, 0.97);
-  inkText(G.state === 'camp' ? 'THE NEST' : 'BAG  -  PAUSED', N / 2, y + 3, '#bd2232', 'center');
+  inkText('BAG  -  PAUSED', N / 2, y + 3, '#bd2232', 'center');
   items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
   const inv = 'CORN ' + G.inv.food + '  $FEED ' + G.inv.mre + '  EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells;
   inkText(inv, N / 2, y + h - 10, '#855a36', 'center');
@@ -1070,8 +1083,8 @@ function drawDead(t) {
   if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34);
   text('PLUCKED', N / 2, y, 16, HRED, 'center');
   inkText('TAKEN BY ' + G.deathCause, N / 2, y + 22, INK, 'center');
-  inkText('DAY ' + G.day + '  PECKED ' + G.kills, N / 2 + 26, y + 38, '#c06a16', 'center');
-  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + 'DAY ' + best.days + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#0a8a3a' : '#855a36', 'center');
+  inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, '#c06a16', 'center');
+  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#0a8a3a' : '#855a36', 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
   if (G.deadT > 1.2 && (t % 1) < 0.65) text(L('A') + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
 }
@@ -1084,14 +1097,14 @@ function drawTitle(t) {
   text('LAST', tx, y, 16, HRED, 'center');
   text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
   inkText('CHIKN EDITION', tx, y + 38, '#0a8a3a', 'center');
-  inkText('FORAGE BY DAY.', tx, y + 50, INK, 'center'); inkText('ROOST BY NIGHT.', tx, y + 59, INK, 'center');
+  inkText('LIFE DRAINS.', tx, y + 50, INK, 'center'); inkText('EAT ON A CRATE.', tx, y + 59, INK, 'center');
   inkText('BILLIONS MUST BOK.', tx, y + 70, '#855a36', 'center');
   const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
   panel(Math.round(N / 2 - 82), cy - 5, 164, 53);
-  const rows = [[L('move'), 'MOVE'], [L('A'), 'FLAP / CONFIRM'], [L('B'), 'PECK / USE / BACK'], [L('START'), 'PAUSE & ITEMS'], [L('SELECT'), 'NEXT WEAPON']];
+  const rows = [[L('move'), 'MOVE'], [L('A'), 'FLAP / CONFIRM'], [L('B'), 'PECK / EAT / BACK'], [L('START'), 'PAUSE & ITEMS'], [L('SELECT'), 'NEXT WEAPON']];
   rows.forEach(([k, v], i) => { inkText(k, N / 2 - 30, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 24, cy + i * 9); });
   if ((t % 1) < 0.65) text('PRESS ' + (m === 'keys' ? 'SPACE' : 'A') + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
-  if (best.days) text('BEST: DAY ' + best.days + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
+  if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
 
 // ================================================================ dynamic props (tall things that can stand in front of the player: they fade)
@@ -1178,11 +1191,11 @@ function renderWorld(dt, t) {
   for (const it of itemPool) if (it.alive) { const bobY = Math.round(Math.sin(t * 3 + it.ph) * 1.5); list.push({ y: it.y, draw: () => { const [sx, sy] = w2s(it.x, it.y); hx.drawImage(SHADOW.i, sx - 5, sy - 3); hx.drawImage(ITEM_IMG, ITEMS.indexOf(it.kind) * 16, 0, 16, 16, sx - 8, sy - 15 + bobY, 16, 16); if (((t * 2 + it.ph) % 3) < 0.15) { hx.fillStyle = '#fff4c0'; hx.fillRect(sx + 3, sy - 13 + bobY, 1, 1); } } }); }
   // zombies (live and falling corpses)
   for (const z of zombiePool) {
-    const s = z.spr, row = actorRow(z.fx, z.fy), col = z.alive ? Math.floor(z.anim) % 4 : 0, w = s.cw, h = s.ch;
+    const s = z.brute ? SPR.brute : SPR.zombies[z.sprI], row = actorRow(z.fx, z.fy), col = z.alive ? Math.floor(z.anim) % 4 : 0, w = s.cw, h = s.ch;
     const rect = [z.x - w / 2, z.y - h + 1, w, h];
     list.push({ y: z.y, rect, actor: true, draw: () => {
       const [sx, sy] = w2s(z.x, z.y);
-      hx.drawImage(z.brute ? SHADOW.b : SHADOW.s, sx - (z.brute ? 8 : 6), sy - 3);
+      if (s.shd && z.alive) { hx.globalAlpha = 0.38; hx.drawImage(s.shd, ...spriteFrame(s, row, col), Math.round(sx - w / 2) + 2, sy - h + 2, w, h); hx.globalAlpha = 1; } // hard offset ink shadow
       if (!z.alive) { // collapse: draw squashed frames sinking, then gone
         const k = clamp(z.dead / 0.6, 0, 1), hh = Math.max(4, Math.round(h * k));
         hx.globalAlpha = 0.5 + k * 0.5; hx.drawImage(s.img, ...spriteFrame(s, row, 0), Math.round(sx - w / 2), sy - hh + 1, w, hh); hx.globalAlpha = 1; return; }
@@ -1192,14 +1205,22 @@ function renderWorld(dt, t) {
     } });
   }
   // player
-  const ps = SPR.player, pcol = player.moving && !player.air ? Math.floor(player.anim) % 4 : (player.air ? 1 : 0);
-  const prect = [player.x - 8, player.y - 22 - player.jz, 16, 22];
+  const pecking = player.peck && player.atkT > 0.04, ps = SPR.player, pcol = pecking ? 4 : player.moving && !player.air ? Math.floor(player.anim) % 4 : (player.air ? 1 : 0);
+  const pk = pecking ? Math.round(Math.sin((1 - player.atkT / 0.2) * Math.PI) * 2) : 0, pdx = player.dir === 2 ? -pk : player.dir === 3 ? pk : 0, pdy = player.dir === 0 ? pk : player.dir === 1 ? -pk : 0; // body lunge
+  const PW = ps.cw, PH = ps.ch, prect = [player.x - PW / 2, player.y - PH - player.jz, PW, PH];
   const drawPlayer = (sil) => {
-    const [sx, sy] = w2s(player.x, player.y), py = sy - 21 - Math.round(player.jz);
-    if (!sil && !player.climb) { const sh = player.jz > 6 ? SHADOW.i : SHADOW.s; hx.drawImage(sh, sx - sh.width / 2, sy - 3); }
+    const [sx, sy] = w2s(player.x, player.y), py = sy - PH + 1 - Math.round(player.jz);
+    if (!sil && player.jz > 2) { const sh = player.jz > 6 ? SHADOW.i : SHADOW.s; hx.drawImage(sh, sx - sh.width / 2, sy - 3); } // airborne: ground spot
+    else if (!sil && ps.shd) { hx.globalAlpha = 0.38; hx.drawImage(ps.shd, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx + 2, py + pdy + 1, PW, PH); hx.globalAlpha = 1; } // hard offset ink shadow
     if (!sil && player.hurtT > 0 && Math.floor(t * 30) % 2) return;
-    hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - 8, py, 16, 22);
-    if (!sil && player.atkT > 0) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, -8, py + 6 + oy, 16, 16); hx.restore(); } else hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, sx - 8 + ox, py + 6 + oy, 16, 16); } }
+    hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx, py + pdy, PW, PH);
+    if (!sil && pecking && player.atkT < 0.16 && player.atkT > 0.08) { const [fx, fy] = [[0, 1], [0, -1], [-1, 0], [1, 0]][player.dir], tx0 = sx + pdx + fx * (PW / 2 + 1), ty0 = py + pdy + Math.round(PH * 0.42) + fy * Math.round(PH * 0.42) + (fx ? -2 : 0); // tok! spark at the beak tip
+      hx.fillStyle = OUT; hx.fillRect(tx0 - 2, ty0 - 1, 5, 3); hx.fillRect(tx0 - 1, ty0 - 2, 3, 5); hx.fillStyle = '#ffffff'; hx.fillRect(tx0 - 1, ty0, 3, 1); hx.fillRect(tx0, ty0 - 1, 1, 3); }
+    if (!sil && G.eat) { const p = clamp(G.eat.t / TUNE.eatTime, 0, 1), cx = sx, cy = py - 7; // eating progress ring above the head
+      for (let k = 0; k < 24; k++) { const a = -Math.PI / 2 + k / 24 * Math.PI * 2, X = Math.round(cx + Math.cos(a) * 7), Y = Math.round(cy + Math.sin(a) * 7); hx.fillStyle = OUT; hx.fillRect(X - 1, Y - 1, 3, 3); }
+      for (let k = 0; k < 24; k++) { const a = -Math.PI / 2 + k / 24 * Math.PI * 2, X = Math.round(cx + Math.cos(a) * 7), Y = Math.round(cy + Math.sin(a) * 7); hx.fillStyle = k / 24 < p ? '#ffc42f' : '#f8f5e9'; hx.fillRect(X, Y, 1, 1); }
+      hx.drawImage(ITEM_IMG, ITEMS.indexOf(G.eat.k) * 16, 0, 16, 16, cx - 8, cy - 9, 16, 16); }
+    if (!sil && player.atkT > 0 && !player.peck) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, -8, py + PH - 16 + oy, 16, 16); hx.restore(); } else hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, sx - 8 + ox, py + PH - 16 + oy, 16, 16); } }
   };
   const showPlayer = STATE === 'game' && (G.state !== 'dead' || G.deadT < 0.5);
   if (showPlayer) list.push({ y: player.y, player: true, draw: () => drawPlayer(false) });
@@ -1231,13 +1252,13 @@ function renderWorld(dt, t) {
   }
   if (covered) drawPlayer(true);
   // effects
-  if (G && G.swing && G.swing.t > 0) { const sw = G.swing; sw.t -= dt; const prog = 1 - sw.t / 0.16, [px0, py0] = w2s(player.x, player.y - 10 - player.jz);
+  if (G && G.swing && G.swing.t > 0 && G.swing.w !== 'fists') { const sw = G.swing; sw.t -= dt; const prog = 1 - sw.t / 0.16, [px0, py0] = w2s(player.x, player.y - 10 - player.jz);
     for (let k = 0; k <= 8; k++) { const a = sw.a - 1.0 + Math.min(prog, 1) * 2.0 * (k / 8); const rr = sw.reach; hx.fillStyle = k > 6 ? '#fff4c0' : '#c8c0b0'; hx.fillRect(Math.round(px0 + Math.cos(a) * rr), Math.round(py0 + Math.sin(a) * rr * 0.85), 2, 2); } }
   if (G && G.tracers) { for (const tr of G.tracers) { const a = w2s(tr.x0, tr.y0), b = w2s(tr.x1, tr.y1);
     if (tr.k === 'shotgun') { const n = Math.max(2, Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / 11)); for (let q = 1; q <= n; q++) { const qx = Math.round(a[0] + (b[0] - a[0]) * q / n), qy = Math.round(a[1] + (b[1] - a[1]) * q / n); hx.fillStyle = OUT; hx.fillRect(qx - 1, qy - 1, 4, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(qx, qy, 2, 2); } } // corn kernels
     else if (tr.k === 'pistol') { pixLine(a[0], a[1], b[0], b[1], 'rgba(255,255,255,.55)'); hx.fillStyle = OUT; hx.fillRect(b[0] - 2, b[1] - 3, 5, 6); hx.fillStyle = '#ffffff'; hx.fillRect(b[0] - 1, b[1] - 2, 3, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(b[0], b[1] - 1, 1, 2); } // egg
     else pixLine(a[0], a[1], b[0], b[1], '#ffe9a0'); tr.t -= dt; } G.tracers = G.tracers.filter((q) => q.t > 0); }
-  if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); for (let k = 0; k < 6; k++) { hx.fillStyle = k % 2 ? '#ffffff' : RAMP.blood[0]; hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 9), p[1] + Math.round((Math.random() - 0.5) * 9), 2, 1); } hx.fillStyle = '#ffc42f'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
+  if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); if (h.peck) { const r = Math.round((0.14 - h.t) * 40) + 2; hx.fillStyle = '#ffc42f'; for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]]) hx.fillRect(p[0] + Math.round(ax * r), p[1] + Math.round(ay * r), 2, 2); hx.fillStyle = '#ffffff'; hx.fillRect(p[0] - 1, p[1] - 1, 3, 3); h.t -= dt; continue; } for (let k = 0; k < 6; k++) { hx.fillStyle = k % 2 ? '#ffffff' : RAMP.blood[0]; hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 9), p[1] + Math.round((Math.random() - 0.5) * 9), 2, 1); } hx.fillStyle = '#ffc42f'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
   applyLight(t);
   drawWeather(dt);
   return covered;
@@ -1260,6 +1281,7 @@ function frame(now) {
   if (!N) resize();
   const dt = Math.min(0.05, (now - last) / 1000); last = now; T0 += dt;
   handleButtons();
+  if (window.__ltFreeze && STATE === 'game') { updateCamera(0, true); lastCovered = renderWorld(0, T0); drawHUD(0, T0); return; } // test hook: hold a frame
   if (STATE === 'title') {
     if (!G) { G = { t: 40, day: 1, owned: ['fists'], state: 'title', msg: [], kills: 0, tracers: [], hits: [] }; Object.assign(player, { x: 40 * TS, y: 36 * TS, level: 0 }); for (let i = 0; i < 18; i++) spawnZombie(false, true); }
     const a = T0 * 0.15; player.x = 40 * TS + Math.sin(a) * 120; player.y = 38 * TS + Math.cos(a * 0.7) * 70;
@@ -1269,7 +1291,7 @@ function frame(now) {
   }
   if (G.state === 'play' || G.state === 'dead') {
     const scale = G.state === 'play' ? updateClock(dt) : 1;
-    if (G.state === 'play') { updatePlayer(dt); updateSurvival(dt, dt * scale); }
+    if (G.state === 'play') { updatePlayer(dt); updateSurvival(dt); }
     updateZombies(dt);
     if (isNight() && Math.random() < dt * 0.03) { G.lightning = 1; setTimeout(() => sfx('thunder'), 300 + Math.random() * 900); }
     if (G.state === 'dead') G.deadT += 0; // advanced in drawDead
@@ -1282,5 +1304,5 @@ function frame(now) {
 genWorld(); renderMap();
 resize();
 requestAnimationFrame(frame);
-window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, ledges, LADDER, NEST, TOWER, TS, get N() { return N; }, setTime: (t) => { G.t = t; },
+window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, crates, TUNE, onCrate, startEat, SPAWN, TS, get N() { return N; }, setTime: (t) => { G.t = t; },
   get muted() { return muted; }, get mode() { return mode(); }, get covered() { return lastCovered; }, get cam() { return [camX, camY]; }, spawnZombie, lvlAt: (x, y) => lvl[tileAt(x, y)], kindAt: (x, y) => kind[tileAt(x, y)], props };

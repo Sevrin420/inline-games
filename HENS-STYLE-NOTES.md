@@ -77,3 +77,20 @@ How these terms appear in the game:
 
 - **References only (not shipped):** `/assets/base-hen-reference/base-hen-*.png` (10 poses), the hen-detective, hen-boxer, professor-hen and other `/assets/*-600.png` hens, `/assets/og/home-card-v2.jpg`, and the @hensdotfarm posts.
 - **Pixelizer:** the hens.farm art was converted with a box downscale, then luminance below threshold became ink and other pixels snapped to the nearest palette colour, then a 1px outer ink outline was added. The script is `/workspace/hens/pix.py` on the build box.
+
+## v5: closer to hens.farm (survival edition)
+
+- **Real hens.farm characters as the sprites:** `games/last-tower/hens-sprites.png` is generated from the hens.farm base-hen reference sheet (`front`, `back`, `right-profile`).
+  - Pixelated to 28 px tall, in 30x33 cells. Left is mirrored from right.
+  - The front face was hand-fixed at 28 px: white face, two ink eyes, gold beak, red wattle.
+  - Walk = 1 px body bob plus a lifted foot.
+  - PECK frame per direction: the head thrusts forward (down 3 / up 3 / sideways 3 px with a filled neck).
+- **Undead flock:** the same hens recoloured (sick green / dusty / lilac), with dull torn combs, goo flecks and glowing eyes. Zombie roostrs are the same hen at 1.3x width in brown, with a red comb and red eyes.
+  - The old hand-pixeled 16x22 hens stay in code only as a fallback until the sheet loads.
+- **Flat fills:** the sprite painter no longer applies SNES ramp shading (one flat colour per material plus the ink outline). Ground speckle noise is cut by about 70%.
+- **Palette:** grass is exactly hens green `#08d14a` and the farmyard is cream `#f8f5e9`.
+- **Hard offset ink drop shadows:** every hen and zombie gets an ink silhouette offset +2/+1 (38% ink). Crates, barns and hay use 40% ink offset blocks, like the hens.farm card shadow.
+- **HUD portrait:** `hen-faces.png` holds real hens.farm heads (happy, neutral, annoyed and surprised poses, pixelated). It sits next to the LIFE bar and changes mood with LIFE and when you're hit.
+- **Shell:** Last Tower opts into the green `matcha` theme (`data-theme="matcha"`; the shared handheld.js now reads `data-theme`).
+- **New asset sources:** https://hens.farm/assets/base-hen-reference/base-hen-{front,back,right-profile,happy,neutral,annoyed,surprised}.png
+- **Build scripts** (on the build box): `/workspace/hens/v5/gen.py` and `/workspace/hens/v5/compare.py`.
