@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="Last Tower: Chikn Edition. The farm has turned, your life drains every second and the undead flock comes in swarms. Grab the corn shotgun by the spawn, find a machine gun and blast them (hold A to fire; your best gun auto-equips). Every enemy telegraphs its attack: zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Every hit counts. Flap onto a crate and press A to eat before you starve. Billions must bok.">
+<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Just run, shoot and try not to die. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Last Tower: Chikn Edition">
-<meta name="twitter:description" content="Chikn Edition: swarms of undead hens, a corn shotgun and a machine gun. Every hit counts. Blast the flock, flap onto a crate, press A to eat, survive.">
+<meta name="twitter:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
 <meta name="twitter:image" content="https://membersonly.cc/last-tower/previ.png">
 <meta property="og:title" content="Last Tower: Chikn Edition">
-<meta property="og:description" content="Chikn Edition: swarms of undead hens, a corn shotgun and a machine gun. Every hit counts. Blast the flock, flap onto a crate, press A to eat, survive.">
+<meta property="og:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
 <meta property="og:image" content="https://membersonly.cc/last-tower/previ.png">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #08d14a; overscroll-behavior: none; }
@@ -30,9 +30,12 @@
   #tKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: #ffc42f; border: 3px solid #090b0a; }
   .tb { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; border: 3px solid #090b0a; color: #090b0a; font: 900 22px "Arial Black", Impact, sans-serif; background: rgba(248,245,233,.85); padding: 0; box-shadow: 3px 4px 0 #090b0a; }
   .tb.on { background: #ffc42f; color: #090b0a; transform: translate(2px, 3px); box-shadow: 1px 1px 0 #090b0a; }
-  #tA { width: 84px; height: 84px; right: calc(18px + env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom)); background: rgba(255,51,71,.9); color: #fff; }
-  #tB { width: 72px; height: 72px; right: calc(112px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); }
-  #tBar { position: absolute; right: calc(12px + env(safe-area-inset-right)); bottom: calc(200px + env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: none; }
+  /* v10: compass SHOOT pad (N/E/S/W) replaces A/B. No flap, no eat. */
+  #tShoot { position: absolute; width: 176px; height: 176px; right: calc(14px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); pointer-events: auto; touch-action: none; border-radius: 50%; background: rgba(9,11,10,.18); }
+  #tShoot .tb { width: 60px; height: 60px; pointer-events: none; background: rgba(255,51,71,.9); color: #fff; font-size: 18px; }
+  #tShoot .tb.on { background: #ffc42f; color: #090b0a; }
+  #tSU { left: 58px; top: 0; } #tSD { left: 58px; bottom: 0; } #tSL { left: 0; top: 58px; } #tSR { right: 0; top: 58px; }
+  #tBar { position: absolute; right: calc(12px + env(safe-area-inset-right)); bottom: calc(212px + env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: none; }
   #tBar .tb { position: static; pointer-events: auto; }
 </style>
 </head>
@@ -42,13 +45,15 @@
 </div>
 <div id="touch">
   <div id="tStick"><div id="tBase"><div id="tKnob"></div></div></div>
-  <button id="tA" class="tb">A</button><button id="tB" class="tb">B</button>
-  <div id="tBar"><button id="tEat" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">EAT</button><button id="tBag" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">BAG</button></div>
+  <div id="tShoot"><button id="tSU" class="tb">N</button><button id="tSR" class="tb">E</button><button id="tSD" class="tb">S</button><button id="tSL" class="tb">W</button></div>
+  <div id="tBar"><button id="tBag" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">BAG</button></div>
 </div>
 <script src="game.js"></script>
-<!-- Handheld shell (v7): D-pad = arrows (move), A = j (peck; on a crate with food: eat / confirm), B = Space (flap / back),
-     SELECT = e (alternate eat on a crate), START = Enter (bag & pause). Best weapon auto-equips. ?handheld=0 opts out. -->
-<script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha"
-        data-keys='{"a":"j","b":" ","start":"Enter","select":"e"}'></script>
+<!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
+     D-pad = WASD (run). START = Enter and SELECT = Escape both pause. No jump, no eat. Best weapon auto-equips.
+     ?handheld=0 opts out (touch: stick + the same compass pad). -->
+<script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
+        data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"Enter","select":"Escape","su":"i","sd":"k","sl":"j","sr":"l"}'
+        data-labels='{"select":"PAUSE","pad":"SHOOT"}'></script>
 </body>
 </html>

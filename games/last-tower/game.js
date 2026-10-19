@@ -1,4 +1,4 @@
-/* LAST TOWER v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -267,7 +267,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=9';
+HENS_SHEET.src = 'hens-sprites.png?v=10';
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water', 'mg', 'belt', 'ammobox'];
 const ITEM_ART = {
   food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
@@ -554,13 +554,11 @@ const BEST_KEY = 'lasttower.best5'; // v5: best = longest survival time (seconds
 let best = { time: 0, kills: 0, days: 0 }; try { best = Object.assign(best, JSON.parse(localStorage.getItem(BEST_KEY)) || {}); } catch (e) {}
 // ---- v5 tuning (all in one place) ----
 const TUNE = {
-  drain: 1.3,            // life lost per second, always (100 -> 0 in ~77 s with no food)
-  eatTime: 3,            // seconds perched on a crate, holding still
-  heal: { food: 25, mre: 45, med: 70 }, // corn cob / $FEED sack / golden HEGG
+  drain: 0,              // v10: NO drain. Life only drops when an attack hits you
   zDmg: 30, bDmg: 66, zCool: 0.9,       // v7: x3 damage. zombie / brute hit, seconds between swipes
   startZ: 22,                            // v9 swarm: 22 on the farm at spawn
   zWind: 0.45, zStrike: 0.16,            // v9 zombie hen: wind-up (crouch + shake) -> lunging peck; damage on the strike frame
-  bWind: 0.62, bHop: 0.24, bStompR: [26, 18], // v9 roostr: crouch -> hop -> STOMP shockwave (dodge by moving or flapping)
+  bWind: 0.62, bHop: 0.24, bStompR: [26, 18], // v9 roostr: crouch -> hop -> STOMP shockwave (dodge by moving)
   waveAfter: 35, waveEvery: 38, waveN: (st) => Math.min(40, 12 + Math.floor(st / 8)), // v9 swarm waves
   sense: [16, 20],                       // v9: chase radius in tiles (day, night)
   target: (st, night) => Math.min(190, Math.round((24 + st * 0.45) * (night ? 1.35 : 1))), // v9: big hordes // horde size vs seconds survived
@@ -592,18 +590,18 @@ const player = { x: 0, y: 0, level: 7, air: false, jz: 0, vz: 0, maxL: 7, sx: 0,
 const itemPool = [], zombiePool = [];
 function newGame() {
   G = {
-    state: 'play', t: 20, day: 1, st: 0, kills: 0, msg: [], hp: 100, stam: 100, eat: null, lootT: TUNE.lootEvery,
-    inv: { food: 1, mre: 0, med: 0, ammo: 0, shells: 0, belt: 0 }, owned: ['fists'], weapon: 'fists',
+    state: 'play', t: 20, day: 1, st: 0, kills: 0, msg: [], hp: 100, stam: 100, lootT: TUNE.lootEvery,
+    inv: { ammo: 0, shells: 0, belt: 0 }, owned: ['fists'], weapon: 'fists',
     menuI: 0, shake: 0, flash: 0, deathCause: '', tracers: [], hits: [], cdT: 0, lightning: 0, swing: null, spawnT: 2, bruteT: 0, throwT: 0, proj: [], splats: [], eggHits: 0, foodLost: 0, parts: [], waves: [], muzzle: null, waveT: TUNE.waveAfter, shots: 0, swarmMax: 0,
   };
   Object.assign(player, { x: SPAWN.x, y: SPAWN.y, level: 0, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0], atkT: 0 });
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
   scatterLoot(TUNE.loot0, true);
   for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
-  say('THE FARM HAS TURNED. LIFE DRAINS.', 4);
-  say('FIND FOOD. EAT IT ON A CRATE.', 4);
+  say('THE FARM HAS TURNED. RUN AND GUN.', 4);
+  say('ONLY HITS HURT. NO HEALING. TRY NOT TO DIE.', 4);
 }
-function say(s, t = 2.5) { if (!G || !G.msg) return; G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
+function say(s, t = 2.5) { if (!G || !G.msg) return; const last = G.msg[G.msg.length - 1]; if (last && last.s === s) { last.t = Math.max(last.t, t); return; } G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
 const onCrate = () => !player.air && !player.climb && kind[tileAt(player.x, player.y - 2)] === K.CRATE; // perched: only brutes can reach you
 const onTower = onCrate;
@@ -624,14 +622,7 @@ function moveBody(b, dx, dy, hw) {
   return hit;
 }
 const JUMP_V = 110, GRAV = 420, HOP_V = 60;
-function jump() {
-  if (player.climb) return;
-  if (G.eat) cancelEat('FLAPPED!');
-  if (player.air) { player.jumpBuf = 0.12; return; }
-  if (G.stam < 4) { say('TOO TIRED TO FLAP', 1); return; }
-  Object.assign(player, { air: true, vz: JUMP_V, jz: 0, maxL: player.level + 1, sx: player.x, sy: player.y });
-  G.stam = Math.max(0, G.stam - 4); sfx('jump');
-}
+function jump() {} // v10: jumping / flapping is gone. Just run and shoot (walking off a ledge still hops you down).
 function hop() { Object.assign(player, { air: true, vz: HOP_V, jz: 0, maxL: player.level, sx: player.x, sy: player.y, hopT: 0.0 }); sfx('jump'); }
 function tryAutoHop(mx, my) { // walking off a ledge edge hops you down, like ALttP cliffs
   const sx = Math.sign(Math.round(mx * 2)), sy = Math.sign(Math.round(my * 2)); if (!sx && !sy) return false;
@@ -655,8 +646,7 @@ function land() {
   const L2 = lvl[tileAt(player.x, player.y - 2)], drop = player.level - L2;
   player.level = L2; player.air = false; player.jz = 0; player.vz = 0;
   if (kind[tileAt(player.x, player.y - 2)] === K.CRATE) { player.perchT = 0.45; sfx('land'); }
-  if (drop >= 3) hurtPlayer((drop - 2) * 10, 'self', 'A BAD FLAP'); else if (drop > 0 || guard) sfx('land');
-  if (player.jumpBuf > 0) { player.jumpBuf = 0; jump(); }
+  if (drop > 0 || guard) sfx('land'); // v10: no fall damage. Only enemy attacks hurt
 }
 function findLanding(x, y) { // nudge a few px to the nearest spot the feet fit
   for (let r = 2; r <= 10; r += 2) for (const [dx, dy] of [[0, -r], [0, r], [-r, 0], [r, 0], [-r, -r], [r, -r], [-r, r], [r, r]]) {
@@ -670,24 +660,23 @@ function findLanding(x, y) { // nudge a few px to the nearest spot the feet fit
 function lootRoll() {
   const r = Math.random();
   // v9: ~half of all loot is guns + ammo
-  if (r < 0.24) return 'food'; if (r < 0.30) return 'mre'; if (r < 0.35) return 'water'; if (r < 0.38) return 'med';
-  if (r < 0.48) return 'ammo'; if (r < 0.64) return 'shells'; if (r < 0.78) return 'belt'; if (r < 0.88) return 'ammobox';
+  // v10: no food. Its loot slots became ammo
+  if (r < 0.20) return 'ammo'; if (r < 0.44) return 'shells'; if (r < 0.66) return 'belt'; if (r < 0.84) return 'ammobox';
   const w = ['pistol', 'shotgun', 'mg', 'machete'][Math.floor(Math.random() * 4)]; return G.owned.includes(w) ? (WEAPONS[w].ammo === 'shells' ? 'shells' : WEAPONS[w].ammo === 'belt' ? 'belt' : 'ammobox') : w;
 }
 function killDrop(z) { // v9: kills feed the guns; every gunEvery kills a gun you don't have yet drops
   if (G.kills % TUNE.gunEvery === 0) { const g = ['shotgun', 'mg', 'pistol', 'machete'].find((k) => !G.owned.includes(k)); if (g) return g; }
   if (z.brute) return G.owned.includes('mg') ? 'ammobox' : 'mg';
-  const r = Math.random(); if (r < 0.32) return Math.random() < 0.8 ? 'food' : 'mre';
-  return r < 0.55 ? 'shells' : r < 0.8 ? 'belt' : r < 0.9 ? 'ammo' : 'ammobox';
+  const r = Math.random(); return r < 0.42 ? 'shells' : r < 0.8 ? 'belt' : r < 0.92 ? 'ammo' : 'ammobox'; // v10: food drops became ammo
 }
 function randomTile(pred, tries = 200) { for (let t = 0; t < tries; t++) { const x = 2 + Math.floor(Math.random() * (MW - 4)), y = 2 + Math.floor(Math.random() * (MH - 4)); const i = id(x, y); if (pred(i, x, y)) return [x, y]; } return null; }
 function dropItem(kind_, x, y, level) { itemPool.push({ alive: true, kind: kind_, x, y, level, ph: Math.random() * 6 }); }
 function scatterLoot(n, first) {
   for (let k = 0; k < n; k++) {
-    const p = randomTile((i, x, y) => (lvl[i] === 0 || lvl[i] === 1) && kind[i] !== K.CRATE && kind[i] !== K.PLAZA && Math.hypot(x - player.x / TS, y - player.y / TS) > (first ? 9 : 6));
+    const p = randomTile((i, x, y) => lvl[i] === 0 && kind[i] !== K.CRATE && kind[i] !== K.PLAZA && Math.hypot(x - player.x / TS, y - player.y / TS) > (first ? 9 : 6));
     if (p) { const i = id(p[0], p[1]); dropItem(lootRoll(), p[0] * TS + 8, p[1] * TS + 10, lvl[i]); }
   }
-  if (first) for (const [k, d] of [['shotgun', 5], ['shells', 6], ['food', 6], ['food', 9], ['ammobox', 9], ['ammo', 10], ['pistol', 12], ['shells', 13], ['pipe', 14], ['belt', 18], ['machete', 24], ['ammobox', 26], ['mg', 30]]) { // v9: a shotgun ~5 tiles from the spawn
+  if (first) for (const [k, d] of [['shotgun', 5], ['shells', 6], ['belt', 6], ['ammo', 9], ['ammobox', 9], ['ammo', 10], ['pistol', 12], ['shells', 13], ['pipe', 14], ['belt', 18], ['machete', 24], ['ammobox', 26], ['mg', 30]]) { // v9: a shotgun ~5 tiles from the spawn
     const p = randomTile((i, x, y) => lvl[i] === 0 && Math.abs(Math.hypot(x - 40, y - 36) - d) < 2, 600);
     if (p) dropItem(k, p[0] * TS + 8, p[1] * TS + 10, 0);
   }
@@ -695,11 +684,7 @@ function scatterLoot(n, first) {
 function pickup(it) {
   const k = it.kind; it.alive = false; sfx('pick');
   if (WEAPONS[k]) { if (!G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } say('FOUND ' + WEAPONS[k].name + (k === 'pistol' ? ' +12 EGGS' : k === 'shotgun' ? ' +10 KERNELS' : k === 'mg' ? ' +90 ROUNDS' : '')); if (k === 'pistol') G.inv.ammo += 12; if (k === 'shotgun') G.inv.shells += 10; if (k === 'mg') G.inv.belt += 90; autoEquip(); return; }
-  if (k === 'food') { G.inv.food++; say('+1 CORN COB'); }
-  else if (k === 'mre') { G.inv.mre++; say('+1 SACK OF $FEED'); }
-  else if (k === 'water') { G.stam = 100; G.hp = Math.min(100, G.hp + 6); say('JUICY WORM. +6 LIFE, STAMINA FULL'); }
-  else if (k === 'med') { G.inv.med++; say('+1 GOLDEN HEGG'); }
-  else if (k === 'ammo') { const n = 8 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' EGGS'); }
+  if (k === 'ammo') { const n = 8 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' EGGS'); }
   else if (k === 'shells') { const n = 6 + Math.floor(Math.random() * 4); G.inv.shells += n; say('+' + n + ' CORN KERNELS'); }
   else if (k === 'belt') { const n = 30 + Math.floor(Math.random() * 16); G.inv.belt += n; say('+' + n + ' ROUNDS'); }
   else if (k === 'ammobox') { G.inv.shells += 8; G.inv.belt += 40; G.inv.ammo += 8; say('AMMO CRATE! +8 KERNELS +40 ROUNDS +8 EGGS'); }
@@ -748,7 +733,7 @@ function spawnWave(n) { // v9: a pack of n zombies appears ~12 tiles away on one
     const z = spawnZombie(false); if (!z) break; z.x = x * TS + 8; z.y = y * TS + 12; z.state = 'chase'; made++; }
   if (made) { say('A SWARM IS COMING!', 2); sfx('groan'); } G.wavesN = (G.wavesN || 0) + 1; return made;
 }
-function stomp(z, perched) { // v9 roostr landing: shockwave ring + damage in an ellipse; a high flap dodges it
+function stomp(z, perched) { // v9 roostr landing: shockwave ring + damage in an ellipse
   const big = perched, rx = TUNE.bStompR[0] + (big ? 6 : 0), ry = TUNE.bStompR[1] + (big ? 8 : 0);
   G.waves.push({ x: z.x, y: z.y, t: 0, T: 0.34, rx, ry }); G.shake = Math.max(G.shake, 3.5); sfx('thud');
   if (G.state !== 'dead' && Math.abs(player.x - z.x) < rx && Math.abs(player.y - z.y) < ry && player.level - z.level <= 1 && !(player.air && player.jz > 8)) { hurtPlayer(TUNE.bDmg, z, 'A ZOMBIE ROOSTR'); if (perched && G.state !== 'dead') knockOff(z); }
@@ -842,7 +827,6 @@ function updateZombies(dt) {
 // ================================================================ combat
 function dirVec() { const l = Math.hypot(player.fx, player.fy) || 1; return [player.fx / l, player.fy / l]; }
 function attack() {
-  if (G.eat) cancelEat('PECKED!');
   autoEquip(); const w = WEAPONS[G.weapon]; if (G.cdT > 0) return;
   const [fx, fy] = dirVec();
   if (w.kind === 'gun') {
@@ -864,7 +848,7 @@ function attack() {
     for (const z of zombiePool) if (z.alive && Math.hypot(z.x - player.x, z.y - player.y) < 20 * TS) z.state = 'chase';
     return;
   }
-  if (G.stam < w.stam * 0.5) { say('TOO TIRED - ROOST OR WAIT', 1.2); G.cdT = 0.3; return; }
+  if (G.stam < w.stam * 0.5) { say('TOO TIRED - CATCH YOUR BREATH', 1.2); G.cdT = 0.3; return; }
   G.stam = Math.max(0, G.stam - w.stam); G.cdT = w.cd; player.atkT = 0.2; player.peck = G.weapon === 'fists'; sfx(player.peck ? 'peck' : 'swing');
   G.swing = { t: 0.16, a: Math.atan2(fy, fx), reach: w.reach, w: G.weapon };
   for (const z of zombiePool) {
@@ -890,35 +874,19 @@ function die(cause) {
   G.hp = 0; G.state = 'dead'; G.deadT = 0; G.deathCause = cause; G.eat = null; sfx('die');
   if (G.st > best.time) { best = { time: Math.floor(G.st), kills: G.kills, days: G.day }; try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {} G.newBest = true; }
 }
-// ---- eating: only perched on a crate, 3 s holding still; any interruption = nothing
-const FOOD_ORDER = ['food', 'mre', 'med'], FOOD_NAME = { food: 'CORN', mre: '$FEED', med: 'GOLDEN HEGG' };
-function nextFood() { return FOOD_ORDER.find((k) => G.inv[k] > 0) || null; }
-function startEat(k) {
-  k = k || nextFood(); if (!k) { say('NO FOOD IN THE BAG', 1.2); sfx('click'); return false; }
-  if (!onCrate()) { say(L('B') + ' FLAP ONTO A CRATE TO EAT', 1.6); sfx('click'); return false; }
-  G.eat = { k, t: 0 }; sfx('menu'); return true;
-}
-function cancelEat(why) { // v6: an interrupted meal is LOST (the food is gone, no heal)
-  if (!G.eat) return; const k = G.eat.k; G.eat = null; G.eatFail = 1.4;
-  if (G.inv[k] > 0) G.inv[k]--; G.foodLost = (G.foodLost || 0) + 1;
-  G.splats.push({ kind: 'food', k, x: player.x, y: player.y - 2, t: 1.1, T: 1.1, dir: player.x % 2 ? 1 : -1 });
-  say((why ? why + ' ' : '') + FOOD_NAME[k] + ' LOST', 1.8); sfx('splat');
-}
-function updateEat(dt, moving) {
-  if (!G.eat) return;
-  if (moving || !onCrate()) { cancelEat(moving ? 'MOVED!' : 'OFF THE CRATE!'); return; }
-  G.eat.t += dt; if (Math.floor(G.eat.t * 3) !== Math.floor((G.eat.t - dt) * 3)) sfx('peck');
-  if (G.eat.t >= TUNE.eatTime) { const k = G.eat.k, h = TUNE.heal[k]; G.eat = null; if (G.inv[k] > 0) { G.inv[k]--; G.hp = Math.min(100, G.hp + h); G.ate = (G.ate || 0) + 1; sfx('eat'); sfx('heal'); say('NOM. ' + FOOD_NAME[k] + ' +' + h + ' LIFE  +KG', 2); } }
-}
+function cancelEat() {} // v10: eating is gone (no meals, no healing). Kept as a no-op for old call sites.
 function updatePlayer(dt) { if (G.state === 'play') autoEquip();
-  if (held.A && G.state === 'play' && !G.eat && G.cdT <= 0 && WEAPONS[G.weapon].kind === 'gun' && !(onCrate() && nextFood())) attack(); // v9: hold A = auto-fire
   let mx = held.right - held.left, my = held.down - held.up;
   if (stick.on && Math.hypot(stick.x, stick.y) > 0.18) { mx = stick.x; my = stick.y; }
   let m = Math.hypot(mx, my); if (m > 1) { mx /= m; my /= m; m = 1; }
   if (G.state !== 'play') { mx = my = 0; m = 0; }
   player.moving = m > 0.1;
   if (player.moving) { player.fx = mx / m; player.fy = my / m; player.anim += dt * 8 * m; player.dir = Math.abs(mx) > Math.abs(my) * 1.05 ? (mx < 0 ? 2 : 3) : (my > 0 ? 0 : 1); }
-  updateEat(dt, player.moving);
+  // v10: SHOOT pad held = aim that way (twin-stick: facing follows the aim, not the walk) and fire on cooldown (guns auto, melee repeats)
+  { const ax = held.SR - held.SL, ay = held.SD - held.SU;
+    if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.25;
+      player.dir = Math.abs(ax) > Math.abs(ay) * 1.05 ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1);
+      if (G.cdT <= 0) attack(); } }
   const spd = 70 * (player.air ? 1.2 : 1);
   const kb = player.kb;
   const hit = moveBody(player, (mx * spd + kb[0]) * dt, (my * spd + kb[1]) * dt, 4);
@@ -934,12 +902,15 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
   for (const it of itemPool) if (it.alive && Math.abs(it.x - player.x) < 10 && Math.abs(it.y - player.y) < 10 && it.level === player.level) pickup(it);
 }
 // ================================================================ input (keyboard = shell buttons = touch)
-const held = { up: 0, down: 0, left: 0, right: 0, A: 0 }; // v9: A is held for auto-fire
+const held = { up: 0, down: 0, left: 0, right: 0, SU: 0, SD: 0, SL: 0, SR: 0 }; // v10: the four SHOOT directions are held (aim + auto-fire)
+const SHOOTS = ['SU', 'SD', 'SL', 'SR'];
+const isShoot = (b) => b === 'SU' || b === 'SD' || b === 'SL' || b === 'SR';
 const stick = { x: 0, y: 0, on: false };
 const queue = [];
-const KEYMAP = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right',
-  j: 'A', z: 'A', x: 'A', ' ': 'B', k: 'B', Enter: 'START', Escape: 'START', p: 'START', e: 'SELECT', q: 'SELECT', Shift: 'SELECT', Tab: 'SELECT', // v7: A = peck (J/Z/X), B = flap (SPACE/K), SELECT = eat (E/Q)
+const KEYMAP = { // v10 twin-stick: WASD move, ARROWS (or IJKL) aim + shoot, ENTER/ESC pause, SPACE starts. No eat, no flap.
+  w: 'up', s: 'down', a: 'left', d: 'right',
+  ArrowUp: 'SU', ArrowDown: 'SD', ArrowLeft: 'SL', ArrowRight: 'SR', i: 'SU', k: 'SD', j: 'SL', l: 'SR',
+  ' ': 'GO', Enter: 'START', Escape: 'START', p: 'START',
 };
 let lastInput = touchDev ? 'touch' : 'keys';
 function keyName(e) { if (e.code === 'Space') return ' '; const k = e.key; return k && k.length === 1 ? k.toLowerCase() : k; }
@@ -961,20 +932,32 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
     if (mag > 0.5) { const dir = Math.abs(stick.x) > Math.abs(stick.y) ? (stick.x < 0 ? 'left' : 'right') : (stick.y < 0 ? 'up' : 'down'); if (dir !== stick.lastDir) { stick.lastDir = dir; queue.push(dir); } } else stick.lastDir = null; });
   const end = (e) => { if (e.pointerId !== id) return; id = null; stick.on = false; stick.x = stick.y = 0; stick.lastDir = null; setKnob(0, 0); };
   area.addEventListener('pointerup', end); area.addEventListener('pointercancel', end);
-  for (const [elId, act] of [['tA', 'A'], ['tB', 'B'], ['tEat', 'SELECT'], ['tBag', 'START']]) {
+  for (const [elId, act] of [['tBag', 'START']]) {
     const el = $(elId);
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); lastInput = 'touch'; el.classList.add('on'); queue.push(act); if (act === 'A') held.A = 1; });
-    const up = () => { el.classList.remove('on'); if (act === 'A') held.A = 0; }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); lastInput = 'touch'; el.classList.add('on'); queue.push(act); });
+    const up = () => el.classList.remove('on'); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
   }
+  // v10: compass SHOOT pad. Angle from the pad centre picks N/E/S/W (diagonals = two); slide to re-aim.
+  const pad = $('tShoot'), ptr = {};
+  const btn = { SU: $('tSU'), SD: $('tSD'), SL: $('tSL'), SR: $('tSR') };
+  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1;
+    for (const d of SHOOTS) { if (on[d] && !held[d]) queue.push(d); held[d] = on[d] ? 1 : 0; btn[d].classList.toggle('on', !!on[d]); } };
+  const dirsAt = (e) => { const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    if (Math.hypot(dx, dy) < r.width * 0.17) return null; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, g = 20, o = [];
+    if (a >= 315 - g || a < 45 + g) o.push('SR'); if (a >= 45 - g && a < 135 + g) o.push('SD'); if (a >= 135 - g && a < 225 + g) o.push('SL'); if (a >= 225 - g && a < 315 + g) o.push('SU'); return o.slice(0, 2); };
+  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); lastInput = 'touch'; const d = dirsAt(e);
+    try { pad.setPointerCapture(e.pointerId); } catch (_) {} ptr[e.pointerId] = d || []; sync(); }); // dead centre: nothing until you slide out
+  pad.addEventListener('pointermove', (e) => { if (!(e.pointerId in ptr)) return; const d = dirsAt(e); if (d) { ptr[e.pointerId] = d; sync(); } });
+  const pend = (e) => { if (!(e.pointerId in ptr)) return; delete ptr[e.pointerId]; sync(); };
+  pad.addEventListener('pointerup', pend); pad.addEventListener('pointercancel', pend);
 }
-// v8: the touch A button reads EAT while perched with food (A eats on a crate)
-let _tALabel = ''; function updateTouchLabels() { const el = $('tA'); if (!el) return; const s = (typeof G !== 'undefined' && G && G.state === 'play' && STATE === 'game' && onCrate() && (G.eat || nextFood())) ? 'EAT' : 'A'; if (s !== _tALabel) { _tALabel = s; el.textContent = s; el.style.fontSize = s === 'EAT' ? '20px' : ''; } }
+function updateTouchLabels() {}
 // controls labels: every on-screen hint names the real control for the current mode
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
-const LABELS = {
-  shell: { move: 'D-PAD', up: 'UP', A: 'A', B: 'B', START: 'START', SELECT: 'SELECT' },
-  touch: { move: 'STICK', up: 'STICK UP', A: 'A', B: 'B', START: 'BAG', SELECT: 'EAT' },
-  keys: { move: 'WASD', up: 'W', A: 'J', B: 'SPACE', START: 'ENTER', SELECT: 'E' },
+const LABELS = { // v10: no A/B, no eat, no flap. shoot = the compass pad (or arrows)
+  shell: { move: 'D-PAD', shoot: 'SHOOT PAD', START: 'START' },
+  touch: { move: 'STICK', shoot: 'SHOOT PAD', START: 'BAG' },
+  keys: { move: 'WASD', shoot: 'ARROWS', START: 'ENTER' },
 };
 const L = (k) => LABELS[mode()][k];
 
@@ -1037,47 +1020,38 @@ function sfx(n) {
   }
 }
 
-// ================================================================ menus
+// ================================================================ menus (v10: pause only. No food, no eating)
 const MENUS = {
-  bag: () => {
-    const top = onCrate(), row = (k, label) => ({ t: (top ? 'EAT ' : '') + label + ' x' + G.inv[k] + '  (+' + TUNE.heal[k] + ', 3S)', dis: !top || !G.inv[k], go: () => { closeMenu(); startEat(k); } });
-    return [
-      { t: 'RESUME', go: () => closeMenu() },
-      row('food', 'CORN'), row('mre', '$FEED'), row('med', 'GOLDEN HEGG'),
-      { t: top ? 'HOLD STILL 3S OR THE FOOD IS LOST' : 'EAT ONLY ON A CRATE (3S, STAY STILL)', dis: true, go: () => {} },
-      { t: 'WEAPON: ' + WEAPONS[G.weapon].name + ' (AUTO-BEST)', dis: true, go: () => {} },
-    ];
-  },
+  bag: () => [
+    { t: 'RESUME', go: () => closeMenu() },
+    { t: 'WEAPON: ' + WEAPONS[G.weapon].name + ' (AUTO-BEST)', dis: true, go: () => {} },
+    { t: 'GUNS: ' + (G.owned.filter((w) => WEAPONS[w].kind === 'gun').map((w) => WEAPONS[w].name).join(', ') || 'NONE YET'), dis: true, go: () => {} },
+    { t: 'ONLY HITS HURT. NO HEALING.', dis: true, go: () => {} },
+  ],
 };
-function openMenu(m) { if (G.eat) cancelEat('PAUSED!'); G.state = m; G.menuI = 0; sfx('menu'); }
+function openMenu(m) { G.state = m; G.menuI = 0; sfx('menu'); }
 function closeMenu() { G.state = 'play'; }
-function handleButtons() {
+function handleButtons() { // v10: D-pad = run, SHOOT pad = aim + fire (held, see updatePlayer), START = pause. No eat, no flap.
   while (queue.length) {
     const b = queue.shift();
-    if (STATE === 'title') { if (b === 'A' || b === 'B' || b === 'START') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
-    if (G.state === 'dead') { if ((b === 'A' || b === 'B' || b === 'START') && G.deadT > 1.2) { newGame(); } continue; }
+    const go = isShoot(b) || b === 'START' || b === 'GO';
+    if (STATE === 'title') { if (go) { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
+    if (G.state === 'dead') { if (go && G.deadT > 1.2) { newGame(); } continue; }
     if (G.state === 'bag') {
       const items = MENUS[G.state]();
       if (b === 'up') { G.menuI = (G.menuI + items.length - 1) % items.length; sfx('menu'); }
       else if (b === 'down') { G.menuI = (G.menuI + 1) % items.length; sfx('menu'); }
-      else if (b === 'A') { const it = items[G.menuI]; if (it.dis) sfx('click'); else it.go(); }
-      else if (b === 'B' || b === 'START') closeMenu();
+      else if (isShoot(b) || b === 'GO') { const it = items[G.menuI]; if (it.dis) sfx('click'); else it.go(); }
+      else if (b === 'START') closeMenu();
       continue;
     }
-    if (b === 'A') { if (G.eat) continue;    // v8: A again mid-meal does nothing (the meal keeps going)
-      if (onCrate() && nextFood()) startEat(); else attack(); } // v8: on a crate with food A eats; otherwise A pecks (also from a crate with no food)
-    else if (b === 'B') jump();              // v7: B = flap
-    else if (b === 'START') openMenu('bag');
-    else if (b === 'SELECT') { if (!G.eat) startEat(); } // v7: SELECT = eat (on a crate)
+    if (b === 'START') openMenu('bag');
   }
 }
 let _alive = 0;
-// v5: no hunger meter and no resting. Life drains all the time; food (eaten on a crate) is the only way back up.
+// v10: no drain at all. Life only drops when an attack lands (peck, stomp, rotten egg); nothing heals it (no food, no eating).
 function updateSurvival(dt) {
   G.st += dt;
-  G.hp -= TUNE.drain * dt;
-  if (G.hp < 25 && Math.random() < dt * 0.25) say('STARVING... FIND FOOD, FIND A CRATE', 1.5);
-  if (G.hp <= 0) { die('AN EMPTY CROP'); return; }
   if (G.cdT <= 0) G.stam = Math.min(100, G.stam + 16 * dt);
   G.lootT -= dt;
   if (G.lootT <= 0) { G.lootT = TUNE.lootEvery; const n = itemPool.filter((i) => i.alive).length; if (n < TUNE.lootFloor) scatterLoot(TUNE.lootAdd); }
@@ -1126,16 +1100,14 @@ function bar(x, y, w, v, col, icon) {
 function panel(x, y, w, h, a = 0.92) { hx.fillStyle = 'rgba(9,11,10,.55)'; hx.fillRect(x + 2, y + 2, w, h); hx.fillStyle = `rgba(248,245,233,${Math.max(a, 0.86)})`; hx.fillRect(x, y, w, h); hx.fillStyle = INK; hx.fillRect(x, y, w, 1); hx.fillRect(x, y + h - 1, w, 1); hx.fillRect(x, y, 1, h); hx.fillRect(x + w - 1, y, 1, h); }
 const inkText = (s, x, y, col = INK, align = 'left') => text(s, x, y, 8, col, align, false);
 function drawItemIcon(i, x, y) { hx.drawImage(ITEM_IMG, i * 16, 0, 16, 16, x - 2, y - 3, 16, 16); }
+function startTxt() { const m = mode(); return m === 'keys' ? 'PRESS SPACE' : m === 'shell' ? 'PRESS START' : 'TAP SHOOT PAD'; }
 function hintText() {
-  const mv = L('move'), A = L('A'), B = L('B'), S = L('START'), SE = L('SELECT'), bag = S === 'BAG' ? 'BAG' : S + ' BAG', eat = SE === 'EAT' ? 'EAT' : SE + ' EAT';
-  if (G.eat) return 'EATING... HOLD STILL OR LOSE IT';
-  const perched = onCrate(), food = nextFood();
-  if (perched) { if (G.proj && G.proj.length) return 'INCOMING EGG! ' + B + ' FLAP OFF TO DODGE'; return food ? A + ' EAT ' + FOOD_NAME[food] + ' (3S, STAY STILL)' : 'NO FOOD! ' + A + ' PECK, GO FORAGE'; }
-  if (WEAPONS[G.weapon].kind === 'gun' && (G.shots || 0) < 4 && !perched) return 'HOLD ' + A + ' TO FIRE ' + WEAPONS[G.weapon].name; // v9
-  if (G.st < 7) return mv + ' MOVE  ' + A + ' PECK  ' + B + ' FLAP';
-  if (G.st < 14) return 'LIFE DRAINS. ' + B + ' FLAP ONTO A CRATE, ' + A + ' EAT';
-  if (G.st < 20) return bag + ' / PAUSE.  BEST WEAPON AUTO-EQUIPS';
-  if (food && G.hp < 60) { const c = nearestCrate(); if (c && c.d < 5 * TS) return B + ' FLAP ONTO THE CRATE TO EAT'; }
+  const mv = L('move'), SH = L('shoot'), S = L('START'), bag = S === 'BAG' ? 'BAG' : S;
+  if (WEAPONS[G.weapon].kind === 'gun' && (G.shots || 0) < 4) return 'HOLD ' + SH + ' TO FIRE ' + WEAPONS[G.weapon].name; // v9
+  if (G.st < 7) return mv + ' RUN   ' + SH + ' AIM + SHOOT';
+  if (G.st < 14) return 'ONLY HITS HURT. NO HEALING. KEEP MOVING';
+  if (G.st < 20) return bag + ' PAUSE.  BEST WEAPON AUTO-EQUIPS';
+  if (G.hp < 35) return 'LOW LIFE. DON\'T GET HIT';
   return '';
 }
 function nearestCrate() { let best = null; for (const c of crates) { const x = (c.x + 1) * TS, y = c.y * TS + 10, d = Math.hypot(x - player.x, y - player.y); if (!best || d < best.d) best = { x, y, d }; } return best; }
@@ -1147,11 +1119,10 @@ function drawHUD(dt, t) {
   // stat bars (top-left)
   const bw = Math.round(N * 0.2);
   const FX = artOk('hen-faces') ? 31 : 0; panel(2, 2, bw + 16 + FX, 26);
-  if (FX) { const fi = player.hurtT > 0 ? 3 : G.eat ? 0 : G.hp < 35 ? 2 : G.hp > 65 ? 0 : 1; hx.drawImage(ART['hen-faces'], fi * 30, 0, 30, 24, 3, 3, 30, 24); } // real hens.farm hen, mood follows LIFE
-  // LIFE: one big draining bar (no separate hunger). The ticking stripe shows it is always going down.
+  if (FX) { const fi = player.hurtT > 0 ? 3 : G.hp < 35 ? 2 : G.hp > 65 ? 0 : 1; hx.drawImage(ART['hen-faces'], fi * 30, 0, 30, 24, 3, 3, 30, 24); } // real hens.farm hen, mood follows LIFE
+  // LIFE: one big bar. v10: it only moves when you get hit (no drain, no ticking stripe).
   const bx = 5 + FX; hx.drawImage(ICONS.heart, bx, 5 + (Math.floor(t * 2) % 2)); hx.fillStyle = INK; hx.fillRect(bx + 9, 5, bw + 2, 10); hx.fillStyle = '#e8e2cc'; hx.fillRect(bx + 10, 6, bw, 8);
-  { const f = Math.round(bw * clamp(G.hp / 100, 0, 1)); hx.fillStyle = G.hp < 30 && Math.floor(t * 4) % 2 ? '#ff9d00' : HRED; hx.fillRect(bx + 10, 6, f, 8); hx.fillStyle = 'rgba(255,255,255,.45)'; hx.fillRect(bx + 10, 6, f, 1);
-    if (f > 2) { hx.fillStyle = '#ffffff'; hx.fillRect(bx + 10 + f - 1 - (Math.floor(t * 8) % 2), 7, 1, 6); } }
+  { const f = Math.round(bw * clamp(G.hp / 100, 0, 1)); hx.fillStyle = G.hp < 30 && Math.floor(t * 4) % 2 ? '#ff9d00' : HRED; hx.fillRect(bx + 10, 6, f, 8); hx.fillStyle = 'rgba(255,255,255,.45)'; hx.fillRect(bx + 10, 6, f, 1); }
   inkText('LIFE', bx + 11 + bw - 1, 6, G.hp < 30 ? '#ffffff' : 'rgba(9,11,10,.75)', 'right');
   bar(bx, 19, bw, G.stam, HGREEN, 'bolt'); // 19+6 = 25
   // clock (top-right)
@@ -1168,22 +1139,14 @@ function drawHUD(dt, t) {
   else { const sx = 19; hx.fillStyle = INK; hx.fillRect(sx, N - 7, 40, 3); hx.fillStyle = G.cdT > 0 ? '#b9c0c6' : HGREEN; hx.fillRect(sx + 1, N - 6, Math.round(38 * (1 - G.cdT / w.cd)), 1); }
   if (G.equip && G.equip.t > 0) { G.equip.t -= dt; const s = 'EQUIPPED: ' + G.equip.name, pw = s.length * 6 + 12, px = Math.round(N / 2 - pw / 2), py = Math.round(N / 2 + 22 + Math.max(0, G.equip.t - 1.4) * 30); // v7 auto-equip popup, under the hen
     panel(px, py, pw, 14); hx.fillStyle = HGOLD; hx.fillRect(px + 1, py + 1, pw - 2, 2); inkText(s, px + 6, py + 4, (G.equip.t * 6 | 0) % 2 && G.equip.t > 1.2 ? HRED : INK); }
-  // supplies (bottom-right): corn + $FEED, golden HEGGs
-  panel(N - 58, N - 20, 56, 18);
-  drawItemIcon(0, N - 56, N - 17); inkText('' + (G.inv.food + G.inv.mre), N - 43, N - 14);
-  if (artOk('hegg')) hx.drawImage(ART.hegg, N - 29, N - 18); else drawItemIcon(2, N - 30, N - 17);
-  inkText('' + G.inv.med, N - 15, N - 14);
   // kill count + safe marker
-  const perched = onCrate();
-  panel(2, 31, 22 + String(G.kills).length * 6 + (perched ? 44 : 0), 11);
+  panel(2, 31, 22 + String(G.kills).length * 6, 11);
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
-  if (perched) inkText('PERCHED', 22 + String(G.kills).length * 6, 32, '#0a8a3a');
   // messages
   let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, '#e8d6a8', 'center'); my += 9; m.t -= dt; }
   G.msg = G.msg.filter((m) => m.t > 0);
   // context hint
   const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, '#f0c050', 'center');
-  if (G.eatFail > 0) { G.eatFail -= dt; if (Math.floor(t * 8) % 2) text('FOOD LOST', N / 2, N / 2 - 40, 16, HRED, 'center'); }
   if (G.state === 'bag') drawMenu();
   if (G.state === 'dead') drawDead(t);
 }
@@ -1194,9 +1157,9 @@ function drawMenu() {
   panel(x, y, w, h, 0.97);
   inkText('BAG  -  PAUSED', N / 2, y + 3, '#bd2232', 'center');
   items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
-  const inv = 'CORN ' + G.inv.food + '  $FEED ' + G.inv.mre + '  EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells + '  ROUNDS ' + G.inv.belt;
+  const inv = 'EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells + '  ROUNDS ' + G.inv.belt;
   inkText(inv, N / 2, y + h - 10, '#855a36', 'center');
-  text(L('A') + ' OK   ' + L('B') + ' BACK   ' + L('move') + ' CHOOSE', N / 2, y + h + 4, 8, CREAM, 'center');
+  text((L('shoot') === 'ARROWS' ? 'ARROW' : 'SHOOT') + ' OK  ' + L('START') + ' BACK  ' + (L('move') === 'WASD' ? 'W/S' : L('move')) + ' CHOOSE', N / 2, y + h + 4, 8, CREAM, 'center');
 }
 function drawDead(t) {
   G.deadT += 1 / 60;
@@ -1209,7 +1172,7 @@ function drawDead(t) {
   inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, '#c06a16', 'center');
   inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#0a8a3a' : '#855a36', 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
-  if (G.deadT > 1.2 && (t % 1) < 0.65) text(L('A') + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
+  if (G.deadT > 1.2 && (t % 1) < 0.65) text(startTxt() + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
 }
 function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
@@ -1220,13 +1183,13 @@ function drawTitle(t) {
   text('LAST', tx, y, 16, HRED, 'center');
   text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
   inkText('CHIKN EDITION', tx, y + 38, '#0a8a3a', 'center');
-  inkText('LIFE DRAINS.', tx, y + 50, INK, 'center'); inkText('EAT ON A CRATE.', tx, y + 59, INK, 'center');
+  inkText('RUN. GUN. ONLY HITS HURT.', tx, y + 50, INK, 'center'); inkText('TRY NOT TO DIE.', tx, y + 59, INK, 'center');
   inkText('BILLIONS MUST BOK.', tx, y + 70, '#855a36', 'center');
   const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
-  panel(Math.round(N / 2 - 82), cy - 5, 164, 62);
-  const rows = [[L('move'), 'MOVE'], [L('A'), 'PECK / EAT ON CRATE'], [L('B'), 'FLAP / BACK'], [L('SELECT'), 'EAT (ALT)'], [L('START'), 'PAUSE & ITEMS'], ['AUTO', 'BEST WEAPON']];
-  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 30, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 24, cy + i * 9); });
-  if ((t % 1) < 0.65) text('PRESS ' + (m === 'keys' ? 'SPACE' : 'A') + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
+  panel(Math.round(N / 2 - 92), cy - 5, 184, 53);
+  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('START'), 'PAUSE'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
+  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 28, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 22, cy + i * 9); });
+  if ((t % 1) < 0.65) text(startTxt() + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
 
@@ -1372,10 +1335,6 @@ function renderWorld(dt, t) {
     hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx, py + pdy, PW, PH);
     if (!sil && pecking && player.atkT < 0.16 && player.atkT > 0.08) { const [fx, fy] = [[0, 1], [0, -1], [-1, 0], [1, 0]][player.dir], tx0 = sx + pdx + fx * (PW / 2 + 1), ty0 = py + pdy + Math.round(PH * 0.42) + fy * Math.round(PH * 0.42) + (fx ? -2 : 0); // tok! spark at the beak tip
       hx.fillStyle = OUT; hx.fillRect(tx0 - 2, ty0 - 1, 5, 3); hx.fillRect(tx0 - 1, ty0 - 2, 3, 5); hx.fillStyle = '#ffffff'; hx.fillRect(tx0 - 1, ty0, 3, 1); hx.fillRect(tx0, ty0 - 1, 1, 3); }
-    if (!sil && G.eat) { const p = clamp(G.eat.t / TUNE.eatTime, 0, 1), cx = sx, cy = py - 7; // eating progress ring above the head
-      for (let k = 0; k < 24; k++) { const a = -Math.PI / 2 + k / 24 * Math.PI * 2, X = Math.round(cx + Math.cos(a) * 7), Y = Math.round(cy + Math.sin(a) * 7); hx.fillStyle = OUT; hx.fillRect(X - 1, Y - 1, 3, 3); }
-      for (let k = 0; k < 24; k++) { const a = -Math.PI / 2 + k / 24 * Math.PI * 2, X = Math.round(cx + Math.cos(a) * 7), Y = Math.round(cy + Math.sin(a) * 7); hx.fillStyle = k / 24 < p ? '#ffc42f' : '#f8f5e9'; hx.fillRect(X, Y, 1, 1); }
-      hx.drawImage(ITEM_IMG, ITEMS.indexOf(G.eat.k) * 16, 0, 16, 16, cx - 8, cy - 9, 16, 16); }
     if (!sil && player.atkT > 0 && !player.peck) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, -8, py + PH - 16 + oy, 16, 16); hx.restore(); } else hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, sx - 8 + ox, py + PH - 16 + oy, 16, 16); } }
   };
   const showPlayer = STATE === 'game' && (G.state !== 'dead' || G.deadT < 0.5);
@@ -1430,11 +1389,7 @@ function renderWorld(dt, t) {
     hx.drawImage(SHADOW.i, ex - 5, ey - 2); drawEgg(ex, Math.round(ey - h), Math.floor(t * 12) % 4); }
   if (G && G.splats) for (const s of G.splats) { const [sx, sy] = w2s(s.x, s.y), k = 1 - s.t / s.T;
     if (s.kind === 'egg') { hx.fillStyle = OUT; hx.fillRect(sx - 7, sy - 3, 15, 6); hx.fillStyle = '#c8d860'; hx.fillRect(sx - 6, sy - 2, 13, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(sx - 2, sy - 2, 5, 3); hx.fillStyle = '#f8f5e9'; hx.fillRect(sx - 8 - Math.round(k * 4), sy - 4 - Math.round(k * 3), 3, 2); hx.fillRect(sx + 6 + Math.round(k * 4), sy - 5 - Math.round(k * 2), 3, 2); }
-    else { // dropped meal: the food flies off the crate, tumbles and splats
-      const fx = sx + Math.round(s.dir * k * 22), fy = sy - 20 - Math.round(Math.sin(k * Math.PI) * 14) + Math.round(k * 22);
-      if (k < 0.75) { hx.save(); hx.translate(fx, fy); hx.rotate(k * 9 * s.dir); hx.drawImage(ITEM_IMG, ITEMS.indexOf(s.k) * 16, 0, 16, 16, -8, -8, 16, 16); hx.restore(); }
-      else { hx.fillStyle = OUT; hx.fillRect(fx - 7, fy + 2, 15, 5); hx.fillStyle = '#ffc42f'; hx.fillRect(fx - 6, fy + 3, 13, 3); hx.fillStyle = '#e09a20'; hx.fillRect(fx - 3, fy + 3, 2, 2); hx.fillRect(fx + 2, fy + 4, 2, 1); }
-      } }
+  }
   // effects
   if (G && G.swing && G.swing.t > 0 && G.swing.w !== 'fists') { const sw = G.swing; sw.t -= dt; const prog = 1 - sw.t / 0.16, [px0, py0] = w2s(player.x, player.y - 10 - player.jz);
     for (let k = 0; k <= 8; k++) { const a = sw.a - 1.0 + Math.min(prog, 1) * 2.0 * (k / 8); const rr = sw.reach; hx.fillStyle = k > 6 ? '#fff4c0' : '#c8c0b0'; hx.fillRect(Math.round(px0 + Math.cos(a) * rr), Math.round(py0 + Math.sin(a) * rr * 0.85), 2, 2); } }
@@ -1489,5 +1444,5 @@ function frame(now) {
 genWorld(); renderMap();
 resize();
 requestAnimationFrame(frame);
-window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, crates, TUNE, onCrate, startEat, SPAWN, TS, lob, get N() { return N; }, setTime: (t) => { G.t = t; },
+window.__lt = { get G() { return G; }, player, get state() { return STATE; }, newGame: () => { STATE = 'game'; newGame(); }, zombies: zombiePool, items: itemPool, crates, TUNE, onCrate, SPAWN, TS, lob, get N() { return N; }, setTime: (t) => { G.t = t; },
   get muted() { return muted; }, get mode() { return mode(); }, get covered() { return lastCovered; }, get cam() { return [camX, camY]; }, spawnZombie, lvlAt: (x, y) => lvl[tileAt(x, y)], kindAt: (x, y) => kind[tileAt(x, y)], props };

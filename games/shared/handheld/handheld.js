@@ -164,6 +164,9 @@
     var diagonals = opts.diagonals !== false;
     var repeat = opts.repeat !== false;
     var labels = opts.labels || {};
+    var compass = opts.pad === 'compass'; // opt-in (Last Tower): a 4-way SHOOT pad (N/E/S/W) replaces A/B (no A/B at all)
+    var SHOOT = ['su', 'sd', 'sl', 'sr'];
+    var NAMES = compass ? BUTTONS.concat(SHOOT) : BUTTONS;
 
     // ------------------------------------------------------------ DOM
     var root = h('div', 'hh-root');
@@ -200,6 +203,14 @@
     function round(name, label) { var b = h('div', 'hh-btn hh-btn-' + name, [h('i', 'hh-cap')]); b.appendChild(h('span', 'hh-lbl', [label])); return b; }
     var btnB = round('b', labels.b || 'B'), btnA = round('a', labels.a || 'A');
     var ab = h('div', 'hh-ab', [h('div', 'hh-ab-well', [btnB, btnA])]);
+    var spad = null, sbtn = {};
+    if (compass) { // compass shoot pad: four round buttons at N/E/S/W, nothing in the middle
+      var sl = { su: 'N', sr: 'E', sd: 'S', sl: 'W' };
+      SHOOT.forEach(function (n) { var b = h('div', 'hh-btn hh-sbtn hh-sbtn-' + n, [h('i', 'hh-cap')]); b.appendChild(h('span', 'hh-slbl', [(labels[n] || sl[n])])); sbtn[n] = b; });
+      btnB = h('div', 'hh-btn hh-btn-b hh-sdummy'); btnA = h('div', 'hh-btn hh-btn-a hh-sdummy'); // not mounted: A/B do not exist in this layout
+      spad = h('div', 'hh-ab hh-spad', [h('div', 'hh-spad-ring'), h('i', 'hh-spad-dot'), sbtn.su, sbtn.sr, sbtn.sd, sbtn.sl, h('span', 'hh-lbl hh-spad-lbl', [labels.pad || 'SHOOT'])]);
+      ab = spad;
+    }
     function pill(name, label) { return h('div', 'hh-pillwrap hh-' + name, [h('div', 'hh-pill', [h('i', 'hh-pillcap')]), h('span', 'hh-lbl', [label])]); }
     var sel = pill('select', labels.select || 'SELECT'), start = pill('start', labels.start || 'START');
     var speaker = h('div', 'hh-speaker', [h('i')]);
@@ -418,7 +429,7 @@
         var rx = (held.up ? 1 : 0) - (held.down ? 1 : 0), ry = (held.right ? 1 : 0) - (held.left ? 1 : 0);
         cross.style.transform = (rx || ry) ? 'perspective(260px) rotateX(' + (rx * 11) + 'deg) rotateY(' + (ry * 11) + 'deg)' : '';
       } else {
-        var b = name === 'start' ? start : name === 'select' ? sel : name === 'a' ? btnA : btnB;
+        var b = sbtn[name] || (name === 'start' ? start : name === 'select' ? sel : name === 'a' ? btnA : btnB);
         b.classList.toggle('hh-down', on);
       }
       if (on) { led.classList.add('hh-led-blink'); clearTimeout(ledT); ledT = setTimeout(function () { led.classList.remove('hh-led-blink'); }, 90); }
@@ -433,7 +444,7 @@
       held[name] = false; visual(name, false); doAction(name, false);
       if (opts.onButton) try { opts.onButton(name, false); } catch (e) { /* game's problem */ }
     }
-    function releaseAll() { BUTTONS.forEach(release); pointers = {}; counts = {}; }
+    function releaseAll() { NAMES.forEach(release); pointers = {}; counts = {}; }
 
     // ------------------------------------------------------------ touch / mouse on the controls
     // Every pointer is hit-tested against all controls on each move, so fingers can
@@ -442,8 +453,9 @@
     function rectsNow() {
       return {
         dpad: dpad.getBoundingClientRect(),
-        btn: [['a', btnA.querySelector('.hh-cap')], ['b', btnB.querySelector('.hh-cap')], ['start', start.querySelector('.hh-pill')], ['select', sel.querySelector('.hh-pill')]]
+        btn: (compass ? [['start', start.querySelector('.hh-pill')], ['select', sel.querySelector('.hh-pill')]] : [['a', btnA.querySelector('.hh-cap')], ['b', btnB.querySelector('.hh-cap')], ['start', start.querySelector('.hh-pill')], ['select', sel.querySelector('.hh-pill')]])
           .map(function (p) { return [p[0], p[1].getBoundingClientRect()]; }),
+        spad: compass ? spad.getBoundingClientRect() : null,
       };
     }
     function hit(x, y) {
@@ -459,6 +471,19 @@
         if (a >= 225 - diag && a < 315 + diag) out.push('up');
         if (out.length > 2) out = out.slice(0, 2);
         return out;
+      }
+      if (R.spad) { // compass shoot pad: the angle from its centre picks N/E/S/W (diagonals = two at once); slide to re-aim
+        var sp = R.spad, scx = sp.left + sp.width / 2, scy = sp.top + sp.height / 2, sdx = x - scx, sdy = y - scy, sd = Math.sqrt(sdx * sdx + sdy * sdy);
+        if (sd <= sp.width / 2 * 1.25) {
+          if (sd < sp.width * 0.12) return []; // dead centre
+          var sa = (Math.atan2(sdy, sdx) * 180 / Math.PI + 360) % 360, sdg = 20;
+          if (sa >= 315 - sdg || sa < 45 + sdg) out.push('sr');
+          if (sa >= 45 - sdg && sa < 135 + sdg) out.push('sd');
+          if (sa >= 135 - sdg && sa < 225 + sdg) out.push('sl');
+          if (sa >= 225 - sdg && sa < 315 + sdg) out.push('su');
+          if (out.length > 2) out = out.slice(0, 2);
+          return out;
+        }
       }
       var best = null, bestD = 1e9, pad = 10 * scale;
       R.btn.forEach(function (p) {
@@ -502,7 +527,7 @@
 
     // Physical keys light up the matching on-screen button (display only).
     var reverse = {};
-    BUTTONS.forEach(function (n) { var v = keys[n]; if (typeof v === 'string' && v !== 'tap') reverse[v.length === 1 ? v.toLowerCase() : v] = n; });
+    NAMES.forEach(function (n) { var v = keys[n]; if (typeof v === 'string' && v !== 'tap') reverse[v.length === 1 ? v.toLowerCase() : v] = n; });
     function mirror(e, on) {
       if (!e.isTrusted || e.handheld || !shown) return;
       var n = reverse[e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key];
@@ -623,8 +648,9 @@
   var me = document.currentScript;
   if (me && me.hasAttribute('data-screen')) {
     var go = function () {
-      var keysAttr = me.getAttribute('data-keys'), parsed = null;
+      var keysAttr = me.getAttribute('data-keys'), parsed = null, labelsAttr = me.getAttribute('data-labels'), plabels = null;
       if (keysAttr) try { parsed = JSON.parse(keysAttr); } catch (e) { console.warn('handheld: bad data-keys JSON'); }
+      if (labelsAttr) try { plabels = JSON.parse(labelsAttr); } catch (e) { console.warn('handheld: bad data-labels JSON'); }
       try {
         mount({
           element: me.getAttribute('data-screen'),
@@ -634,6 +660,8 @@
           pointer: me.getAttribute('data-pointer') === 'true',
           layout: me.getAttribute('data-layout') || undefined,
           theme: me.getAttribute('data-theme') || undefined,
+          pad: me.getAttribute('data-pad') || undefined,      // opt-in: 'compass' (4-way shoot pad instead of A/B)
+          labels: plabels || undefined,
         });
       } catch (e) { console.warn('handheld: ' + e.message); }
     };

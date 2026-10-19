@@ -457,3 +457,19 @@ html.hh-active, html.hh-active body { overflow: hidden; overscroll-behavior: non
   .hh-cursor::before { animation: none; }
   .hh-anim-off .hh-view, .hh-anim-on .hh-view, .hh-anim-boot .hh-bootmark, .hh-anim-flash .hh-pwrfx { animation: none; }
 }
+
+/* ---- opt-in compass SHOOT pad (data-pad="compass", Last Tower only): N/E/S/W buttons replace A/B ---- */
+.hh-spad { width: 150px; height: 150px; margin-right: 0; }
+.hh-land .hh-spad { width: 156px; height: 156px; }
+.hh-spad-ring { position: absolute; inset: 8px; border-radius: 50%; background: radial-gradient(circle, rgba(0,0,0,.10) 0 58%, rgba(0,0,0,.16) 59% 100%); box-shadow: inset 0 2px 4px rgba(0,0,0,.25); }
+.hh-sbtn { position: absolute; width: 48px; height: 48px; margin: 0; }
+.hh-sbtn .hh-cap { --c1: var(--a1); --c2: var(--a2); }
+.hh-sbtn-su { left: 50%; top: 0; margin-left: -24px; }
+.hh-sbtn-sd { left: 50%; bottom: 0; margin-left: -24px; }
+.hh-sbtn-sl { top: 50%; left: 0; margin-top: -24px; }
+.hh-sbtn-sr { top: 50%; right: 0; margin-top: -24px; }
+.hh-spad-dot { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: rgba(0,0,0,.22); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+.hh-slbl { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 900 13px/1 var(--hh-font); letter-spacing: .04em; color: var(--ink); opacity: .82; pointer-events: none; }
+.hh-down .hh-slbl { transform: translateY(3px); }
+.hh-spad-lbl { top: auto; bottom: -16px; margin-top: 0; }
+.hh-sdummy { display: none; }
