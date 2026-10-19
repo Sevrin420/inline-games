@@ -1,4 +1,4 @@
-/* LAST TOWER v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -12,9 +12,11 @@ function rng(seed) { let s = (seed >>> 0) || 1; return () => { s ^= s << 13; s >
 function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; return [c, x]; }
 // v9 "make the colours pop": one-off saturation + contrast pass over every baked canvas (map, props, items, sprite sheet). ?pop=0 = the v8 look.
 const POP = !/[?&]pop=0\b/.test(location.search);
+const HENS_LOCK = [[8, 209, 74], [248, 245, 233], [9, 11, 10], [255, 196, 47], [255, 51, 71], [142, 216, 255], [255, 255, 255]]; // green, cream, ink, gold, red, sky, white
 function popCanvas(c, sat = 1.38, con = 1.16) {
   if (!POP || !c || !c.width) return c; const x = c.getContext('2d'), im = x.getImageData(0, 0, c.width, c.height), d = im.data;
   for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const r = d[i], g = d[i + 1], b = d[i + 2], l = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (HENS_LOCK.some((q) => Math.abs(q[0] - r) + Math.abs(q[1] - g) + Math.abs(q[2] - b) < 10)) continue; // v11: hens.farm palette colours stay exact
     for (let k = 0; k < 3; k++) { let v = l + (d[i + k] - l) * sat; if (v < 170) v = 170 - (170 - v) * con; d[i + k] = v < 0 ? 0 : v > 255 ? 255 : v; } } // deepen mids/darks, keep the cream highlights
   x.putImageData(im, 0, 0); return c;
 }
@@ -50,30 +52,30 @@ addEventListener('resize', () => { resize(); setTimeout(resize, 120); });
 // ink outlines (#090b0a), cream, bright grass green #08d14a, gold #ffc42f, red #ff3347, sky #8ed8ff; ramps kept short and flat.
 const OUT = '#090b0a';
 const RAMP = {
-  asphalt: ['#e2c08a', '#d0a96e', '#b48c56', '#86643c'],   // dirt farm track
-  walk: ['#ffe68a', '#f6cf55', '#d9ab38', '#9c7424'],      // straw verge
+  asphalt: ['#efe3c4', '#e2d2a8', '#c9b482', '#8f7c52'],   // v11: cream-tan farm track (sits between cream and gold)
+  walk: ['#ffe08a', '#ffc42f', '#d89a14', '#8c6214'],      // v11: straw verge = hens.farm gold
   plaza: ['#fffdf5', '#f8f5e9', '#e4dcc2', '#a99c76'],     // hens.farm cream     // cream farmyard
   grass: ['#3fe070', '#08d14a', '#06a83b', '#036b2b'],      // hens.farm green
   dirt: ['#c39260', '#a77748', '#855a36', '#5a3c26'],      // tilled field
-  brick: ['#ff6470', '#ef3646', '#bd2232', '#7c1422'],     // barn red
-  conc: ['#ffffff', '#efebde', '#cfc8b2', '#8f8a78'],      // whitewash
+  brick: ['#ff6470', '#ff3347', '#c8202f', '#80141f'],     // barn red = hens.farm comb red
+  conc: ['#ffffff', '#f8f5e9', '#e4dcc2', '#a99c76'],      // whitewash = hens.farm cream
   tower: ['#f0c27e', '#d69e5a', '#a87840', '#6e4c28'],     // coop planks
-  roof: ['#7a8894', '#5f6c78', '#47525d', '#2c343c'],      // slate barn roof
+  roof: ['#4a504c', '#2e3330', '#1c201e', '#090b0a'],      // v11: ink barn roofs
   rust: ['#ffb24a', '#f0901e', '#c06a16', '#7e420e'],
   metal: ['#e4e8ea', '#bfc6cb', '#939ba2', '#5c636a'],
   hazard: ['#ffe066', '#ffc42f', '#d89a14', '#8c6214'],
   car1: ['#56e886', '#14c94e', '#0a9238', '#055a22'],      // tractor green
   car2: ['#ff6a78', '#ff3347', '#c8202f', '#80141f'],      // tractor red
   car3: ['#ffe066', '#ffc42f', '#d49a1c', '#8c6214'],      // tractor yellow
-  glass: ['#e2f6ff', '#8ed8ff', '#58aedc', '#2e6c96'],
-  lit: ['#fff4b0', '#ffd23f', '#e09a20', '#8a5a14'],
+  glass: ['#e2f6ff', '#8ed8ff', '#58aedc', '#2e6c96'],    // hens.farm sky
+  lit: ['#fff4b0', '#ffc42f', '#d89a14', '#8c6214'],
   wood: ['#d09a5a', '#a87440', '#7e5430', '#523620'],
   fire: ['#fff6c8', '#ffc42f', '#ff7a1a', '#d0301c'],
   water: ['#b8e8ff', '#8ed8ff', '#5ab0e0', '#2f6f9a'],
   blood: ['#9ac83a', '#6e9a26', '#4c701a', '#2e4610'],      // zombie goo (green, cartoon-friendly)
-  hay: ['#fff0a0', '#ffd659', '#e2ae2e', '#a07418'],
+  hay: ['#fff0a0', '#ffc42f', '#d89a14', '#8c6214'],
   worm: ['#ffc4ca', '#ff9aa4', '#e0606a', '#a03a44'],
-  leaf: ['#5ce88a', '#22c95a', '#0d9a42', '#056028'],
+  leaf: ['#3fe070', '#08d14a', '#06a83b', '#036b2b'],      // v11: trees = hens.farm green
   // actors: hens
   feather: ['#ffffff', '#ffffff', '#e4e7ea', '#b9c0c6'],
   fshade: ['#d9dde1', '#d9dde1', '#c2c8ce', '#a0a8b0'],
@@ -267,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=10';
+HENS_SHEET.src = 'hens-sprites.png?v=11';
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water', 'mg', 'belt', 'ammobox'];
 const ITEM_ART = {
   food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
@@ -883,10 +885,15 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
   player.moving = m > 0.1;
   if (player.moving) { player.fx = mx / m; player.fy = my / m; player.anim += dt * 8 * m; player.dir = Math.abs(mx) > Math.abs(my) * 1.05 ? (mx < 0 ? 2 : 3) : (my > 0 ? 0 : 1); }
   // v10: SHOOT pad held = aim that way (twin-stick: facing follows the aim, not the walk) and fire on cooldown (guns auto, melee repeats)
-  { const ax = held.SR - held.SL, ay = held.SD - held.SU;
-    if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.25;
-      player.dir = Math.abs(ax) > Math.abs(ay) * 1.05 ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1);
-      if (G.cdT <= 0) attack(); } }
+  // v11: two buttons at once (N+E, E+S, S+W, W+N; or a thumb between them; or two arrow keys) = that diagonal.
+  //      An 80 ms (wall-clock) chord window on the first press lets the second finger land before the first shot goes out.
+  { const ax = held.SR - held.SL, ay = held.SD - held.SU, n = held.SU + held.SD + held.SL + held.SR;
+    player.aim = Math.max(0, (player.aim || 0) - dt);
+    if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.2; player.diag = !!(ax && ay);
+      player.shootT = (player.shootT || 0) + dt;
+      player.dir = ax && (!ay || Math.abs(ax) >= Math.abs(ay)) ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1); // diagonals use the side profile so the gun points the right way
+      if (G.cdT <= 0 && (performance.now() - shootT0 >= 80 || (ax && ay))) attack(); }
+    else if (!n) player.shootT = 0; }
   const spd = 70 * (player.air ? 1.2 : 1);
   const kb = player.kb;
   const hit = moveBody(player, (mx * spd + kb[0]) * dt, (my * spd + kb[1]) * dt, 4);
@@ -904,6 +911,7 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
 // ================================================================ input (keyboard = shell buttons = touch)
 const held = { up: 0, down: 0, left: 0, right: 0, SU: 0, SD: 0, SL: 0, SR: 0 }; // v10: the four SHOOT directions are held (aim + auto-fire)
 const SHOOTS = ['SU', 'SD', 'SL', 'SR'];
+let shootT0 = 0; // v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
 const isShoot = (b) => b === 'SU' || b === 'SD' || b === 'SL' || b === 'SR';
 const stick = { x: 0, y: 0, on: false };
 const queue = [];
@@ -919,6 +927,7 @@ addEventListener('keydown', (e) => {
   const a = KEYMAP[k]; if (!a) return;
   e.preventDefault(); audioInit();
   if (e.handheld) lastInput = 'shell'; else if (e.isTrusted) lastInput = 'keys';
+  if (isShoot(a) && !SHOOTS.some((d) => held[d])) shootT0 = performance.now();
   if (a in held) { if (!held[a]) queue.push(a); held[a] = 1; } else if (!e.repeat) queue.push(a);
 });
 addEventListener('keyup', (e) => { const a = KEYMAP[keyName(e)]; if (a in held) held[a] = 0; });
@@ -940,7 +949,7 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
   // v10: compass SHOOT pad. Angle from the pad centre picks N/E/S/W (diagonals = two); slide to re-aim.
   const pad = $('tShoot'), ptr = {};
   const btn = { SU: $('tSU'), SD: $('tSD'), SL: $('tSL'), SR: $('tSR') };
-  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1;
+  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1; if (!SHOOTS.some((d) => held[d]) && SHOOTS.some((d) => on[d])) shootT0 = performance.now();
     for (const d of SHOOTS) { if (on[d] && !held[d]) queue.push(d); held[d] = on[d] ? 1 : 0; btn[d].classList.toggle('on', !!on[d]); } };
   const dirsAt = (e) => { const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
     if (Math.hypot(dx, dy) < r.width * 0.17) return null; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, g = 20, o = [];
@@ -1082,13 +1091,24 @@ const ICONS = (() => { // tiny 7x6 pixel icons. chars: # main, o second, k ink, 
     skull: ['..oo...', '.####..', '.#k##yy', '.####y.', '..##...', '.o..o..'],          // zombie chikn head
   };
   const cols = { heart: ['#ff3347'], food: ['#ffc42f', '#d89a14'], bolt: ['#22d457'], sun: ['#ffc42f'], moon: ['#8ed8ff'], skull: ['#c2d99a', '#94384a'] }, out = {};
-  for (const k in defs) { const [c, x] = mk(7, 6); defs[k].forEach((row, y) => [...row].forEach((ch, X) => { const col = ch === '#' ? cols[k][0] : ch === 'o' ? (cols[k][1] || '#6a4a2a') : ch === 'k' ? '#090b0a' : ch === 'y' ? '#ffc42f' : null; if (col) px(x, col, X, y); })); out[k] = c; }
+  for (const k in defs) { const [c, x] = mk(7, 6); defs[k].forEach((row, y) => [...row].forEach((ch, X) => { const col = ch === '#' ? cols[k][0] : ch === 'o' ? (cols[k][1] || INK) : ch === 'k' ? '#090b0a' : ch === 'y' ? '#ffc42f' : null; if (col) px(x, col, X, y); })); out[k] = c; }
   return out;
 })();
-const INK = '#090b0a', CREAM = '#f8f5e9', HGREEN = '#08d14a', HRED = '#ff3347', HGOLD = '#ffc42f';
+const INK = '#090b0a', CREAM = '#f8f5e9', HGREEN = '#08d14a', HRED = '#ff3347', HGOLD = "#ffc42f";
 // real hens.farm art (permission from the community), pixelated to the game grid: title hen, plucked hen, golden HEGG
 const ART = {}; for (const k of ['hen-title', 'hen-plucked', 'hegg', 'hen-faces']) { const im = new Image(); im.src = k + '.png'; ART[k] = im; }
 const artOk = (k) => ART[k].complete && ART[k].naturalWidth > 0;
+// v11 hens.farm skin: the real hens.farm artwork is shown as crisp, full-resolution <img>/<div> layers over the canvas
+// (HUD portrait, title hero, death and pause hens), placed in canvas coordinates. ?skin=classic = the v10 pixel versions.
+const SKIN = (() => { const L = document.getElementById('skinLayer'); if (!L || /[?&]skin=classic/.test(location.search)) { if (L) L.remove(); return null; }
+  document.documentElement.classList.add('lt-skin'); const o = {}; for (const el of L.children) o[el.dataset.k] = { el, on: false, key: '' }; return o; })();
+const skinOn = (k) => !!(SKIN && SKIN[k] && SKIN[k].ok !== false && (SKIN[k].el.tagName !== 'IMG' || (SKIN[k].el.complete && SKIN[k].el.naturalWidth > 0)));
+let _skinUsed = {};
+function skinShow(k, x, y, w, h, extra) { if (!skinOn(k)) return false; const s = SKIN[k]; _skinUsed[k] = 1;
+  const key = [x, y, w, h, extra, N].join(','); if (key !== s.key) { s.key = key; const st = s.el.style; st.left = (x / N * 100) + '%'; st.top = (y / N * 100) + '%'; st.width = (w / N * 100) + '%'; st.height = (h / N * 100) + '%'; if (extra !== undefined) st.backgroundPosition = extra; }
+  if (!s.on) { s.on = true; s.el.style.display = 'block'; } return true; }
+function skinBegin() { _skinUsed = {}; }
+function skinEnd() { if (!SKIN) return; for (const k in SKIN) if (!_skinUsed[k] && SKIN[k].on) { SKIN[k].on = false; SKIN[k].el.style.display = 'none'; } }
 function bar(x, y, w, v, col, icon) {
   hx.drawImage(ICONS[icon], x, y);
   hx.fillStyle = INK; hx.fillRect(x + 9, y, w + 2, 6);
@@ -1105,21 +1125,23 @@ function hintText() {
   const mv = L('move'), SH = L('shoot'), S = L('START'), bag = S === 'BAG' ? 'BAG' : S;
   if (WEAPONS[G.weapon].kind === 'gun' && (G.shots || 0) < 4) return 'HOLD ' + SH + ' TO FIRE ' + WEAPONS[G.weapon].name; // v9
   if (G.st < 7) return mv + ' RUN   ' + SH + ' AIM + SHOOT';
-  if (G.st < 14) return 'ONLY HITS HURT. NO HEALING. KEEP MOVING';
+  if (G.st < 14) return (L('shoot') === 'ARROWS' ? 'TWO ARROWS' : 'TWO SHOOT BUTTONS') + ' = DIAGONAL (NE/SE/SW/NW)';
+  if (G.st < 17) return 'ONLY HITS HURT. NO HEALING. KEEP MOVING';
   if (G.st < 20) return bag + ' PAUSE.  BEST WEAPON AUTO-EQUIPS';
   if (G.hp < 35) return 'LOW LIFE. DON\'T GET HIT';
   return '';
 }
 function nearestCrate() { let best = null; for (const c of crates) { const x = (c.x + 1) * TS, y = c.y * TS + 10, d = Math.hypot(x - player.x, y - player.y); if (!best || d < best.d) best = { x, y, d }; } return best; }
-function drawHUD(dt, t) {
+function drawHUD(dt, t) { skinBegin(); drawHUD0(dt, t); skinEnd(); }
+function drawHUD0(dt, t) {
     if (STATE === 'title') { drawTitle(t); return; }
   // low-HP vignette / hurt flash
   if (G.hp < 30 || player.hurtT > 0) { const a = player.hurtT > 0 ? 0.35 : (0.15 + Math.sin(t * 5) * 0.08); hx.fillStyle = `rgba(160,20,20,${a})`; hx.fillRect(0, 0, N, 3); hx.fillRect(0, N - 3, N, 3); hx.fillRect(0, 0, 3, N); hx.fillRect(N - 3, 0, 3, N); }
   if (G.flash > 0) { hx.fillStyle = `rgba(255,230,180,${G.flash * 2})`; hx.fillRect(0, 0, N, N); G.flash -= dt; }
   // stat bars (top-left)
   const bw = Math.round(N * 0.2);
-  const FX = artOk('hen-faces') ? 31 : 0; panel(2, 2, bw + 16 + FX, 26);
-  if (FX) { const fi = player.hurtT > 0 ? 3 : G.hp < 35 ? 2 : G.hp > 65 ? 0 : 1; hx.drawImage(ART['hen-faces'], fi * 30, 0, 30, 24, 3, 3, 30, 24); } // real hens.farm hen, mood follows LIFE
+  const FX = artOk('hen-faces') || skinOn('face') ? 31 : 0; panel(2, 2, bw + 16 + FX, 26);
+  if (FX) { const fi = player.hurtT > 0 ? 3 : G.hp < 35 ? 2 : G.hp > 65 ? 0 : 1; if (!(G.state !== 'dead' && skinShow('face', 3, 3, 30, 24, (fi * 100 / 3) + '% 0'))) hx.drawImage(ART['hen-faces'], fi * 30, 0, 30, 24, 3, 3, 30, 24); } // real hens.farm hen, mood follows LIFE
   // LIFE: one big bar. v10: it only moves when you get hit (no drain, no ticking stripe).
   const bx = 5 + FX; hx.drawImage(ICONS.heart, bx, 5 + (Math.floor(t * 2) % 2)); hx.fillStyle = INK; hx.fillRect(bx + 9, 5, bw + 2, 10); hx.fillStyle = '#e8e2cc'; hx.fillRect(bx + 10, 6, bw, 8);
   { const f = Math.round(bw * clamp(G.hp / 100, 0, 1)); hx.fillStyle = G.hp < 30 && Math.floor(t * 4) % 2 ? '#ff9d00' : HRED; hx.fillRect(bx + 10, 6, f, 8); hx.fillStyle = 'rgba(255,255,255,.45)'; hx.fillRect(bx + 10, 6, f, 1); }
@@ -1129,13 +1151,13 @@ function drawHUD(dt, t) {
   const night = isNight(); const ct = clockStr();
   panel(N - 56, 2, 54, 18);
   hx.drawImage(ICONS[night ? 'moon' : 'sun'], N - 52, 8);
-  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(fmtTime(G.st), N - 5, 10, night ? '#2e6c96' : '#c06a16', 'right'); // time survived
+  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(fmtTime(G.st), N - 5, 10, night ? '#2e6c96' : HRED, 'right'); // time survived
   // weapon + ammo (bottom-left)
   const w = WEAPONS[G.weapon], ww = Math.max(74, 22 + w.name.length * 6);
   panel(2, N - 22, ww, 20);
   if (w.icon >= 0) drawItemIcon(w.icon, 5, N - 19); else { hx.fillStyle = INK; hx.fillRect(7, N - 14, 7, 5); hx.fillStyle = HGOLD; hx.fillRect(8, N - 13, 5, 3); hx.fillRect(13, N - 12, 2, 1); } // beak
   inkText(w.name, 19, N - 20);
-  if (w.kind === 'gun') inkText(AMMO_NAME[w.ammo] + ' ' + G.inv[w.ammo], 19, N - 11, G.inv[w.ammo] ? '#c06a16' : HRED);
+  if (w.kind === 'gun') inkText(AMMO_NAME[w.ammo] + ' ' + G.inv[w.ammo], 19, N - 11, G.inv[w.ammo] ? INK : HRED);
   else { const sx = 19; hx.fillStyle = INK; hx.fillRect(sx, N - 7, 40, 3); hx.fillStyle = G.cdT > 0 ? '#b9c0c6' : HGREEN; hx.fillRect(sx + 1, N - 6, Math.round(38 * (1 - G.cdT / w.cd)), 1); }
   if (G.equip && G.equip.t > 0) { G.equip.t -= dt; const s = 'EQUIPPED: ' + G.equip.name, pw = s.length * 6 + 12, px = Math.round(N / 2 - pw / 2), py = Math.round(N / 2 + 22 + Math.max(0, G.equip.t - 1.4) * 30); // v7 auto-equip popup, under the hen
     panel(px, py, pw, 14); hx.fillStyle = HGOLD; hx.fillRect(px + 1, py + 1, pw - 2, 2); inkText(s, px + 6, py + 4, (G.equip.t * 6 | 0) % 2 && G.equip.t > 1.2 ? HRED : INK); }
@@ -1143,10 +1165,10 @@ function drawHUD(dt, t) {
   panel(2, 31, 22 + String(G.kills).length * 6, 11);
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
   // messages
-  let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, '#e8d6a8', 'center'); my += 9; m.t -= dt; }
+  let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
   G.msg = G.msg.filter((m) => m.t > 0);
   // context hint
-  const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, '#f0c050', 'center');
+  const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, HGOLD, 'center');
   if (G.state === 'bag') drawMenu();
   if (G.state === 'dead') drawDead(t);
 }
@@ -1155,10 +1177,11 @@ function drawMenu() {
   const items = MENUS[G.state](), w = Math.min(N - 16, 200), h = 26 + items.length * 11, x = Math.round((N - w) / 2), y = Math.round((N - h) / 2) - 6;
   hx.fillStyle = 'rgba(9,11,10,.4)'; hx.fillRect(0, 0, N, N);
   panel(x, y, w, h, 0.97);
-  inkText('BAG  -  PAUSED', N / 2, y + 3, '#bd2232', 'center');
+  skinShow('pause', x + w - 46, y - 38, 42, 42); // v11: the hens.farm detective hen peeks over the pause card
+  inkText('BAG  -  PAUSED', N / 2, y + 3, HRED, 'center');
   items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
   const inv = 'EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells + '  ROUNDS ' + G.inv.belt;
-  inkText(inv, N / 2, y + h - 10, '#855a36', 'center');
+  inkText(inv, N / 2, y + h - 10, INK, 'center');
   text((L('shoot') === 'ARROWS' ? 'ARROW' : 'SHOOT') + ' OK  ' + L('START') + ' BACK  ' + (L('move') === 'WASD' ? 'W/S' : L('move')) + ' CHOOSE', N / 2, y + h + 4, 8, CREAM, 'center');
 }
 function drawDead(t) {
@@ -1166,11 +1189,11 @@ function drawDead(t) {
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.55, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
   const y = N / 2 - 46, pw = Math.min(N - 12, 196), px0 = Math.round(N / 2 - pw / 2);
   panel(px0, y - 6, pw, 94);
-  if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34);
+  if (!skinShow('dead', px0 + 2, y + 30, 50, 53)) { if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34); }
   text('PLUCKED', N / 2, y, 16, HRED, 'center');
   inkText('TAKEN BY ' + G.deathCause, N / 2, y + 22, INK, 'center');
-  inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, '#c06a16', 'center');
-  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#0a8a3a' : '#855a36', 'center');
+  inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, HRED, 'center');
+  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#036b2b' : INK, 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
   if (G.deadT > 1.2 && (t % 1) < 0.65) text(startTxt() + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
 }
@@ -1178,17 +1201,18 @@ function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
   const y = Math.round(N * 0.08), cw = Math.min(N - 16, 210), cx0 = Math.round(N / 2 - cw / 2);
   panel(cx0, y - 4, cw, 86);
-  if (artOk('hen-title')) { const bobY = Math.round(Math.sin(t * 3) * 1); hx.drawImage(ART['hen-title'], cx0 + cw - 52, y + 10 + bobY); }
+  { const bobY = Math.round(Math.sin(t * 3) * 1); if (!skinShow('title', cx0 + cw - 60, y + 2 + bobY, 56, 60)) { if (artOk('hen-title')) hx.drawImage(ART['hen-title'], cx0 + cw - 52, y + 10 + bobY); } }
+  skinShow('egg', cx0 + 6, y + 62, 12, 15);
   const tx = cx0 + Math.round((cw - 56) / 2);
   text('LAST', tx, y, 16, HRED, 'center');
   text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
-  inkText('CHIKN EDITION', tx, y + 38, '#0a8a3a', 'center');
+  inkText('CHIKN EDITION', tx, y + 38, '#036b2b', 'center');
   inkText('RUN. GUN. ONLY HITS HURT.', tx, y + 50, INK, 'center'); inkText('TRY NOT TO DIE.', tx, y + 59, INK, 'center');
-  inkText('BILLIONS MUST BOK.', tx, y + 70, '#855a36', 'center');
+  inkText('BILLIONS MUST BOK.', tx, y + 70, INK, 'center');
   const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
-  panel(Math.round(N / 2 - 92), cy - 5, 184, 53);
-  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('START'), 'PAUSE'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
-  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 28, cy + i * 9, '#bd2232', 'right'); inkText(v, N / 2 - 22, cy + i * 9); });
+  panel(Math.round(N / 2 - 92), cy - 5, 184, 62);
+  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('shoot') === 'ARROWS' ? '2 ARROWS' : '2 BUTTONS', 'DIAGONAL SHOT'], [L('START'), 'PAUSE'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
+  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 28, cy + i * 9, HRED, 'right'); inkText(v, N / 2 - 22, cy + i * 9); });
   if ((t % 1) < 0.65) text(startTxt() + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
@@ -1236,17 +1260,17 @@ const w2s = (x, y) => [Math.round(x - camX), Math.round(y - camY)];
 function applyLight(t) {
   const dl = daylight(); if (dl >= 1 && !(G && G.lightning > 0)) return;
   const dusk = dl > 0 && dl < 1 ? 1 - Math.abs(dl * 2 - 1) : 0;
-  let r = lerp(58, 255, dl), g = lerp(62, 255, dl), b = lerp(112, 255, dl);
-  r = lerp(r, 255, dusk * 0.4); g = lerp(g, 160, dusk * 0.45); b = lerp(b, 130, dusk * 0.5);
+  let r = lerp(52, 255, dl), g = lerp(84, 255, dl), b = lerp(112, 255, dl); // v11: hens.farm night (deep sky-teal), golden dusk
+  r = lerp(r, 255, dusk * 0.4); g = lerp(g, 196, dusk * 0.45); b = lerp(b, 110, dusk * 0.5);
   if (G && G.lightning > 0) { r = g = b = 255; G.lightning = Math.max(0, G.lightning - 0.08); }
   const L = light.x; L.globalCompositeOperation = 'source-over'; L.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`; L.fillRect(0, 0, N, N);
   L.globalCompositeOperation = 'lighter';
   const k = 1 - dl, add = (wx, wy, rad, col) => { const [sx, sy] = w2s(wx, wy); if (sx < -rad || sy < -rad || sx > N + rad || sy > N + rad) return; L.globalAlpha = k; L.drawImage(disc(rad, col), sx - rad, sy - rad); };
-  if (G && G.state !== 'dead') add(player.x, player.y - 6 - player.jz, 46, '#d8a070');
-  if (G && G.muzzle && G.muzzle.t > 0) add(player.x, player.y - 10 - player.jz, G.muzzle.big ? 60 : 40, '#ffd080'); // v9 muzzle light at night
+  if (G && G.state !== 'dead') add(player.x, player.y - 6 - player.jz, 46, '#e0b860');
+  if (G && G.muzzle && G.muzzle.t > 0) add(player.x, player.y - 10 - player.jz, G.muzzle.big ? 60 : 40, '#ffc42f'); // v9 muzzle light at night
   const fl = Math.sin(t * 12) > -0.6;
   for (const p of props) {
-    if (p.type === 'lamp' && p.lit && (!p.flick || ((t * 3 + p.seed) % 7) > 0.5)) add(p.tx * TS + 12, p.ty * TS + 10, 36, '#c8b080');
+    if (p.type === 'lamp' && p.lit && (!p.flick || ((t * 3 + p.seed) % 7) > 0.5)) add(p.tx * TS + 12, p.ty * TS + 10, 36, '#d8b050');
     else if (p.type === 'barrel') add(p.tx * TS + 8, p.ty * TS + 4, fl ? 34 : 32, '#e08840');
     else if (p.type === 'campfire') add(p.tx * TS + 8, p.ty * TS + 8, fl ? 52 : 50, '#f09048');
     
@@ -1391,6 +1415,9 @@ function renderWorld(dt, t) {
     if (s.kind === 'egg') { hx.fillStyle = OUT; hx.fillRect(sx - 7, sy - 3, 15, 6); hx.fillStyle = '#c8d860'; hx.fillRect(sx - 6, sy - 2, 13, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(sx - 2, sy - 2, 5, 3); hx.fillStyle = '#f8f5e9'; hx.fillRect(sx - 8 - Math.round(k * 4), sy - 4 - Math.round(k * 3), 3, 2); hx.fillRect(sx + 6 + Math.round(k * 4), sy - 5 - Math.round(k * 2), 3, 2); }
   }
   // effects
+  if (G && STATE === 'game' && G.state === 'play' && player.aim > 0) { // v11 aim marker: two ink/gold pips + a tip along the shot line (shows diagonals clearly)
+    const [ax0, ay0] = w2s(player.x, player.y - 10 - player.jz), [fx, fy] = dirVec(), col = player.diag ? '#ffc42f' : '#ffffff';
+    for (const [r, s] of [[15, 3], [20, 3], [25, 5]]) { const X = Math.round(ax0 + fx * r), Y = Math.round(ay0 + fy * r * 0.85); hx.fillStyle = OUT; hx.fillRect(X - (s >> 1) - 1, Y - (s >> 1) - 1, s + 2, s + 2); hx.fillStyle = r === 25 ? HRED : col; hx.fillRect(X - (s >> 1), Y - (s >> 1), s, s); } }
   if (G && G.swing && G.swing.t > 0 && G.swing.w !== 'fists') { const sw = G.swing; sw.t -= dt; const prog = 1 - sw.t / 0.16, [px0, py0] = w2s(player.x, player.y - 10 - player.jz);
     for (let k = 0; k <= 8; k++) { const a = sw.a - 1.0 + Math.min(prog, 1) * 2.0 * (k / 8); const rr = sw.reach; hx.fillStyle = k > 6 ? '#fff4c0' : '#c8c0b0'; hx.fillRect(Math.round(px0 + Math.cos(a) * rr), Math.round(py0 + Math.sin(a) * rr * 0.85), 2, 2); } }
   if (G && G.tracers) { for (const tr of G.tracers) { const a = w2s(tr.x0, tr.y0), b = w2s(tr.x1, tr.y1);

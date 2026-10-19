@@ -107,3 +107,56 @@ How these terms appear in the game:
 - **Enemy attack frames** (sheet now 228x808): every enemy has 6 frames per direction = 4 walk + STRIKE (lunging peck) + WIND-UP (crouch / head reared back). Wind-up also blinks red and shakes; strikes draw a white/red slash crescent; roostr stomps draw an ink + white/gold shockwave ring.
 - **Juice**: white hit flash on every damage tick, muzzle flashes (big for the shotgun), ejected casings/kernel husks, feather + goo gibs on kills, a gold ring under the hen when the swarm covers her.
 - **New pickups**: machine gun, belt of rounds, green ammo crate.
+
+## v11: hens.farm skin (shell + game) and 2-button diagonals
+- **One palette for shell and game**:
+
+  | Use | Hex |
+  | --- | --- |
+  | hens green: shell body, grass, trees | `#08d14a` |
+  | ink: outlines, D-pad, bezel, roofs, UI text | `#090b0a` |
+  | cream: farmyard ground, cards, pills, mute, whitewash | `#f8f5e9` |
+  | egg gold: straw, hay, lamps, pressed buttons, hints | `#ffc42f` |
+  | comb red: shoot pad caps, barns, HUD accents | `#ff3347` |
+  | sky: backdrop, glass | `#8ed8ff` |
+
+  - The v9 colour-pop pass now locks these exact colours (`HENS_LOCK` in a.js).
+  - Night lighting is a deep sky-teal multiply, dusk is golden, and lamp/muzzle light is gold.
+- **Shell skin**: `games/last-tower/skin/hens-skin.css` and `hens-skin.js`. They are linked only from Last Tower's index.html; the shared handheld files are untouched.
+  - The skin restyles the matcha theme: flat green body, a 3px ink outline and an 8/9px hard ink offset shadow.
+  - Red shoot caps with ink rings turn gold when pressed. The D-pad is an ink cross, the pills and mute are cream cards, and the backdrop is sky with green hills.
+  - Real images:
+    - a lowercase "hens.farm" wordmark with the base hen icon;
+    - the base hen peeking over the top of the shell (portrait only);
+    - the golden egg as the speaker;
+    - a footer reading "BILLIONS MUST BOK".
+  - `?skin=classic` gives the v10 look.
+- **Real art in the game, crisp and not pixelated**: `#skinLayer` sits over the canvas, and game.js places each image in canvas coordinates:
+
+  | Element | Real image |
+  | --- | --- |
+  | HUD portrait (mood follows LIFE / hits) | happy / neutral / annoyed / surprised heads |
+  | Title hero | the boxer hen, plus the golden egg |
+  | Death card | the confused hen |
+  | Pause card | the detective hen peeking over the card |
+
+  - The hens and roostrs on the map are still the v5 sprites. Those were already pixelated from the real base-hen reference sheet (front, back and profile) and recoloured for the undead flock.
+- **Asset sources** (all from https://hens.farm/assets/, used with permission; converted by `/workspace/hens/v11/mk.py` with a crop, a Lanczos resize and a 256-colour quantize):
+
+  | Skin file | Source |
+  | --- | --- |
+  | `skin/faces.png` (4 x 150x120) | `base-hen-reference/base-hen-{happy,neutral,annoyed,surprised}.png` |
+  | `skin/boxer.png` | `hen-boxer-600.png` |
+  | `skin/confused.png` | `confused-hen-600.png` |
+  | `skin/detective.png` | `hen-detective-600.png` |
+  | `skin/peek.png` | `base-hen-reference/base-hen-three-quarter-front.png` |
+  | `skin/egg.png` | `golden-egg-320.png` |
+  | `skin/icon.png` | `base-hen-96.png` |
+  | `skin/shuffle.png` (spare, not used yet) | `hen-shuffle-600.png` |
+  | `previ.png` | hen-boxer-600, golden-egg-320 and a v11 gameplay screenshot |
+
+  - References only: `og/home-card-v2.jpg` (hills, wordmark) and `og/media-coop-card.jpg`.
+- **Diagonals**:
+  - Pressing two adjacent shoot buttons (N+E, E+S, S+W, W+N) fires on that diagonal. So do a thumb between two buttons, two arrow keys, or I+L, K+L, K+J and I+J.
+  - An 80 ms chord window holds the first shot so the second finger can land; a single tap still fires.
+  - On a diagonal the hen uses its side profile, the gun and muzzle flash point along the diagonal, and a gold aim marker (two pips and a red tip) shows the line. Both pad buttons light up.

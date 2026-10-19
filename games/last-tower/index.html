@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Just run, shoot and try not to die. Billions must bok.">
+<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing, press two at once for a diagonal; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Just run, shoot and try not to die. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Last Tower: Chikn Edition">
-<meta name="twitter:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
+<meta name="twitter:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad (two buttons = diagonal), drawn with real hens.farm art. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
 <meta name="twitter:image" content="https://membersonly.cc/last-tower/previ.png">
 <meta property="og:title" content="Last Tower: Chikn Edition">
-<meta property="og:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
+<meta property="og:description" content="Chikn Edition: a fast run-and-gun. Swarms of undead hens, a corn shotgun, a machine gun and a four-way compass shoot pad (two buttons = diagonal), drawn with real hens.farm art. No jumping, no healing, only hits hurt. Run, shoot, try not to die.">
 <meta property="og:image" content="https://membersonly.cc/last-tower/previ.png">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #08d14a; overscroll-behavior: none; }
@@ -37,11 +37,18 @@
   #tSU { left: 58px; top: 0; } #tSD { left: 58px; bottom: 0; } #tSL { left: 0; top: 58px; } #tSR { right: 0; top: 58px; }
   #tBar { position: absolute; right: calc(12px + env(safe-area-inset-right)); bottom: calc(212px + env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: none; }
   #tBar .tb { position: static; pointer-events: auto; }
+  #skinLayer { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  #skinLayer .sk { position: absolute; display: none; object-fit: contain; image-rendering: auto; -webkit-user-drag: none; }
+  #skinLayer .sk-face { background: url(skin/faces.png) 0 0 / 400% 100% no-repeat; }
+  #skinLayer img[data-k="title"], #skinLayer img[data-k="dead"], #skinLayer img[data-k="pause"] { filter: drop-shadow(2px 3px 0 rgba(9, 11, 10, .85)); }
 </style>
+<link rel="stylesheet" href="skin/hens-skin.css?v=11">
 </head>
 <body>
 <div id="stage">
   <canvas id="c" width="256" height="256"></canvas>
+  <!-- v11 hens.farm skin: real hens.farm art drawn crisp over the pixel canvas (placed by game.js in canvas coordinates) -->
+  <div id="skinLayer"><div class="sk sk-face" data-k="face"></div><img class="sk" data-k="title" src="skin/boxer.png" alt=""><img class="sk" data-k="dead" src="skin/confused.png" alt=""><img class="sk" data-k="pause" src="skin/detective.png" alt=""><img class="sk" data-k="egg" src="skin/egg.png" alt=""></div>
 </div>
 <div id="touch">
   <div id="tStick"><div id="tBase"><div id="tKnob"></div></div></div>
@@ -55,5 +62,6 @@
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"Enter","select":"Escape","su":"i","sd":"k","sl":"j","sr":"l"}'
         data-labels='{"select":"PAUSE","pad":"SHOOT"}'></script>
+<script src="skin/hens-skin.js?v=11"></script>
 </body>
 </html>
