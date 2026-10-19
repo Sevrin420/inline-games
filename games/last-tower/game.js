@@ -1,4 +1,4 @@
-/* LAST TOWER v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -886,14 +886,14 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
   if (player.moving) { player.fx = mx / m; player.fy = my / m; player.anim += dt * 8 * m; player.dir = Math.abs(mx) > Math.abs(my) * 1.05 ? (mx < 0 ? 2 : 3) : (my > 0 ? 0 : 1); }
   // v10: SHOOT pad held = aim that way (twin-stick: facing follows the aim, not the walk) and fire on cooldown (guns auto, melee repeats)
   // v11: two buttons at once (N+E, E+S, S+W, W+N; or a thumb between them; or two arrow keys) = that diagonal.
-  //      An 80 ms (wall-clock) chord window on the first press lets the second finger land before the first shot goes out.
+  //      A 110 ms (wall-clock) chord window (a tap shorter than that fires on release) on the first press lets the second finger land before the first shot goes out.
   { const ax = held.SR - held.SL, ay = held.SD - held.SU, n = held.SU + held.SD + held.SL + held.SR;
     player.aim = Math.max(0, (player.aim || 0) - dt);
     if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.2; player.diag = !!(ax && ay);
       player.shootT = (player.shootT || 0) + dt;
       player.dir = ax && (!ay || Math.abs(ax) >= Math.abs(ay)) ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1); // diagonals use the side profile so the gun points the right way
-      if (G.cdT <= 0 && (performance.now() - shootT0 >= 80 || (ax && ay))) attack(); }
-    else if (!n) player.shootT = 0; }
+      if (G.cdT <= 0 && (performance.now() - shootT0 >= 110 || (ax && ay))) { attack(); shootFired = true; } }
+    else if (!n) { player.shootT = 0; if (!shootFired && G.state === 'play') { shootFired = true; G.cdT = 0; attack(); } } } // a quick tap still fires once, on release
   const spd = 70 * (player.air ? 1.2 : 1);
   const kb = player.kb;
   const hit = moveBody(player, (mx * spd + kb[0]) * dt, (my * spd + kb[1]) * dt, 4);
@@ -911,7 +911,8 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
 // ================================================================ input (keyboard = shell buttons = touch)
 const held = { up: 0, down: 0, left: 0, right: 0, SU: 0, SD: 0, SL: 0, SR: 0 }; // v10: the four SHOOT directions are held (aim + auto-fire)
 const SHOOTS = ['SU', 'SD', 'SL', 'SR'];
-let shootT0 = 0; // v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
+let shootT0 = 0, shootFired = true; // shootFired: a shot has gone out since the first press (a quick tap fires on release)
+let _noop0 = 0; // v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
 const isShoot = (b) => b === 'SU' || b === 'SD' || b === 'SL' || b === 'SR';
 const stick = { x: 0, y: 0, on: false };
 const queue = [];
@@ -927,7 +928,7 @@ addEventListener('keydown', (e) => {
   const a = KEYMAP[k]; if (!a) return;
   e.preventDefault(); audioInit();
   if (e.handheld) lastInput = 'shell'; else if (e.isTrusted) lastInput = 'keys';
-  if (isShoot(a) && !SHOOTS.some((d) => held[d])) shootT0 = performance.now();
+  if (isShoot(a) && !SHOOTS.some((d) => held[d])) { shootT0 = performance.now(); shootFired = false; }
   if (a in held) { if (!held[a]) queue.push(a); held[a] = 1; } else if (!e.repeat) queue.push(a);
 });
 addEventListener('keyup', (e) => { const a = KEYMAP[keyName(e)]; if (a in held) held[a] = 0; });
@@ -949,7 +950,7 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
   // v10: compass SHOOT pad. Angle from the pad centre picks N/E/S/W (diagonals = two); slide to re-aim.
   const pad = $('tShoot'), ptr = {};
   const btn = { SU: $('tSU'), SD: $('tSD'), SL: $('tSL'), SR: $('tSR') };
-  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1; if (!SHOOTS.some((d) => held[d]) && SHOOTS.some((d) => on[d])) shootT0 = performance.now();
+  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1; if (!SHOOTS.some((d) => held[d]) && SHOOTS.some((d) => on[d])) { shootT0 = performance.now(); shootFired = false; }
     for (const d of SHOOTS) { if (on[d] && !held[d]) queue.push(d); held[d] = on[d] ? 1 : 0; btn[d].classList.toggle('on', !!on[d]); } };
   const dirsAt = (e) => { const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
     if (Math.hypot(dx, dy) < r.width * 0.17) return null; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, g = 20, o = [];

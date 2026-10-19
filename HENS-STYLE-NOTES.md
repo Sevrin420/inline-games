@@ -158,5 +158,5 @@ How these terms appear in the game:
   - References only: `og/home-card-v2.jpg` (hills, wordmark) and `og/media-coop-card.jpg`.
 - **Diagonals**:
   - Pressing two adjacent shoot buttons (N+E, E+S, S+W, W+N) fires on that diagonal. So do a thumb between two buttons, two arrow keys, or I+L, K+L, K+J and I+J.
-  - An 80 ms chord window holds the first shot so the second finger can land; a single tap still fires.
+  - A 110 ms chord window holds the first shot so the second finger can land; a quick single tap fires on release.
   - On a diagonal the hen uses its side profile, the gun and muzzle flash point along the diagonal, and a gold aim marker (two pips and a red tip) shows the line. Both pad buttons light up.
