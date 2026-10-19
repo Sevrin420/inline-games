@@ -100,3 +100,10 @@ How these terms appear in the game:
 - **Tell**: stops, faces the hen, raises a rotten egg overhead with a flashing red "!" for 0.7 s.
 - **Rotten egg**: rounded pale-lime egg with green spots and ink outline, tumbling along a visible arc; a blinking red/gold ink ring marks where it will land and its shadow tracks the ground. Splat = egg goo + shell bits.
 - **Lost meal**: the food item flies off the hen, tumbles and splats; the HUD flashes FOOD LOST in red.
+
+## v9: swarm edition look
+- **Colour pop**: one saturation (x1.38) + mid/dark deepening pass over every baked canvas (map, props, items, sprite sheet); cream highlights are protected so the hens.farm cream ground stays warm. `?pop=0` shows the old look.
+- **Shadows** (one light direction, sun top-left -> shadows fall right/down): soft contact ellipses under every hen, roostr, item and pickup; hard ink offset sprite shadows kept; baked ellipses/long shadows under trees, lamps, antennas, barrels; 2px drop under fences; crates/barns/tractors keep their right/bottom ink shadows.
+- **Enemy attack frames** (sheet now 228x808): every enemy has 6 frames per direction = 4 walk + STRIKE (lunging peck) + WIND-UP (crouch / head reared back). Wind-up also blinks red and shakes; strikes draw a white/red slash crescent; roostr stomps draw an ink + white/gold shockwave ring.
+- **Juice**: white hit flash on every damage tick, muzzle flashes (big for the shotgun), ejected casings/kernel husks, feather + goo gibs on kills, a gold ring under the hen when the swarm covers her.
+- **New pickups**: machine gun, belt of rounds, green ammo crate.
