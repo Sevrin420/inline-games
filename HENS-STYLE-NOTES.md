@@ -160,3 +160,8 @@ How these terms appear in the game:
   - Pressing two adjacent shoot buttons (N+E, E+S, S+W, W+N) fires on that diagonal. So do a thumb between two buttons, two arrow keys, or I+L, K+L, K+J and I+J.
   - A 110 ms chord window holds the first shot so the second finger can land; a quick single tap fires on release.
   - On a diagonal the hen uses its side profile, the gun and muzzle flash point along the diagonal, and a gold aim marker (two pips and a red tip) shows the line. Both pad buttons light up.
+
+## v13 (Oct 19 2026)
+- Pickups drawn 3x (48 px) as a ground layer under every actor (so they never hide the hen), with a pulsing gold halo ellipse (#ffc42f, ink rim), bob and sparkle. Pickup reach 22x20 (was 10x10).
+- Shell (Last Tower only, CSS in last-tower/index.html): `.hh-select` hidden; the START pill spans both slots (92x24, label "START · PAUSE" inside the pill). Shared handheld.js/css untouched. Touch (`?handheld=0`): one big PAUSE button.
+- Achievements (ach.js): gold #ffc42f title, 2 px ink outline, 4 px hard ink offset shadow, scale-in pop, bok fanfare, queued (backlog plays faster), top band at 29% of the screen. Saved in localStorage `lasttower.ach1`; title shows TROPHIES n/26; death screen lists the run's achievements.

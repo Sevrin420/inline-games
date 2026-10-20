@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing, press two at once for a diagonal; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Just run, shoot and try not to die. Billions must bok.">
+<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing, press two at once for a diagonal; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Big glowing pickups, gold achievement pop-ups for every minute survived and kill milestones. Just run, shoot and try not to die. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Last Tower: Chikn Edition">
@@ -41,8 +41,16 @@
   #skinLayer .sk { position: absolute; display: none; object-fit: contain; image-rendering: auto; -webkit-user-drag: none; }
   #skinLayer .sk-face { background: url(skin/faces.png) 0 0 / 400% 100% no-repeat; }
   #skinLayer img[data-k="title"], #skinLayer img[data-k="dead"], #skinLayer img[data-k="pause"] { filter: drop-shadow(2px 3px 0 rgba(9, 11, 10, .85)); }
+  /* v13 (Last Tower shell only): no SELECT pill; one big START / PAUSE pill spanning both slots */
+  .hh-root .hh-select { display: none !important; }
+  .hh-port .hh-start { grid-column: sel-start / start-end; justify-self: center; margin: -6px 0 0; }
+  .hh-root .hh-start { position: relative; }
+  .hh-root .hh-start .hh-pill { width: 92px; height: 24px; border-radius: 14px; padding: 3px; }
+  .hh-root .hh-start .hh-pillcap { inset: 3px; border-radius: 11px; }
+  .hh-root .hh-start .hh-lbl { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; font-size: 8.5px; font-weight: 900; letter-spacing: .1em; white-space: nowrap; color: #090b0a; pointer-events: none; text-shadow: none; }
+  .hh-land .hh-start { margin-top: -2px; }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=11">
+<link rel="stylesheet" href="skin/hens-skin.css?v=13">
 </head>
 <body>
 <div id="stage">
@@ -53,15 +61,15 @@
 <div id="touch">
   <div id="tStick"><div id="tBase"><div id="tKnob"></div></div></div>
   <div id="tShoot"><button id="tSU" class="tb">N</button><button id="tSR" class="tb">E</button><button id="tSD" class="tb">S</button><button id="tSL" class="tb">W</button></div>
-  <div id="tBar"><button id="tBag" class="tb" style="border-radius:16px;padding:8px 14px;font-size:14px">BAG</button></div>
+  <div id="tBar"><button id="tBag" class="tb" style="border-radius:18px;padding:14px 26px;font-size:20px">PAUSE</button></div>
 </div>
 <script src="game.js"></script>
 <!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
-     D-pad = WASD (run). START = Enter and SELECT = Escape both pause. No jump, no eat. Best weapon auto-equips.
+     D-pad = WASD (run). START = Enter pauses (v13: the SELECT pill is hidden; one big START). No jump, no eat. Best weapon auto-equips.
      ?handheld=0 opts out (touch: stick + the same compass pad). -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"Enter","select":"Escape","su":"i","sd":"k","sl":"j","sr":"l"}'
-        data-labels='{"select":"PAUSE","pad":"SHOOT"}'></script>
-<script src="skin/hens-skin.js?v=11"></script>
+        data-labels='{"start":"START \u00b7 PAUSE","pad":"SHOOT"}'></script>
+<script src="skin/hens-skin.js?v=13"></script>
 </body>
 </html>
