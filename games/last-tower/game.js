@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -228,13 +228,14 @@ function zombify(rows, seed) {
 function widen(f) { // bulkier "roostr" variant: duplicate the centre columns and a torso row
   const w = f.map((r) => r.slice(0, 8) + r.slice(7, 9) + r.slice(8)); w.splice(12, 0, w[12]); return w;
 }
-function atlas(frames, mats, opt) {
+const PLAYER_PAPER = { edge: '#c9c3b6', back: '#d8d2c4', rib: '#c2bcae', ink: [92, 88, 82] }; // v21: the player's cardboard back is shaded off-white, not brown
+function atlas(frames, mats, opt, pc) {
   const cw = frames[0][0][0].length, ch = frames[0][0].length;
   const [c, x] = mk(cw * frames[0].length, ch * 4);
   frames.forEach((row, ri) => row.forEach((f, fi) => x.drawImage(paint(f, mats, opt), fi * cw, ri * ch)));
-  return sheetAtlas(c, cw, ch);
+  return sheetAtlas(c, cw, ch, pc);
 }
-function sheetAtlas(c, cw, ch) {
+function sheetAtlas(c, cw, ch, pc = {}) { // pc (v21): paper colours {edge, back, rib, ink}; the player hen uses a shaded off-white back
   // silhouette version (outline recoloured bright, body faint) for the "never hidden" pass
   const [s, sx] = mk(c.width, c.height); sx.drawImage(c, 0, 0);
   const id = sx.getImageData(0, 0, c.width, c.height), d = id.data, [or, og, ob] = hex(OUT);
@@ -246,12 +247,12 @@ function sheetAtlas(c, cw, ch) {
   const [wh, whx] = mk(c.width, c.height); whx.drawImage(c, 0, 0); whx.globalCompositeOperation = 'source-in'; whx.fillStyle = '#ffffff'; whx.fillRect(0, 0, c.width, c.height);
   const [rd, rdx] = mk(c.width, c.height); rdx.drawImage(c, 0, 0); rdx.globalCompositeOperation = 'source-in'; rdx.fillStyle = '#ff2a3c'; rdx.fillRect(0, 0, c.width, c.height);
   // v20 Paper cutouts: cardboard edge (thickness layers) + the plain cardboard BACK, and a golden dusk rim light on the sun (west) side
-  const [cb, cbx] = mk(c.width, c.height); cbx.drawImage(c, 0, 0); cbx.globalCompositeOperation = 'source-in'; cbx.fillStyle = '#8a6238'; cbx.fillRect(0, 0, c.width, c.height);
-  const [bk, bkx] = mk(c.width, c.height); bkx.drawImage(c, 0, 0); bkx.globalCompositeOperation = 'source-in'; bkx.fillStyle = '#5e4229'; bkx.fillRect(0, 0, c.width, c.height);
-  bkx.globalCompositeOperation = 'source-atop'; bkx.fillStyle = '#4a321e'; for (let y = 1; y < c.height; y += 3) bkx.fillRect(0, y, c.width, 1); // corrugated cardboard ribs
+  const [cb, cbx] = mk(c.width, c.height); cbx.drawImage(c, 0, 0); cbx.globalCompositeOperation = 'source-in'; cbx.fillStyle = pc.edge || '#8a6238'; cbx.fillRect(0, 0, c.width, c.height);
+  const [bk, bkx] = mk(c.width, c.height); bkx.drawImage(c, 0, 0); bkx.globalCompositeOperation = 'source-in'; bkx.fillStyle = pc.back || '#5e4229'; bkx.fillRect(0, 0, c.width, c.height);
+  bkx.globalCompositeOperation = 'source-atop'; bkx.fillStyle = pc.rib || '#4a321e'; for (let y = 1; y < c.height; y += 3) bkx.fillRect(0, y, c.width, 1); // corrugated cardboard ribs
   const bd = bkx.getImageData(0, 0, c.width, c.height), sd = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, rim = new ImageData(c.width, c.height), rd2 = rim.data, Wd = c.width;
   for (let p = 0; p < sd.length / 4; p++) { const i = p * 4; if (!sd[i + 3]) continue; const ink = sd[i] < 40 && sd[i + 1] < 40 && sd[i + 2] < 40;
-    if (ink) { bd.data[i] = 30; bd.data[i + 1] = 20; bd.data[i + 2] = 12; continue; }
+    if (ink) { const k = pc.ink || [30, 20, 12]; bd.data[i] = k[0]; bd.data[i + 1] = k[1]; bd.data[i + 2] = k[2]; continue; }
     const X = p % Wd, l = X > 0 ? p - 1 : -1; if (l >= 0 && sd[l * 4] < 40 && sd[l * 4 + 1] < 40 && sd[l * 4 + 2] < 40 && sd[l * 4 + 3] && X % cw > 0) { rd2[i] = 255; rd2[i + 1] = 196; rd2[i + 2] = 96; rd2[i + 3] = 200; } }
   bkx.putImageData(bd, 0, 0); const [rm, rmx] = mk(c.width, c.height); rmx.putImageData(rim, 0, 0);
   return { img: c, sil: s, shd: h, wht: wh, red: rd, crd: cb, back: bk, rim: rm, cw, ch, nf: Math.round(c.width / cw) };
@@ -259,7 +260,7 @@ function sheetAtlas(c, cw, ch) {
 const zFrames = (seed) => henFrames(zombify(HEN_DOWN, seed), zombify(HEN_UP, seed + 1), zombify(HEN_SIDE, seed + 2));
 const HEN_MATS = { R: 'comb', W: 'feather', w: 'fshade', k: 'ink', Y: 'beak', O: 'leg', A: 'bandana' };
 const SPR = {
-  player: atlas(henFrames(HEN_DOWN, HEN_UP, HEN_SIDE, true), HEN_MATS, { flat: 'RkYOAw', noFold: 'kYRA' }),
+  player: atlas(henFrames(HEN_DOWN, HEN_UP, HEN_SIDE, true), HEN_MATS, { flat: 'RkYOAw', noFold: 'kYRA' }, PLAYER_PAPER),
   zombies: ['zf1', 'zf2', 'zf3'].map((f, i) => atlas(zFrames(11 + i * 7), { R: 'zcomb', W: f, w: f, e: 'eyeZ', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', dark: 'w', noFold: 'eY' })),
   brute: atlas(zFrames(99).map((row) => row.map(widen)), { R: 'comb', W: 'rooster', w: 'rtail', e: 'eyeB', Y: 'beak', O: 'leg', g: 'blood' }, { flat: 'eYOg', noFold: 'eY' }),
 };
@@ -299,7 +300,7 @@ const HENS_SHEET = new Image();
 HENS_SHEET.onload = () => {
   const cut = (x, y, w, h) => { const [c, cx] = mk(w, h); cx.drawImage(HENS_SHEET, x, y, w, h, 0, 0, w, h); return c; };
   const ZF = HENS_SHEET.width >= 228 ? 6 : 4; // v9 sheet: 4 walk + STRIKE + WIND-UP frames for every enemy
-  SPR.player = sheetAtlas(popCanvas(cut(0, 0, 150, 132)), 30, 33);
+  SPR.player = sheetAtlas(popCanvas(cut(0, 0, 150, 132)), 30, 33, PLAYER_PAPER);
   SPR.zombies = [0, 1, 2].map((i) => sheetAtlas(zTint(popCanvas(cut(0, 132 + i * 132, 30 * ZF, 132)), Z_PAL[i], 30, 33, 5 + i), 30, 33));
   SPR.brute = sheetAtlas(zTint(popCanvas(cut(0, 528, 38 * ZF, 148)), Z_PAL[3], 38, 37, 9), 38, 37);
   if (HENS_SHEET.height >= 808) SPR.thrower = sheetAtlas(zTint(popCanvas(cut(0, 676, 30 * ZF, 132)), Z_PAL[4], 30, 33, 13), 30, 33);
@@ -1149,7 +1150,7 @@ function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + f
     const go = isShoot(b) || b === 'GO';
     if (STATE === 'off') continue;
     if (STATE === 'intro') { if (go || b === 'TAP') { introEnd(); queue.length = 0; return; } continue; } // v19: shoot skips the intro (to the title, not into a run)
-    if (STATE === 'title') { if (T0 - INTRO.popAt < 0.45) continue; if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
+    if (STATE === 'title') { if (T0 - INTRO.popAt < 0.45) continue; if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); uiSnd('select'); } continue; }
     if (G.state === 'dead') {
       const dir = b === 'up' || b === 'down' || b === 'left' || b === 'right';
       if (NE.on) { if (go && G.deadT > 0.25) nameSelect(); else if (dir) nameNav(b); continue; } // v18 name grid: shoot presses the key under the cursor (OK greyed until valid)
@@ -1617,15 +1618,15 @@ const neValid = () => NE.name === '' || (validName(NE.name) && !nameBlocked(NE.n
 function nameOpen(from) { NE.on = true; NE.from = from || 'death'; NE.name = from === 'change' && lbName ? lbName : ''; NE.cur = 0; NE.blink = 0; }
 function nameConfirm() {
   if (!neValid()) { NE.shake = 0.3; sfx('zpeck'); return; }
-  const s = NE.name, sn = showName(s); saveName(s); NE.on = false; sfx('pick'); if (s) achEvent('name'); const r = RUN && RUN.g === G ? RUN : null;
+  const s = NE.name, sn = showName(s); saveName(s); NE.on = false; if (!uiSnd('select')) sfx('pick'); if (s) achEvent('name'); const r = RUN && RUN.g === G ? RUN : null;
   if (r) { if (r.local && r.localMe) { r.localMe.name = sn; r.board.top.forEach((e) => { if (e.mine) e.name = sn; }); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(localBoard().map((e) => (e.t === r.localMe.t ? Object.assign(e, { name: sn }) : e)))); } catch (e) {} }
     else if (!r.posted) lbPost(r, true); }
   if (NE.from === 'death') CR.t = 0; // the high scores roll starts now
 }
-function neType(ch) { NE.blink = 0; if (ch === '<' || ch === 'DEL') { NE.name = NE.name.slice(0, -1); sfx('click'); return; } if (ch === 'OK') { nameConfirm(); return; }
-  if (NE.name.length >= NE_MAX) { NE.shake = 0.2; sfx('zpeck'); return; } NE.name += ch; sfx('click'); }
+function neType(ch) { NE.blink = 0; if (ch === '<' || ch === 'DEL') { NE.name = NE.name.slice(0, -1); if (!uiSnd('cursor', 0.8)) sfx('click'); return; } if (ch === 'OK') { nameConfirm(); return; }
+  if (NE.name.length >= NE_MAX) { NE.shake = 0.2; sfx('zpeck'); return; } NE.name += ch; if (!uiSnd('slam', 1.15, 0.7)) sfx('click'); }
 function nameSelect() { neType(NE_GRID[NE.cur].ch); } // shoot = press the key under the cursor
-function nameNav(dir) { NE.blink = 0; sfx('click'); const k = NE_GRID[NE.cur];
+function nameNav(dir) { NE.blink = 0; if (!uiSnd('cursor')) sfx('click'); const k = NE_GRID[NE.cur];
   if (dir === 'left' || dir === 'right') { const row = NE_GRID.map((q, i) => [q, i]).filter(([q]) => q.r === k.r), j = row.findIndex(([, i]) => i === NE.cur); NE.cur = row[(j + (dir === 'right' ? 1 : row.length - 1)) % row.length][1]; return; }
   const r = (k.r + (dir === 'down' ? 1 : 4)) % 5, mid = k.c + (k.w - 1) / 2; NE.cur = NE_GRID.findIndex((q) => q.r === r && mid >= q.c - 0.01 && mid < q.c + q.w); }
 const nameEntryOn = () => NE.on && STATE === 'game' && G && G.state === 'dead';
@@ -1703,7 +1704,11 @@ function buildCredits() {
       add(4, () => {}); } }
   add(30, () => {});
   add(24, (y) => bigGold('BILLIONS MUST BOK.', N / 2, y, W));
-  if (typeof ANN !== 'undefined' && Object.values(ANN.src).includes('halo')) { add(10, () => {}); add(10, (y) => text('HALO ANNOUNCER AUDIO (C) MICROSOFT / BUNGIE, USED UNDER PARODY LICENSE', N / 2, y, 8, 'rgba(248,245,233,.6)', 'center', false)); } // v19 credit (only when those clips are installed)
+  { const c = (y, m) => text(m, N / 2, y, 8, 'rgba(248,245,233,.6)', 'center', false), src = typeof ANN !== 'undefined' ? Object.values(ANN.src) : []; // v21 real-audio credits
+    add(10, () => {}); add(10, (y) => c(y, 'REAL GAME AUDIO, USED UNDER PARODY LICENSE:'));
+    if (src.includes('halo')) add(10, (y) => c(y, 'HALO: REACH ANNOUNCER (C) MICROSOFT / BUNGIE'));
+    if (src.includes('ut')) add(10, (y) => c(y, 'UNREAL TOURNAMENT ANNOUNCER (C) EPIC GAMES'));
+    if (src.includes('sf2')) add(10, (y) => c(y, 'STREET FIGHTER II SOUNDS (C) CAPCOM')); }
   add(Math.round(N * 0.45), () => {});
   CR.rows = rows; CR.H = rows.reduce((a, r) => a + r.h, 0); CR.g = G; CR.t = 0; CR.n = N;
 }
@@ -2101,40 +2106,56 @@ function bokSnd(kind) { const p = rr(0.85, 1.2), v = 0.06;
     else if (n === 'pick' && sndOk('happy', 0.15)) { bokSnd('happy'); bokSnd('chime'); } }; }
 { const _h = hurtZombie; hurtZombie = function (z, ...a) { const was = z.alive; _h(z, ...a); if (was && z.alive && sndOk('crack', 0.06)) bokSnd('crack'); }; }
 { const _sp = spawnZombie; spawnZombie = function (...a) { const z = _sp(...a); if (z && STATE === 'game' && G && G.state === 'play' && Math.random() < 0.35 && sndOk('zgroan', 0.7)) bokSnd(Math.random() < 0.5 ? 'zgroan' : 'zcluck'); return z; }; }
-// ---- the announcer. Default: the ORIGINAL voice (sfx/original/*.mp3, made on the box with espeak-ng, pitched down + compressed + reverb).
-// If sfx/halo/manifest.json exists (licensed clips dropped in later), those lines are used instead where present. ?announcer=original
-// forces the original voice, ?announcer=0 turns the announcer off. Respects mute; ducks the music under every callout.
-const ANN = { mode: /[?&]announcer=0\b/.test(location.search) ? 'off' : /[?&]announcer=original\b/.test(location.search) ? 'original' : 'auto', buf: {}, src: {}, loading: false, cur: null, curP: 0, curEnd: 0, lastT: -9,
-  chain: 0, chainT: 0, pend: 0, pendT: 0, said: {}, multiT: -9 };
-const ANN_LINES = ['slayer', 'double', 'triple', 'overkill', 'killtacular', 'spree', 'frenzy', 'riot', 'rampage', 'untouchable', 'unstoppable', 'boktacular', 'eggster', 'fowl', 'gameover', 'billions'];
-function annLoad() { if (ANN.mode === 'off' || ANN.loading || !AC) return; ANN.loading = true;
-  const getHalo = ANN.mode === 'original' ? Promise.resolve({}) : fetch('sfx/halo/manifest.json?v=19b').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-  getHalo.then((man) => { const halo = (man && man.lines) || {};
-    for (const k of ANN_LINES) { const url = halo[k] ? 'sfx/halo/' + halo[k] : 'sfx/original/' + k + '.mp3'; ANN.src[k] = halo[k] ? 'halo' : 'original';
-      fetch(url).then((r) => r.arrayBuffer()).then((ab) => new Promise((res, rej) => AC.decodeAudioData(ab, res, rej))).then((b) => { ANN.buf[k] = b; }).catch(() => {}); } }); }
+// ---- REAL clips (v21): the announcers + Street Fighter II UI sounds. All are the original game audio (no TTS, no recreations), used
+// under the site owner's parody license: Halo: Reach multiplayer announcer (c) Microsoft / Bungie (sfx/halo/), Unreal Tournament (UT99)
+// announcer (c) Epic Games (sfx/ut/), Street Fighter II Turbo SNES UI sounds (c) Capcom (sfx/sf2/). Sources: the README in each folder.
+// Mix: HALO says 'Slayer' at the start, the multi-kill chain (Double Kill ... Killionaire) and 'Game Over'; UT says First Blood and the big
+// no-hit streak tiers. ?announcer=original swaps the voices for the old synthesized voice (sfx/original/), ?announcer=0 silences them.
+// Every file is fetched at page load (small mp3s), decoded once the audio unlocks, and played through the master bus (so mute works).
+// RARE triggers: one global cooldown (ANN_CD s) shared by both announcers; routine kills never speak.
+const ANN = { mode: /[?&]announcer=0\b/.test(location.search) ? 'off' : /[?&]announcer=original\b/.test(location.search) ? 'original' : 'real', buf: {}, src: {}, raw: {}, cur: null, curP: 0, curEnd: 0, lastT: -99,
+  chain: 0, evT: -9, pend: 0, pendT: 0, q: null, kills: 0 };
+const ANN_FILES = ANN.mode === 'original'
+  ? { slayer: 'original/slayer', double: 'original/double', triple: 'original/triple', overkill: 'original/overkill', killtacular: 'original/killtacular', spree: 'original/spree', rampage: 'original/rampage', dominating: 'original/frenzy', unstoppable: 'original/unstoppable', godlike: 'original/untouchable', gameover: 'original/gameover' }
+  : { slayer: 'halo/slayer', double: 'halo/double', triple: 'halo/triple', overkill: 'halo/overkill', killtacular: 'halo/killtacular', killtrocity: 'halo/killtrocity', killamanjaro: 'halo/killamanjaro', killtastrophe: 'halo/killtastrophe', killpocalypse: 'halo/killpocalypse', killionaire: 'halo/killionaire', gameover: 'halo/gameover',
+      firstblood: 'ut/firstblood', spree: 'ut/spree', rampage: 'ut/rampage', dominating: 'ut/dominating', unstoppable: 'ut/unstoppable', godlike: 'ut/godlike' };
+const UI_FILES = { cursor: 'sf2/cursor', select: 'sf2/select', mode: 'sf2/mode', slam: 'sf2/slam' }; // SF2: cursor move, character-select confirm, mode select, fierce-hit thunk
+const ANN_CD = 13, ANN_MULTI_GAP = 0.6, ANN_SAME = 0.05; // global cooldown (s) | max gap between kills in a multi-kill | kills this close = one blast
+const MULTI_LINE = (n) => (n >= 10 ? 'killionaire' : ['', '', 'double', 'triple', 'overkill', 'killtacular', 'killtrocity', 'killamanjaro', 'killtastrophe', 'killpocalypse'][n] || null);
+const STREAK_LINE = { 25: 'spree', 50: 'rampage', 100: 'dominating', 200: 'unstoppable', 300: 'godlike' }; // kills in a row without being hit (UT)
+// preload: raw bytes now, decode when the AudioContext exists
+for (const [k, f] of Object.entries(ANN.mode === 'off' ? UI_FILES : Object.assign({}, ANN_FILES, UI_FILES))) { ANN.src[k] = f.split('/')[0];
+  ANN.raw[k] = fetch('sfx/' + f + '.mp3?v=21').then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null); }
+function annLoad() { if (ANN.decoding || !AC) return; ANN.decoding = true;
+  for (const [k, pr] of Object.entries(ANN.raw)) pr.then((ab) => ab && new Promise((res, rej) => AC.decodeAudioData(ab, res, rej))).then((b) => { if (b) ANN.buf[k] = b; }).catch(() => {}); }
 { const _ai = audioInit; audioInit = function () { _ai(); try { annLoad(); } catch (e) {} }; }
-function announce(k, prio = 1) { if (ANN.mode === 'off' || !AC || muted) return false; const b = ANN.buf[k]; if (!b) return false; const now = AC.currentTime;
+function annNow() { return performance.now() / 1000; }
+// SF2 UI sound (waits up to 0.4 s for its decode on the very first gesture)
+function uiSnd(k, rate = 1, gain = 0.9, tries = 0) { if (!AC) return false; const b = ANN.buf[k]; if (!b) { if (tries < 8 && ANN.raw[k]) setTimeout(() => uiSnd(k, rate, gain, tries + 1), 50); return false; }
+  const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = b; s.playbackRate.value = rate; g.gain.value = gain; s.connect(g); g.connect(master); s.start(); (window.__ltUi = window.__ltUi || []).push(k); return true; }
+function announce(k, prio = 1, force = false) { if (ANN.mode === 'off' || !ANN_FILES[k]) return false; const t = annNow();
+  if (!force && t - ANN.lastT < ANN_CD) return false; // the shared global cooldown (Slayer / Game Over use force)
+  (window.__ltAnnTry = window.__ltAnnTry || []).push(k); ANN.lastT = t; if (!AC) return false; const b = ANN.buf[k]; if (!b) return false; const now = AC.currentTime;
   if (ANN.cur && now < ANN.curEnd) { if (prio <= ANN.curP) return false; try { ANN.cur.stop(); } catch (e) {} }
-  const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = b; g.gain.value = 1.15; s.connect(g); g.connect(master); s.start(); ANN.cur = s; ANN.curP = prio; ANN.curEnd = now + b.duration; ANN.lastT = now;
+  const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = b; g.gain.value = 1.15; s.connect(g); g.connect(master); s.start(); ANN.cur = s; ANN.curP = prio; ANN.curEnd = now + b.duration;
   musicDuck(0.45, b.duration + 0.15); (window.__ltAnn = window.__ltAnn || []).push(k); return true; }
-// multi-kills: kills within 0.9 s chain; the callout waits 0.3 s after the burst so a shotgun blast gets ONE line (its best)
-const MULTI_LINE = (n) => (n >= 8 ? 'eggster' : n >= 5 ? 'killtacular' : n === 4 ? 'overkill' : n === 3 ? 'triple' : n === 2 ? 'double' : null);
-const STREAK_LINE = { 10: 'spree', 15: 'frenzy', 25: 'untouchable', 35: 'riot', 50: 'rampage', 100: 'unstoppable' }; // kills in a row without a hit
-{ const _k = achKill; achKill = function (z) { _k(z); if (!G || G.state !== 'play') return; const now = performance.now() / 1000;
-    ANN.chain = now - ANN.chainT < 0.9 ? ANN.chain + 1 : 1; ANN.chainT = now; if (ANN.chain >= 2) { ANN.pend = ANN.chain; ANN.pendT = now + 0.3; }
-    const st = G.rs ? G.rs.streak : 0; if (STREAK_LINE[st]) announce(STREAK_LINE[st], 2);
-    if (G.kills > 0 && G.kills % 250 === 0) announce('boktacular', 1); }; }
-setInterval(() => { if (!ANN.pend) return; const now = performance.now() / 1000; if (now < ANN.pendT) return; const n = ANN.pend; ANN.pend = 0;
-  if (now - ANN.multiT < 2.2 && n < 5) return; const k = MULTI_LINE(n); if (k && G && G.state === 'play' && announce(k, n >= 5 ? 2 : 1)) ANN.multiT = now; }, 50);
-{ const _hp = hurtPlayer; hurtPlayer = function (dmg, from, cause) { const was = G && G.state; _hp(dmg, from, cause); if (was === 'play' && G.state === 'play' && cause === 'A ROTTEN EGG' && Math.random() < 0.6) announce('fowl', 1); }; }
-{ const _ng = newGame; newGame = function () { _ng(); ANN.chain = 0; ANN.pend = 0; setTimeout(() => { if (STATE === 'game' && G && G.state === 'play') announce('slayer', 3); }, 350); }; }
-{ const _d = die; die = function (cause) { _d(cause); announce('gameover', 4); const g = G; setTimeout(() => { if (G === g && G.state === 'dead') announce('billions', 3); }, 1700); }; }
+// multi-kill = kill EVENTS each <= 0.6 s after the last (kills within 50 ms, e.g. one shotgun blast, count as one event), said 0.35 s after it ends
+{ const _k = achKill; achKill = function (z) { _k(z); if (!G || G.state !== 'play') return; const t = annNow(); ANN.kills++;
+    if (ANN.kills === 1 && ANN_FILES.firstblood) ANN.q = { k: 'firstblood', hit: -1, exp: t + 20 }; // waits out the Slayer cooldown, gives up after 20 s
+    if (t - ANN.evT > ANN_SAME) { ANN.chain = t - ANN.evT <= ANN_MULTI_GAP ? ANN.chain + 1 : 1; ANN.evT = t; if (ANN.chain >= 2) { ANN.pend = ANN.chain; ANN.pendT = t + 0.35; } }
+    const st = G.rs ? G.rs.streak : 0; if (STREAK_LINE[st]) ANN.q = { k: STREAK_LINE[st], hit: G.hitN || 0, exp: t + 30 }; }; }
+setInterval(() => { if (!G || G.state !== 'play' || STATE !== 'game') { ANN.pend = 0; ANN.q = null; return; } const t = annNow(), q = ANN.q;
+  if (q && ((q.hit >= 0 && (G.hitN || 0) !== q.hit) || t > q.exp)) ANN.q = null; // streak broken (or too late) before it could be said: drop it
+  else if (q && t - ANN.lastT >= ANN_CD) { ANN.q = null; announce(q.k, 2); } // queued lines wait out the cooldown, then get one try
+  if (ANN.pend && t >= ANN.pendT) { const n = ANN.pend; ANN.pend = 0; const k = MULTI_LINE(n); if (k && !ANN.q) announce(k, 1); } }, 50); // a multi-kill inside the cooldown is dropped
+{ const _ng = newGame; newGame = function () { _ng(); ANN.chain = 0; ANN.pend = 0; ANN.q = null; ANN.evT = -9; ANN.kills = 0; setTimeout(() => { if (STATE === 'game' && G && G.state === 'play') announce('slayer', 3, true); }, 350); }; }
+{ const _d = die; die = function (cause) { _d(cause); ANN.pend = 0; ANN.q = null; announce('gameover', 4, true); }; }
 // ================================================================ v19 power-on boot: the handheld starts OFF every visit (nothing remembered).
 // Slide (or tap) the power switch, or press Enter / Space / P: the screen fades in, the music starts (that gesture unlocks WebAudio),
 // a <5 s cinematic intro plays (the hen running for her life, close-ups of the undead flock), then the title pops up. Shoot skips it.
 // Sliding the switch off turns the game off again (P toggles too). ?handheld=0 (no shell) or ?boot=0 skips all of this.
 const INTRO = { t: 0, T: 5.6, cuts: [0, 1.7, 2.8, 3.9], popAt: -9, shot: -1 }; // v20: silo intro
-function bootOn() { resize(); setTimeout(resize, 60); setTimeout(resize, 400); STATE = 'intro'; INTRO.t = 0; INTRO.shot = -1; G = null; zombiePool.length = 0; itemPool.length = 0; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } queue.length = 0; for (const k in held) held[k] = 0; }
+function bootOn() { resize(); setTimeout(resize, 60); setTimeout(resize, 400); STATE = 'intro'; INTRO.t = 0; INTRO.shot = -1; INTRO.slam = false; setTimeout(() => uiSnd('mode'), 30); /* v21 SF2 power-on */ G = null; zombiePool.length = 0; itemPool.length = 0; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } queue.length = 0; for (const k in held) held[k] = 0; }
 function bootOff() { STATE = 'off'; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } skinBegin(); skinEnd(); }
 function introEnd() { if (STATE !== 'intro') return; STATE = 'title'; INTRO.popAt = T0; sfx('dawn'); }
 if (LT_BOOT) {
@@ -2222,6 +2243,7 @@ function drawIntro(dt) {
     ziDraw(k); ziTracers(); hx.restore();
   }
   // title slam in the last wide shot
+  if (shot === 3 && st > 0.45 && !INTRO.slam) { INTRO.slam = true; uiSnd('slam', 0.9, 1); } // SF2 thunk on the title slam
   if (shot === 3 && st > 0.45) { const e = Math.min(1, (st - 0.45) / 0.18), sc = 1 + (1 - e) * 2.2, sz = 16, img = textImg('ZOMBIE FARM', sz, HRED, false), ink = textImg('ZOMBIE FARM', sz, INK, false), k2 = Math.max(1, Math.round((N * 0.8) / img.width * 2) / 2) * sc;
     const w = Math.round(img.width * k2), h = Math.round(img.height * k2), x = Math.round(N / 2 - w / 2), y = Math.round(N * 0.5 - h / 2);
     for (let q = 1; q <= Math.round(3 * k2 / sc); q++) hx.drawImage(ink, x + q, y + q, w, h); for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) hx.drawImage(ink, x + dx, y + dy, w, h); hx.drawImage(img, x, y, w, h);
