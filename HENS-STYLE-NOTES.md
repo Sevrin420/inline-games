@@ -209,3 +209,10 @@ How these terms appear in the game:
 - v16's auto-assigned names (`lasttower.name`) are deleted on load, so every v16 player is re-prompted. None had reached the
   live board (it was empty when v17 shipped).
 - If the server still refuses a name, it is cleared and the name screen comes back.
+
+## v18 — 100 achievements, always day, alphabet name grid
+- Credits show only `ACHIEVEMENTS n/100` + `+N THIS RUN` (no per-achievement list). PLUCKED stats, TOP 20, flock credits kept.
+- 100 achievements (`ACH_LIST` in ach.js): minutes, kills, no-hit, guns/tiers, multi-kills, roostrs/slingers, close calls, streaks, distance, shots/accuracy, pickups, lifetime (`lasttower.life1`), runs, lore, meta. 3+ queued pop-ups merge into one "+N ACHIEVEMENTS" card.
+- Flock pop-ups: bottom band, pfp ~33% of screen width, large quote, never over the hen.
+- No darkness: `daylight()` = 1, `isNight()` = false; lamps are props; horde ramp unchanged.
+- Death: full alphabet grid (A–Z, 0–9, - _ ., DEL, OK); 1–12 chars, blank start, OK only at ≥3 valid + profanity-clean. Shown first death / no name; later deaths skip it (tap gold row to edit). Scores roll after OK; shoot restart only once named.

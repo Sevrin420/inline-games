@@ -1,4 +1,4 @@
-/* LAST TOWER v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=17';
+HENS_SHEET.src = 'hens-sprites.png?v=18';
 const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
@@ -610,10 +610,10 @@ function newGame() {
   scatterLoot(TUNE.loot0, true);
   for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
   setTier('mg', 0); setTier('shotgun', 0); G.owned = ['fists']; // v15: tiers reset each run
-  G.lastHit = 0; G.cleanTier = 0; if (!window.__ltNoLB) lbRunStart(); // v16 leaderboard play record
+  achRunStart(); if (!window.__ltNoLB) lbRunStart(); // v18 run stats + lifetime runs // v16 leaderboard play record
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; const last = G.msg[G.msg.length - 1]; if (last && last.s === s) { last.t = Math.max(last.t, t); return; } G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
-const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
+const isNight = () => false; // v18: always bright day (no night, no darkening; lamps are props only)
 const onCrate = () => !player.air && !player.climb && kind[tileAt(player.x, player.y - 2)] === K.CRATE; // perched: only brutes can reach you
 const onTower = onCrate;
 const tileAt = (x, y) => id(Math.floor(x / TS), Math.floor(y / TS));
@@ -853,7 +853,7 @@ function attack() {
     G.muzzle = { t: w.pellets > 1 ? 0.07 : 0.045, a: Math.atan2(fy, fx), big: w.pellets > 1, k: G.weapon }; // v9 muzzle flash + an ejected casing / kernel husk
     G.parts.push({ x: player.x, y: player.y - 1, z: 10 + player.jz, vx: -fy * 50 + (Math.random() - 0.5) * 30, vy: fx * 40 + (Math.random() - 0.5) * 20, vz: 50 + Math.random() * 30, t: 0, T: 1.4, k: 'c', c: w.pellets > 1 ? '#ff3347' : '#ffc42f' }); if (G.parts.length > PART_MAX) G.parts.shift();
     if (w.pellets > 1) { player.kb = [-fx * 70, -fy * 70]; } // shotgun recoil
-    let ax = fx, ay = fy, bestD = 1e9;
+    let ax = fx, ay = fy, bestD = 1e9, anyHit = false;
     for (const z of zombiePool) { if (!z.alive) continue; const dx = z.x - player.x, dy = (z.y - 8) - (player.y - 8), d = Math.hypot(dx, dy); if (d > w.range) continue; const dot = (dx * fx + dy * fy) / (d || 1); if (dot > 0.86 && d < bestD) { bestD = d; ax = dx / d; ay = dy / d; } }
     for (let p = 0; p < w.pellets; p++) {
       const a = Math.atan2(ay, ax) + (w.pellets > 1 ? (p / (w.pellets - 1) - 0.5) * w.spread + (Math.random() - 0.5) * 0.08 : (Math.random() - 0.5) * 2 * (w.jitter || 0)), dx = Math.cos(a), dy = Math.sin(a);
@@ -862,8 +862,9 @@ function attack() {
       const hz = []; for (const z of zombiePool) { if (!z.alive) continue; const rx = z.x - player.x, ry = (z.y - 8) - (player.y - 8), t = rx * dx + ry * dy; if (t < 0 || t > hitD) continue; if (Math.abs(rx * dy - ry * dx) < (z.brute ? 9 : 7)) hz.push([t, z]); }
       hz.sort((a, b) => a[0] - b[0]); const hits = hz.slice(0, 1 + (w.pierce || 0)); if (hits.length) hitD = hits[hits.length - 1][0]; // v15: pierce = extra zombies per bullet
       G.tracers.push({ k: G.weapon, tier: w.tier, x0: player.x + dx * 8, y0: player.y - 10 - player.jz + dy * 8, x1: player.x + dx * hitD, y1: player.y - 10 - player.jz + dy * hitD, t: 0.12 });
-      for (const [, hzz] of hits) hurtZombie(hzz, w.dmg, dx, dy, w.kb || 1);
+      for (const [, hzz] of hits) hurtZombie(hzz, w.dmg, dx, dy, w.kb || 1); if (hits.length) anyHit = true;
     }
+    if (anyHit) G.shotHits = (G.shotHits || 0) + 1; // v18 accuracy
     for (const z of zombiePool) if (z.alive && Math.hypot(z.x - player.x, z.y - player.y) < 20 * TS) z.state = 'chase';
     return;
   }
@@ -880,7 +881,7 @@ function attack() {
 function hurtPlayer(dmg, from, cause) {
   if (!G || !['play', 'bag', 'camp'].includes(G.state)) return;
   // v8: every hit counts (no invulnerability window; several hits in one frame all land)
-  G.hp -= dmg; achHurt(dmg); player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT!');
+  G.hp -= dmg; achHurt(dmg, cause); player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT!');
   if (from && typeof from === 'object' && !player.air) { const dx = player.x - from.x, dy = player.y - from.y, d = Math.hypot(dx, dy) || 1; player.kb = [dx / d * 90, dy / d * 90]; }
   if (G.hp <= 0) die(cause);
 }
@@ -892,7 +893,7 @@ function knockOff(z) { // a zombie roostr bowls you off the crate
 function die(cause) {
   G.hp = 0; G.state = 'dead'; G.deadT = 0; G.deathCause = cause; G.eat = null; sfx('die');
   if (G.st > best.time) { best = { time: Math.floor(G.st), kills: G.kills, days: G.day }; try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {} G.newBest = true; }
-  if (!window.__ltNoLB) lbRunEnd(); // v16: end the server play, fetch the TOP 20
+  achRunEnd(); if (!window.__ltNoLB) lbRunEnd(); // v16: end the server play, fetch the TOP 20
 }
 function cancelEat() {} // v10: eating is gone (no meals, no healing). Kept as a no-op for old call sites.
 function updatePlayer(dt) { if (G.state === 'play') autoEquip();
@@ -951,8 +952,8 @@ addEventListener('keydown', (e) => {
     e.preventDefault(); audioInit(); if (e.repeat && k !== 'Backspace') return;
     if (e.handheld && KEYMAP[k] && KEYMAP[k] in held && !isShoot(KEYMAP[k])) { if (!held[KEYMAP[k]]) queue.push(KEYMAP[k]); held[KEYMAP[k]] = 1; return; }
     if (e.handheld) return;
-    if (/^[a-z]$/.test(k)) neType(k.toUpperCase()); else if (k === 'Backspace' || k === 'Delete') neType('<');
-    else if (k === 'Enter' || k === ' ') { if (G.deadT > 0.25) nameConfirm(); }
+    if (/^[a-z0-9_.\-]$/.test(k)) neType(k.toUpperCase()); else if (k === 'Backspace' || k === 'Delete') neType('<');
+    else if (k === 'Enter') { if (G.deadT > 0.25) nameConfirm(); } else if (k === ' ') { if (G.deadT > 0.25) nameSelect(); }
     else if (k === 'ArrowUp') nameNav('up'); else if (k === 'ArrowDown') nameNav('down'); else if (k === 'ArrowLeft') nameNav('left'); else if (k === 'ArrowRight') nameNav('right');
     return; }
   if (k === 'm') { toggleMute(); return; }
@@ -1073,7 +1074,7 @@ function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + f
     if (STATE === 'title') { if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
     if (G.state === 'dead') {
       const dir = b === 'up' || b === 'down' || b === 'left' || b === 'right';
-      if (NE.on) { if (go && G.deadT > 0.25) nameConfirm(); else if (dir) nameNav(b); continue; } // v17 name screen: shoot only confirms (greyed until valid)
+      if (NE.on) { if (go && G.deadT > 0.25) nameSelect(); else if (dir) nameNav(b); continue; } // v18 name grid: shoot presses the key under the cursor (OK greyed until valid)
       if (go && G.deadT > 0.25) { creditsRestart(); queue.length = 0; return; } // 0.25 s guard: a shot fired in the same instant as the fatal hit doesn't skip the credits
       continue; }
   }
@@ -1095,13 +1096,12 @@ function updateSurvival(dt) {
 let lastPhaseNight = false;
 function updateClock(dt) {
   const before = G.t % CYCLE; G.t += dt; const ph = G.t % CYCLE;
-  if (before < DAY_LEN - 30 && ph >= DAY_LEN - 30) say('DUSK SOON. THE FLOCK GETS HUNGRY.', 4);
-  if (before < DAY_LEN && ph >= DAY_LEN) { say('NIGHT FALLS. THE UNDEAD FLOCK STIRS.', 4); sfx('dusk'); }
-  if (ph < before) { G.day++; say('DAY ' + G.day + '. GM. STILL BOKING.', 4); sfx('dawn'); }
+  if (ph < before) G.day++; // v18: no dusk / night (always day)
   return 1;
 }
 function clockStr() { const ph = G ? G.t % CYCLE : 40; let h; if (ph < DAY_LEN) h = 6 + ph / DAY_LEN * 14; else h = 20 + (ph - DAY_LEN) / NIGHT_LEN * 10; h %= 24; const hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
-function daylight() {
+function daylight() { return 1; } // v18: always bright day
+function daylightOld() {
   if (!G) return 0.85; const ph = G.t % CYCLE, tr = 18;
   if (ph < tr) return ph / tr;                       // dawn
   if (ph < DAY_LEN - tr) return 1;
@@ -1178,7 +1178,7 @@ function drawHUD0(dt, t) {
   const night = isNight(); const ct = clockStr();
   panel(N - 56, 2, 54, 18);
   hx.drawImage(ICONS[night ? 'moon' : 'sun'], N - 52, 8);
-  inkText('DAY ' + G.day, N - 5, 2, INK, 'right'); inkText(fmtTime(G.st), N - 5, 10, night ? '#2e6c96' : HRED, 'right'); // time survived
+  inkText(fmtTime(G.st), N - 5, 6, HRED, 'right'); // v18: always day: time survived only
   // weapon + ammo (bottom-left)
   const w = WEAPONS[G.weapon], ww = Math.max(74, 22 + w.name.length * 6);
   panel(2, N - 22, ww, 20);
@@ -1212,57 +1212,129 @@ function drawTitle(t) {
   inkText('CHIKN EDITION', tx, y + 38, '#036b2b', 'center');
   inkText('BILLIONS MUST BOK.', tx, y + 58, INK, 'center'); // v14: no instructions
   const cy = Math.max(y + 96, Math.round(N * 0.5)); // v14: controls panel + start prompt removed
-  { const ids = Object.keys(ACH_UNLOCKED).sort((a, b) => ACH_UNLOCKED[b] - ACH_UNLOCKED[a]); text('TROPHIES ' + ids.length + '/' + ACH_TOTAL + (ids.length ? '  ' + achDef(ids[0])[0] : ''), N / 2, cy + 40, 8, HGOLD, 'center'); }
+  { const ids = Object.keys(ACH_UNLOCKED).sort((a, b) => ACH_UNLOCKED[b] - ACH_UNLOCKED[a]); text('TROPHIES ' + achCount() + '/' + ACH_TOTAL + (ids.length ? '  ' + achDef(ids[0])[0] : ''), N / 2, cy + 40, 8, HGOLD, 'center'); }
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
-// ================================================================ v13 achievements: big gold hens.farm pop-ups, queued, saved in localStorage
-const ACH_KEY = 'lasttower.ach1';
-const MIN_NAMES = ['', "STILL BOKKIN'", 'HARD-BOILED', 'FREE RANGE LEGEND', 'COOP CHAMPION', 'BILLIONS MUST BOK'];
-const ACH_DEF = { // id -> [title, subtitle]; minute + kill tiers are generated
-  gun1: ['LOCKED AND BOKKED', 'FIRST GUN'],
-  mg: ['BRRRT-AWK!', 'MACHINE GUN ACQUIRED'],
-  spree: ['FRENZY!', '10 KILLS IN 3 SECONDS'],
-  shot5: ['CORN-SPLOSION!', '5 KILLS IN ONE SHOTGUN BLAST'],
-  roostr: ['ROOSTR SLAYER', 'A ZOMBIE ROOSTR GOES DOWN'],
-  thrower: ['EGG-SLINGER DOWN', 'NO MORE ROTTEN EGGS (FOR NOW)'],
-  close: ['CLOSE CALL', 'STILL ALIVE AT 10 LIFE OR LESS'],
-  clean1: ['UNTOUCHED', '1 MINUTE WITHOUT A HIT'],
-  clean2: ['FEATHERS INTACT', '2 MINUTES WITHOUT A HIT'],
-  clean3: ['TEFLON HEN', '3 MINUTES WITHOUT A HIT'],
-  up1: ['UPGRADED', 'FIRST TIER II GUN'],
-  gold: ['GOLDEN GUN', 'A TIER V GUN'],
-  maxt: ['MAX TIER', 'BOTH GUNS AT TIER V'],
-};
-const KILL_TIERS = [[25, 'PECKING ORDER'], [50, 'FOWL PLAY'], [100, 'CENTURY CHIKN'], [250, 'HEN-DEMIC'], [500, 'COOP DE GRACE'], [1000, 'KILLERGAINZ']];
-for (const [n, nm] of KILL_TIERS) ACH_DEF['k' + n] = [nm, n + ' UNDEAD CHIKN PLUCKED'];
-for (let m = 1; m <= 10; m++) ACH_DEF['m' + m] = [MIN_NAMES[m] || 'UNPLUCKABLE', m + (m === 1 ? ' MINUTE' : ' MINUTES') + ' SURVIVED (' + m + ':00)'];
-const ACH_TOTAL = Object.keys(ACH_DEF).length;
+// ================================================================ v18: 100 achievements (big gold pop-ups, queued + merged, saved in localStorage)
+// ids from v13-v17 are kept, so trophies already earned still count. Lifetime stats live in lasttower.life1.
+const ACH_KEY = 'lasttower.ach1', LIFE_KEY = 'lasttower.life1';
+const ACH_LIST = [ // [id, title, subtitle, check(run R, lifetime L)] ; check is evaluated while playing (null = awarded by an event)
+  // minutes survived (13)
+  ['m1', "STILL BOKKIN'", '1:00 SURVIVED', (R) => R.st >= 60], ['m2', 'HARD-BOILED', '2:00 SURVIVED', (R) => R.st >= 120], ['m3', 'FREE RANGE LEGEND', '3:00 SURVIVED', (R) => R.st >= 180],
+  ['m4', 'COOP CHAMPION', '4:00 SURVIVED', (R) => R.st >= 240], ['m5', 'BILLIONS MUST BOK', '5:00 SURVIVED', (R) => R.st >= 300], ['m6', 'NEST EGG', '6:00 SURVIVED', (R) => R.st >= 360],
+  ['m7', 'SEVEN-LAYER YOLK', '7:00 SURVIVED', (R) => R.st >= 420], ['m8', 'OVER EASY, NEVER OVER', '8:00 SURVIVED', (R) => R.st >= 480], ['m9', 'NINE LIVES (WRONG ANIMAL)', '9:00 SURVIVED', (R) => R.st >= 540],
+  ['m10', 'UNPLUCKABLE', '10:00 SURVIVED', (R) => R.st >= 600], ['m12', 'A DOZEN EGGS', '12:00 SURVIVED', (R) => R.st >= 720], ['m15', 'FIFTEEN MINUTES OF FLAME', '15:00 SURVIVED', (R) => R.st >= 900],
+  ['m20', 'ETERNAL ROOST', '20:00 SURVIVED', (R) => R.st >= 1200],
+  // kills in one run (9)
+  ['k10', 'FIRST BLOOD-ISH', '10 UNDEAD PLUCKED', (R) => R.kills >= 10], ['k25', 'PECKING ORDER', '25 UNDEAD PLUCKED', (R) => R.kills >= 25], ['k50', 'FOWL PLAY', '50 UNDEAD PLUCKED', (R) => R.kills >= 50],
+  ['k100', 'CENTURY CHIKN', '100 UNDEAD PLUCKED', (R) => R.kills >= 100], ['k150', 'BUCKET OF WINGS', '150 UNDEAD PLUCKED', (R) => R.kills >= 150], ['k250', 'HEN-DEMIC', '250 UNDEAD PLUCKED', (R) => R.kills >= 250],
+  ['k500', 'COOP DE GRACE', '500 UNDEAD PLUCKED', (R) => R.kills >= 500], ['k750', 'FEATHER STORM', '750 UNDEAD PLUCKED', (R) => R.kills >= 750], ['k1000', 'KILLERGAINZ', '1000 UNDEAD PLUCKED', (R) => R.kills >= 1000],
+  // no-hit streaks (5)
+  ['clean1', 'UNTOUCHED', '1 MINUTE WITHOUT A HIT', null], ['clean2', 'FEATHERS INTACT', '2 MINUTES WITHOUT A HIT', null], ['clean3', 'TEFLON HEN', '3 MINUTES WITHOUT A HIT', null],
+  ['clean4', 'NON-STICK NUGGET', '4 MINUTES WITHOUT A HIT', null], ['clean5', 'GHOST CHIKN', '5 MINUTES WITHOUT A HIT', null],
+  // guns + tiers (10)
+  ['gun1', 'LOCKED AND BOKKED', 'FIRST GUN', (R) => R.ownGun], ['mg', 'BRRRT-AWK!', 'MACHINE GUN ACQUIRED', (R) => R.ownMg], ['sg', 'POP GOES THE CORN', 'SHOTGUN ACQUIRED', (R) => R.ownSg],
+  ['both', 'DUAL WIELD DIVA', 'MG AND SHOTGUN IN ONE RUN', (R) => R.ownMg && R.ownSg], ['up1', 'UPGRADED', 'A TIER II GUN', (R) => R.tmax >= 2], ['mg3', 'BELT-FED BIRD', 'MG III', (R) => R.tmg >= 3],
+  ['sg3', 'KERNEL PANIC', 'SHOTGUN III', (R) => R.tsg >= 3], ['tier4', 'PURPLE REIGN', 'A TIER IV GUN', (R) => R.tmax >= 4], ['gold', 'GOLDEN GUN', 'A TIER V GUN', (R) => R.tmax >= 5],
+  ['maxt', 'MAX TIER', 'BOTH GUNS AT TIER V', (R) => R.tmin >= 5],
+  // multi-kills (5)
+  ['spree', 'FRENZY!', '10 KILLS IN 3 SECONDS', null], ['spree20', 'FEEDING FRENZY', '20 KILLS IN 5 SECONDS', null], ['shot3', 'HAT TRICK HEN', '3 KILLS IN ONE SHOTGUN BLAST', null],
+  ['shot5', 'CORN-SPLOSION!', '5 KILLS IN ONE SHOTGUN BLAST', null], ['shot8', 'POPCORN APOCALYPSE', '8 KILLS IN ONE SHOTGUN BLAST', null],
+  // roostrs + egg-slingers (8)
+  ['roostr', 'ROOSTR SLAYER', 'A ZOMBIE ROOSTR GOES DOWN', (R) => R.roostr >= 1], ['roostr5', 'COCK-A-DOODLE-DONE', '5 ROOSTRS IN ONE RUN', (R) => R.roostr >= 5],
+  ['roostr20', 'ROOSTR ROAST', '20 ROOSTRS IN ONE RUN', (R) => R.roostr >= 20], ['thrower', 'EGG-SLINGER DOWN', 'NO MORE ROTTEN EGGS (FOR NOW)', (R) => R.thrower >= 1],
+  ['thrower5', 'RETURN TO SENDER', '5 EGG-SLINGERS IN ONE RUN', (R) => R.thrower >= 5], ['thrower20', 'OMELETTE DU FROMAGE', '20 EGG-SLINGERS IN ONE RUN', (R) => R.thrower >= 20],
+  ['splat', 'EGG ON YOUR FACE', 'TAKE A ROTTEN EGG AND LIVE', (R, L, G) => G.eggHits > 0 && G.hp > 0], ['stomped', 'STOMP AND SHRUG', 'SURVIVE A ROOSTR STOMP', (R) => R.stompHit],
+  // close calls (4)
+  ['close', 'CLOSE CALL', 'STILL ALIVE AT 10 LIFE OR LESS', (R, L, G) => G.hp > 0 && G.hp <= 10], ['close5', 'BY A FEATHER', 'STILL ALIVE AT 5 LIFE OR LESS', (R, L, G) => G.hp > 0 && G.hp <= 5],
+  ['clutch', 'CLUTCH CLUCK', '30 SECONDS AT 10 LIFE OR LESS', (R) => R.closeT >= 30], ['lowmin', 'RUNNING ON FUMES', 'A MINUTE AT 25 LIFE OR LESS', (R) => R.lowT >= 60],
+  // kill streaks without being hit (3)
+  ['streak25', 'UNTOUCHABLE 25', '25 KILLS WITHOUT A HIT', (R) => R.streak >= 25], ['streak50', 'UNTOUCHABLE 50', '50 KILLS WITHOUT A HIT', (R) => R.streak >= 50],
+  ['streak100', 'UNTOUCHABLE 100', '100 KILLS WITHOUT A HIT', (R) => R.streak >= 100],
+  // distance (4)
+  ['run1', 'LEG DAY', 'RUN 300 TILES IN ONE RUN', (R) => R.dist >= 300], ['run2', 'FREE RANGE CARDIO', 'RUN 1000 TILES IN ONE RUN', (R) => R.dist >= 1000],
+  ['run3', 'MARATHON MOTHER HEN', 'RUN 3000 TILES IN ONE RUN', (R) => R.dist >= 3000], ['lrun', 'ROAD RUNNER (WRONG BIRD)', 'RUN 20000 TILES, ALL RUNS', (R, L) => L.dist + R.dist >= 20000],
+  // shots (4) + accuracy (2)
+  ['sh100', 'TRIGGER CLUCKY', '100 SHOTS IN ONE RUN', (R) => R.shots >= 100], ['sh500', 'SPRAY AND PRAY', '500 SHOTS IN ONE RUN', (R) => R.shots >= 500],
+  ['sh2000', 'BULLET HELL HEN', '2000 SHOTS IN ONE RUN', (R) => R.shots >= 2000], ['lsh', 'AMMO ECONOMY', '10000 SHOTS, ALL RUNS', (R, L) => L.shots + R.shots >= 10000],
+  ['acc50', 'SHARPSHOOTER', '50% HITS (100+ SHOTS)', (R) => R.shots >= 100 && R.hits / R.shots >= 0.5], ['acc75', "EAGLE EYE (HEN'S EYE)", '75% HITS (100+ SHOTS)', (R) => R.shots >= 100 && R.hits / R.shots >= 0.75],
+  // pickups (4)
+  ['pk10', 'MAGPIE', '10 PICKUPS IN ONE RUN', (R) => R.pickups >= 10], ['pk40', 'SCAVENGER HEN', '40 PICKUPS IN ONE RUN', (R) => R.pickups >= 40],
+  ['pk100', 'HOARDER OF THE COOP', '100 PICKUPS IN ONE RUN', (R) => R.pickups >= 100], ['lpk', 'DRAGON OF THE NEST', '1000 PICKUPS, ALL RUNS', (R, L) => L.pickups + R.pickups >= 1000],
+  // lifetime kills (4) + time (2) + runs (4)
+  ['lk500', 'SEASONED', '500 KILLS, ALL RUNS', (R, L) => L.kills + R.kills >= 500], ['lk2500', 'EXTRA CRISPY', '2500 KILLS, ALL RUNS', (R, L) => L.kills + R.kills >= 2500],
+  ['lk10k', 'FAMILY BUCKET', '10000 KILLS, ALL RUNS', (R, L) => L.kills + R.kills >= 10000], ['lk50k', 'COLONEL OF THE COOP', '50000 KILLS, ALL RUNS', (R, L) => L.kills + R.kills >= 50000],
+  ['lt10', 'REGULAR AT THE ROOST', '10 MINUTES SURVIVED, ALL RUNS', (R, L) => L.time + R.st >= 600], ['lt60', 'ONE HOUR OF BOK', '1 HOUR SURVIVED, ALL RUNS', (R, L) => L.time + R.st >= 3600],
+  ['runs1', 'GM, CHIKN', 'YOUR FIRST RUN', (R, L) => L.runs >= 1], ['runs10', 'BACK FOR SECONDS', '10 RUNS', (R, L) => L.runs >= 10],
+  ['runs50', 'COOP COMMUTER', '50 RUNS', (R, L) => L.runs >= 50], ['runs100', 'CERTIFIED HEN-THUSIAST', '100 RUNS', (R, L) => L.runs >= 100],
+  // chikn lore + oddities (17)
+  ['egg', '$EGG STACKER', 'HOLD 200+ MG ROUNDS', (R, L, G) => G.inv.belt >= 200], ['hegg', 'HEGG HUNTER', '5 GUN UPGRADES IN ONE RUN', (R) => R.upgrades >= 5],
+  ['wagmi', 'WAGMI', '3:00 AND 300 KILLS', (R) => R.st >= 180 && R.kills >= 300], ['hodl', 'DIAMOND CLAWS', 'STAND STILL 10 SECONDS, NO HIT', (R) => R.stillT >= 10],
+  ['pacifist', 'PACIFIST PULLET', 'SURVIVE 1:00 WITH ZERO KILLS', (R) => R.st >= 60 && R.kills === 0], ['pecker', 'BEAK MODE', '25 PECK KILLS IN ONE RUN', (R) => R.peck >= 25],
+  ['dry', 'DRY CLUCK', 'OUT OF AMMO? 5 PECK KILLS AFTER A GUN', (R) => R.dryPeck >= 5], ['swarm', 'SWARM SURFER', '40 UNDEAD ON SCREEN, STILL ALIVE', (R) => R.onScreen >= 40],
+  ['switch', 'QUICK DRAW', 'MG KILL + SHOTGUN KILL IN 2 SECONDS', null], ['feed', 'FEED THE COOP', '5 AMMO CRATES IN ONE RUN', (R) => R.boxes >= 5],
+  ['bok', 'BOK BOK BOK!', '3 ACHIEVEMENTS IN 10 SECONDS', null], ['flock', 'FLOCK TOGETHER', 'MEET EVERY COMMUNITY HEN', null],
+  ['paper', 'PAPER WINGS', 'PLUCKED IN UNDER 10 SECONDS', null], ['ngmi', 'NGMI', 'PLUCKED WITH ZERO KILLS', null], ['rug', 'RUG PULLED', 'PLUCKED 5 S AFTER AN UPGRADE', null],
+  ['name', 'NAME IN LIGHTS', 'CHOOSE YOUR NAME', null], ['top20', 'MADE THE FLOCK', 'A SPOT ON THE TOP 20', null],
+  // meta (2)
+  ['half', 'HALF-BOILED', '50 ACHIEVEMENTS UNLOCKED', null], ['all', 'COMPLETIONIST CHIKN', '99 ACHIEVEMENTS UNLOCKED', null],
+];
+const ACH_DEF = {}; for (const [id, t1, t2] of ACH_LIST) ACH_DEF[id] = [t1, t2];
+const ACH_TOTAL = ACH_LIST.length; // 100
 let ACH_UNLOCKED = {}; try { ACH_UNLOCKED = JSON.parse(localStorage.getItem(ACH_KEY)) || {}; } catch (e) {}
-function achDef(id) { if (ACH_DEF[id]) return ACH_DEF[id];
-  { const u = /^up:(\w+):(\d+)$/.exec(id); if (u) return [GUN_LABEL[u[1]] + ' ' + roman(+u[2]), 'UPGRADED + AMMO TOPPED UP']; const d = /^drop:(\d+)$/.exec(id); if (d) return ['MG ' + roman(+d[1]) + ' DROPPING', '+ SHOTGUN ' + roman(+d[1])]; } const m = /^m(\d+)$/.exec(id); if (m) return ['UNPLUCKABLE', m[1] + ' MINUTES SURVIVED (' + m[1] + ':00)']; return [id, '']; }
+let LIFE = { kills: 0, shots: 0, pickups: 0, dist: 0, time: 0, runs: 0 }; try { Object.assign(LIFE, JSON.parse(localStorage.getItem(LIFE_KEY)) || {}); } catch (e) {}
+const saveLife = () => { try { localStorage.setItem(LIFE_KEY, JSON.stringify(LIFE)); } catch (e) {} };
+const achCount = () => ACH_LIST.reduce((n, a) => n + (ACH_UNLOCKED[a[0]] ? 1 : 0), 0);
+const MULTI = {}; let _multiN = 0;
+function achDef(id) { if (ACH_DEF[id]) return ACH_DEF[id]; if (MULTI[id]) return MULTI[id];
+  { const u = /^up:(\w+):(\d+)$/.exec(id); if (u) return [GUN_LABEL[u[1]] + ' ' + roman(+u[2]), 'UPGRADED + AMMO TOPPED UP']; const d = /^drop:(\d+)$/.exec(id); if (d) return ['MG ' + roman(+d[1]) + ' DROPPING', '+ SHOTGUN ' + roman(+d[1])]; } return [id, '']; }
+function unlockSave(id) { const isNew = !ACH_UNLOCKED[id]; if (isNew) { ACH_UNLOCKED[id] = Math.floor(Date.now() / 1000); try { localStorage.setItem(ACH_KEY, JSON.stringify(ACH_UNLOCKED)); } catch (e) {} } return isNew; }
+function metaCheck() { const n = achCount(); if (n >= 50 && !ACH_UNLOCKED.half) achEvent('half'); if (n >= 99 && !ACH_UNLOCKED.all) achEvent('all'); }
+// an achievement earned when no pop-up can show (death, name entry): saved + counted for this run, no card
+function achEvent(id) { if (!G) return; if (G.state !== 'dead' && award(id)) return; G.achGot = G.achGot || {}; if (G.achGot[id]) return; G.achGot[id] = 1; (G.achList = G.achList || []).push(id); unlockSave(id); metaCheck(); }
 function award(id, repeatable) {
   if (!G || G.state === 'dead') return false;
   G.achGot = G.achGot || {}; if (G.achGot[id] && !repeatable) return false;
   G.achGot[id] = (G.achGot[id] || 0) + 1; (G.achList = G.achList || []).push(id);
-  const isNew = !ACH_UNLOCKED[id]; if (isNew) { ACH_UNLOCKED[id] = Math.floor(Date.now() / 1000); try { localStorage.setItem(ACH_KEY, JSON.stringify(ACH_UNLOCKED)); } catch (e) {} }
-  (G.achQ = G.achQ || []).push({ id, t: 0, isNew }); return true;
+  const isNew = unlockSave(id);
+  // queue: 3+ waiting cards merge into one "+N ACHIEVEMENTS" card so a burst never stalls the screen
+  const q = (G.achQ = G.achQ || []), last = q[q.length - 1];
+  if (q.length >= 3 && last && last.multi && last.t === 0) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
+  else if (q.length >= 3) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
+  else q.push({ id, t: 0, isNew });
+  if (id !== 'bok') { const R = G.rs; if (R) { R.awT.push(G.st); while (R.awT.length && G.st - R.awT[0] > 10) R.awT.shift(); if (R.awT.length >= 3) award('bok'); } }
+  metaCheck(); return true;
 }
-function achKill(z) { if (!G) return; const now = G.st; (G.killT = G.killT || []).push(now); while (G.killT.length && now - G.killT[0] > 3) G.killT.shift();
-  if (G.killT.length >= 10) award('spree'); if (z.brute) award('roostr'); if (z.thrower) award('thrower'); }
-function achHurt(dmg) { if (G && dmg > 0) { G.lastHit = G.st; G.cleanTier = 0; } }
+function runStats() { return { st: 0, kills: 0, dist: 0, shots: 0, hits: 0, pickups: 0, boxes: 0, roostr: 0, thrower: 0, peck: 0, dryPeck: 0, upgrades: 0, streak: 0, closeT: 0, lowT: 0, stillT: 0, onScreen: 0,
+  stompHit: false, lastUpT: -99, mgKillT: -99, sgKillT: -99, awT: [], px: player.x, py: player.y, lastSt: 0, scanT: 0, committed: false }; }
+function achRunStart() { G.rs = runStats(); G.lastHit = 0; G.cleanTier = 0; LIFE.runs++; saveLife(); }
+function achRunEnd() { const R = G.rs; if (!R || R.committed) return; R.committed = true; R.st = G.st; R.kills = G.kills;
+  LIFE.kills += R.kills; LIFE.shots += R.shots; LIFE.pickups += R.pickups; LIFE.dist += Math.round(R.dist); LIFE.time += Math.round(R.st); saveLife();
+  if (G.st < 10) achEvent('paper'); if (G.kills === 0) achEvent('ngmi'); if (G.st - R.lastUpT <= 5) achEvent('rug'); }
+function achKill(z) { if (!G || !G.rs) return; const R = G.rs, now = G.st; (G.killT = G.killT || []).push(now); while (G.killT.length && now - G.killT[0] > 5) G.killT.shift();
+  if (G.killT.filter((t) => now - t <= 3).length >= 10) award('spree'); if (G.killT.length >= 20) award('spree20');
+  if (z.brute) R.roostr++; if (z.thrower) R.thrower++; R.streak++;
+  if (G.weapon === 'fists') { R.peck++; if (G.owned.some((w) => WEAPONS[w].kind === 'gun')) R.dryPeck++; }
+  if (G.weapon === 'mg') R.mgKillT = now; if (G.weapon === 'shotgun') R.sgKillT = now; if (Math.abs(R.mgKillT - R.sgKillT) <= 2) award('switch'); }
+function achHurt(dmg, cause) { if (G && dmg > 0) { G.lastHit = G.st; G.cleanTier = 0; if (G.rs) { G.rs.streak = 0; G.rs.stillT = 0; if (cause === 'A ZOMBIE ROOSTR') G.rs.stompPend = true; } } }
 function updateAch() {
-  if (!G || G.state !== 'play') return;
-  const m = Math.floor(G.st / 60); if (m >= 1) award('m' + m);
-  for (const [n] of KILL_TIERS) if (G.kills >= n) award('k' + n);
-  if (G.owned.some((w) => WEAPONS[w].kind === 'gun')) award('gun1');
-  if (G.owned.includes('mg')) award('mg');
-  { const a = G.tier.mg || 0, b = G.tier.shotgun || 0; if (Math.max(a, b) >= 2) award('up1'); if (Math.max(a, b) >= 5) award('gold'); if (Math.min(a, b) >= 5) award('maxt'); }
-  if (G.hp > 0 && G.hp <= 10) award('close');
-  const clean = G.st - (G.lastHit || 0), tier = Math.min(3, Math.floor(clean / 60)); // tiered, and repeatable once a streak is broken and rebuilt
+  if (!G || G.state !== 'play' || !G.rs) return; const R = G.rs, dt = Math.max(0, G.st - R.lastSt); R.lastSt = G.st;
+  R.st = G.st; R.kills = G.kills; R.shots = G.shots || 0; R.hits = G.shotHits || 0;
+  const mv = Math.hypot(player.x - R.px, player.y - R.py); if (mv < 40) R.dist += mv / TS; R.px = player.x; R.py = player.y;
+  R.stillT = mv < 0.05 ? R.stillT + dt : 0;
+  if (G.hp > 0 && G.hp <= 10) R.closeT += dt; if (G.hp > 0 && G.hp <= 25) R.lowT += dt;
+  if (R.stompPend && G.hp > 0) R.stompHit = true;
+  R.scanT -= dt; if (R.scanT <= 0) { R.scanT = 0.5; let n = 0; const h = N / 2 + 8; for (const z of zombiePool) if (z.alive && Math.abs(z.x - player.x) < h && Math.abs(z.y - player.y) < h) n++; R.onScreen = Math.max(R.onScreen, n); }
+  R.ownGun = G.owned.some((w) => WEAPONS[w].kind === 'gun'); R.ownMg = G.owned.includes('mg'); R.ownSg = G.owned.includes('shotgun');
+  const a = G.tier.mg || 0, b = G.tier.shotgun || 0; R.tmg = a; R.tsg = b; R.tmax = Math.max(a, b); R.tmin = Math.min(a, b);
+  for (const [id, , , chk] of ACH_LIST) if (chk && !(G.achGot && G.achGot[id]) && chk(R, LIFE, G)) award(id);
+  const clean = G.st - (G.lastHit || 0), tier = Math.min(5, Math.floor(clean / 60)); // tiered, repeatable once a streak is broken and rebuilt
   if (tier > (G.cleanTier || 0)) { G.cleanTier = tier; award('clean' + tier, true); }
 }
 // shotgun multi-kill: count kills inside one blast
-{ const _attack = attack; attack = function () { const k0 = G ? G.kills : 0, w = G && G.weapon; _attack(); if (w === 'shotgun' && G.kills - k0 >= 5) award('shot5'); }; }
+{ const _attack = attack; attack = function () { const k0 = G ? G.kills : 0, w = G && G.weapon; _attack(); if (w === 'shotgun') { const k = G.kills - k0; if (k >= 3) award('shot3'); if (k >= 5) award('shot5'); if (k >= 8) award('shot8'); } }; }
+// pickups + upgrades
+{ const _pk = pickup; pickup = function (it) { const R = G && G.rs; if (R) { R.pickups++; if (it.kind === 'ammobox') R.boxes++; if ((it.kind === 'mg' || it.kind === 'shotgun') && (it.tier || 1) > (G.tier[it.kind] || 0) && G.tier[it.kind]) { R.upgrades++; R.lastUpT = G.st; } } _pk(it); }; }
 function sfxAch() { tone(523, 523, 0.08, 'square', 0.07); tone(659, 659, 0.08, 'square', 0.07, 0.08); tone(784, 784, 0.1, 'square', 0.07, 0.16); tone(1046, 1046, 0.22, 'triangle', 0.08, 0.26); noise(0.05, 2600, 0.1, 3, 0.26); } // bok-bok-BOK fanfare
 // the pop-up: cached card (gold title, 3px ink outline, hard ink offset shadow), punchy scale-in, top band so it never covers the hen
 const _achImg = new Map();
@@ -1298,18 +1370,17 @@ function drawAch(dt) {
 // v16 no-hit streak meter (under the kill count): fills over each minute without a hit, one gold pip per minute banked
 // (UNTOUCHED / FEATHERS INTACT / TEFLON HEN), flashes red and empties when a hit lands. Wordless.
 function drawCleanMeter(t) {
-  if (!G || G.state !== 'play') return; const clean = G.st - (G.lastHit || 0), tier = Math.min(3, Math.floor(clean / 60)), f = tier >= 3 ? 1 : (clean % 60) / 60;
-  const x = 2, y = 44, w = 50; panel(x, y, w, 9); const hit = player.hurtT > 0;
-  // tiny shield
+  if (!G || G.state !== 'play') return; const clean = G.st - (G.lastHit || 0), tier = Math.min(5, Math.floor(clean / 60)), f = tier >= 5 ? 1 : (clean % 60) / 60;
+  const x = 2, y = 44, w = 56; panel(x, y, w, 9); const hit = player.hurtT > 0;
   hx.fillStyle = hit ? HRED : tier ? HGOLD : '#9fb3a6'; hx.fillRect(x + 3, y + 2, 5, 3); hx.fillRect(x + 4, y + 5, 3, 1); hx.fillRect(x + 5, y + 6, 1, 1);
   hx.fillStyle = INK; hx.fillRect(x + 10, y + 3, 26, 3); hx.fillStyle = hit ? HRED : HGOLD; hx.fillRect(x + 10, y + 3, Math.round(26 * f), 3);
-  for (let i = 0; i < 3; i++) { hx.fillStyle = i < tier ? HGOLD : 'rgba(9,11,10,.25)'; hx.fillRect(x + 39 + i * 3, y + 3, 2, 3); }
+  for (let i = 0; i < 5; i++) { hx.fillStyle = i < tier ? HGOLD : 'rgba(9,11,10,.25)'; hx.fillRect(x + 39 + i * 3, y + 3, 2, 3); }
 }
 // ================================================================ v15 THE FLOCK: community hens (X pfps of people posting about hens.farm) cheer your achievements
 // Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
 const FLOCK = [], _flockRecent = [];
 const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
-if (FLOCK_LAYER) fetch('flock/manifest.json?v=17').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=18').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
 const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
   m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
   m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
@@ -1338,7 +1409,7 @@ const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything 
   maxt: ["{h}: 'max tier. the farm fears you.'", "{h}: 'fully loaded. fully bokked.'"],
   up: ["{h}: 'upgrade secured. bok.'", "{h} approves this loadout", "{h}: 'shinier. louder. better.'"],
   drop: ["{h}: 'new guns just dropped'", "{h} spotted shiny crates", "{h}: 'the minute bell rang. tier up.'"],
-  any: ["{h}: 'bok!'", "{h} is cheering from the coop"],
+  any: ["{h}: 'bok!'", "{h} is cheering from the coop", "{h}: 'put that one on the egg'", "{h}: 'the coop group chat is going OFF'", "{h}: 'certified bok moment'", "{h} saw that. everyone saw that.", "{h}: 'we are so back'", "{h}: 'screenshot this'"],
 };
 function flockLinesFor(id) { if (id.startsWith('up:')) return FLOCK_LINES.up; if (id.startsWith('drop:')) return FLOCK_LINES.drop; if (/^m\d+$/.test(id)) return FLOCK_LINES[id] || FLOCK_LINES.mX; return FLOCK_LINES[id] || FLOCK_LINES.any; }
 const _lineLast = {};
@@ -1355,11 +1426,12 @@ function flockPop(id) {
   const lines = flockLinesFor(id); let k = Math.floor(Math.random() * lines.length); if (lines.length > 1 && k === _lineLast[id]) k = (k + 1) % lines.length; _lineLast[id] = k;
   const raw = lines[k], quote = raw.startsWith('{h}: '), body = quote ? '\u201c' + raw.slice(5).replace(/^'|'$/g, '') + '\u201d' : raw.replace('{h} ', '');
   // slide in from the edge the hen is NOT aiming at (she always sits at screen centre, the card stays in the side gutter)
-  const side = player.fx > 0.25 ? 'left' : player.fx < -0.25 ? 'right' : (_flockSide++ % 2 ? 'left' : 'right');
+  const side = 'bottom'; _flockSide++; // v18: big card in the bottom band (the hen is always at screen centre; the gold title is in the top band)
+  try { const seen = new Set(JSON.parse(localStorage.getItem('lasttower.flockseen') || '[]')); seen.add(f.h); localStorage.setItem('lasttower.flockseen', JSON.stringify([...seen])); if (FLOCK.length >= 10 && FLOCK.every((x) => seen.has(x.h))) achEvent('flock'); } catch (e) {}
   flockFont(); if (_flockPopEl) _flockPopEl.remove();
   const el = document.createElement('div'); el.className = 'fk-pop fk-' + side;
   el.innerHTML = `<img src="${_esc(f.src)}" alt=""><div class="fk-txt"><b>@${_esc(f.h)}</b><span>${_esc(body)}</span></div>`;
-  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 1650);
+  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 2000);
 }
 // death screen: 2-3 cheering hens ("the flock salutes you"), placed in canvas coords
 let _salute = null;
@@ -1385,7 +1457,7 @@ addEventListener('resize', flockFont);
 // Leaderboard: the shared membersonly.cc API (server/src/leaderboard.js, game "last-tower": survival time measured by the
 // server, capped by the run clock, ties by kills, best per player, top 20). No API -> a local top 20 on this device.
 const LB_GAME = 'last-tower', NAME_KEY = 'lasttower.name2', LOCAL_LB_KEY = 'lasttower.lb1';
-const validName = (s) => typeof s === 'string' && /^[A-Z]{3,12}$/.test(s);
+const validName = (s) => typeof s === 'string' && /^[A-Z0-9_.\-]{3,12}$/.test(s) && /[A-Z0-9]/.test(s); // v18: 3-12 of A-Z 0-9 - _ .
 let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (validName(s)) lbName = s; localStorage.removeItem('lasttower.name'); } catch (e) {} // v17: v16's auto-assigned names (old key) are dropped, so everyone picks their own
 const saveName = (s) => { lbName = s; try { localStorage.setItem(NAME_KEY, s); } catch (e) {} };
 const MA = () => (window.MembersAuth && window.MembersAuth.available ? window.MembersAuth : null);
@@ -1401,7 +1473,7 @@ function lbRunEnd() { // called by die()
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
   const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName || '???', ms: r.ms, kills: r.kills, t: Date.now() };
     if (r.ms >= 5000) l.push(me); l.sort((a, b) => b.ms - a.ms || b.kills - a.kills); const top = l.slice(0, 20); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(top)); } catch (e) {}
-    r.localMe = me; r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; };
+    r.localMe = me; r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; if (top.includes(me)) achEvent('top20'); };
   if (!A || !r.play) { fallback(); return; }
   A.endPlay(r.play, { outcome: 'died', score: r.kills, meta: { ms: r.ms, mg: G.tier.mg || 0, sg: G.tier.shotgun || 0 } })
     .then((p) => (p ? A.leaderboard(LB_GAME) : null))
@@ -1413,72 +1485,75 @@ function lbPost(r, onRestart) { // post this run under the current name (on rest
   if (r && onRestart) r.postOnReady = true;
   if (!r || r.posted || r.posting || !r.board || r.local || !lbName) return; const A = MA(); if (!A) return; r.posting = true;
   const name = lbName; A.postLeaderboard(LB_GAME, r.play, name).then((res) => { r.posting = false;
-    if (res.status === 201 && res.json) { r.posted = true; r.board = res.json; r.entry = res.json.entry; return; }
+    if (res.status === 201 && res.json) { r.posted = true; r.board = res.json; r.entry = res.json.entry; if (r.entry && r.entry.rank <= 20) achEvent('top20'); return; }
     const err = res.json && res.json.error; if (err === 'name_not_allowed' || err === 'bad_name') { lbName = null; try { localStorage.removeItem(NAME_KEY); } catch (e) {} if (G === r.g && G.state === 'dead') nameOpen('death'); return; } // refused: ask again
     r.posted = true; r.err = err || 'offline'; }).catch(() => { r.posting = false; r.posted = true; });
 }
-// ---- v17 name entry: no starting name. The first death (or any death with no saved name) opens a blank arcade name screen
-// BEFORE the credits roll: 6 blank slots + a tappable A-Z grid + backspace + a check. D-pad up/down = letter wheel, left/right = slot,
-// shoot = confirm (only on this screen; greyed until valid: 3+ letters, passes the blocklist). Credits + restart wait for it.
-// Change it later: tap your gold row on the TOP 20 (or the YOU line). Typing letters / Backspace / Enter work on a keyboard.
-const NE = { on: false, slots: null, cur: 0, blink: 0, shake: 0, keys: null, check: null, back: null, from: null };
-const NE_SLOTS = 6, ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-// mirror of the server's blocklist (server/src/names.js) so the check icon only lights for names the board will take
+// ---- v18 name entry: a full alphabet grid on the first death (or whenever no name is saved), BEFORE the credits roll.
+// A-Z, 0-9, - _ . + DEL + OK. D-pad moves the gold cursor, shoot presses the key under it; on phones just tap a key.
+// 1-12 characters, blank at the start; OK stays grey until 3+ characters (with a letter or digit) that pass the same blocklist
+// as the server. Credits + restart wait for it; shoot never restarts from here. A keyboard can type, Backspace, Enter.
+// Change it later: tap your gold row on the TOP 20 (or the "YOU: #n" line).
+const NE = { on: false, name: '', cur: 0, blink: 0, shake: 0, keys: null, from: null };
+const NE_MAX = 12, NE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';
+const NE_GRID = (() => { const k = []; for (let i = 0; i < 36; i++) k.push({ ch: NE_CHARS[i], r: Math.floor(i / 9), c: i % 9, w: 1 });
+  k.push({ ch: '-', r: 4, c: 0, w: 1 }, { ch: '_', r: 4, c: 1, w: 1 }, { ch: '.', r: 4, c: 2, w: 1 }, { ch: 'DEL', r: 4, c: 3, w: 3 }, { ch: 'OK', r: 4, c: 6, w: 3 }); return k; })();
+// mirror of server/src/names.js isBlocked (leet + squash + collapse), so OK only lights for names the board will take
 const NB_ANY = ['fuck', 'fuk', 'fck', 'shit', 'cunt', 'nigg', 'faggot', 'fag', 'kike', 'retard', 'whore', 'slut', 'bitch', 'pussy', 'penis', 'vagina', 'porn', 'nazi', 'hitler', 'kkk', 'tranny', 'dyke', 'wank', 'twat', 'bastard',
   'asshole', 'jizz', 'dildo', 'blowjob', 'handjob', 'molest', 'cocksuck', 'motherf', 'beaner', 'wetback', 'raghead', 'towelhead', 'semen', 'boner', 'clit', 'heil'];
-const NB_WORD = ['rape', 'rapist', 'cum', 'ass', 'arse', 'tit', 'tits', 'dick', 'cock', 'spic', 'chink', 'coon', 'gook', 'homo', 'hoe', 'pedo', 'paki', 'jap', 'negro', 'sex', 'anal', 'nig', 'nigs', 'lesbo', 'kys'];
-const nameBlocked = (s) => { const l = s.toLowerCase(), c = l.replace(/(.)\1+/g, '$1'); return NB_ANY.some((w) => l.includes(w) || c.includes(w)) || NB_WORD.includes(l) || NB_WORD.includes(c); };
-const neName = () => (NE.slots || []).join('').replace(/\s+/g, '');
-const neValid = () => { const s = neName(); return validName(s) && !nameBlocked(s); };
-function nameOpen(from) { NE.on = true; NE.from = from || 'death'; NE.slots = (lbName && from === 'change' ? lbName.slice(0, NE_SLOTS) : '').padEnd(NE_SLOTS, ' ').split(''); NE.cur = from === 'change' ? Math.min(NE_SLOTS - 1, neName().length) : 0; NE.blink = 0; }
+const NB_WORD = new Set(['rape', 'rapist', 'cum', 'ass', 'arse', 'tit', 'tits', 'dick', 'cock', 'spic', 'chink', 'coon', 'gook', 'homo', 'hoe', 'pedo', 'paki', 'jap', 'negro', 'sex', 'anal', 'nig', 'nigs', 'lesbo', 'kys']);
+const NB_LEET = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', 8: 'b', 9: 'g' };
+function nameBlocked(s) { const l = s.toLowerCase().replace(/[0-9]/g, (d) => NB_LEET[d] || d), sq = l.replace(/[^a-z]/g, ''), col = (x) => x.replace(/(.)\1+/g, '$1');
+  if ([sq, col(sq)].some((f) => NB_ANY.some((w) => f.includes(w)))) return true; const words = l.split(/[^a-z]+/).filter(Boolean); return words.some((w) => NB_WORD.has(w) || NB_WORD.has(col(w))) || NB_WORD.has(sq); }
+const neName = () => NE.name;
+const neValid = () => validName(NE.name) && !nameBlocked(NE.name);
+function nameOpen(from) { NE.on = true; NE.from = from || 'death'; NE.name = from === 'change' && lbName ? lbName : ''; NE.cur = 0; NE.blink = 0; }
 function nameConfirm() {
   if (!neValid()) { NE.shake = 0.3; sfx('zpeck'); return; }
-  const s = neName(); saveName(s); NE.on = false; sfx('pick'); const r = RUN && RUN.g === G ? RUN : null;
+  const s = NE.name; saveName(s); NE.on = false; sfx('pick'); achEvent('name'); const r = RUN && RUN.g === G ? RUN : null;
   if (r) { if (r.local && r.localMe) { r.localMe.name = s; r.board.top.forEach((e) => { if (e.mine) e.name = s; }); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(localBoard().map((e) => (e.t === r.localMe.t ? Object.assign(e, { name: s }) : e)))); } catch (e) {} }
     else if (!r.posted) lbPost(r, true); }
-  if (NE.from === 'death') CR.t = 0; // the roll starts now
+  if (NE.from === 'death') CR.t = 0; // the high scores roll starts now
 }
-function neType(ch) { NE.blink = 0; if (ch === '<') { if (NE.slots[NE.cur] === ' ' && NE.cur > 0) NE.cur--; NE.slots[NE.cur] = ' '; sfx('click'); return; }
-  NE.slots[NE.cur] = ch; NE.cur = Math.min(NE_SLOTS - 1, NE.cur + 1); sfx('click'); }
-function nameNav(dir) { NE.blink = 0; sfx('click');
-  if (dir === 'left') NE.cur = Math.max(0, NE.cur - 1); else if (dir === 'right') NE.cur = Math.min(NE_SLOTS - 1, NE.cur + 1);
-  else { const W = ' ' + ABC, i = W.indexOf(NE.slots[NE.cur]); NE.slots[NE.cur] = W[(i + (dir === 'up' ? 1 : W.length - 1)) % W.length]; } }
+function neType(ch) { NE.blink = 0; if (ch === '<' || ch === 'DEL') { NE.name = NE.name.slice(0, -1); sfx('click'); return; } if (ch === 'OK') { nameConfirm(); return; }
+  if (NE.name.length >= NE_MAX) { NE.shake = 0.2; sfx('zpeck'); return; } NE.name += ch; sfx('click'); }
+function nameSelect() { neType(NE_GRID[NE.cur].ch); } // shoot = press the key under the cursor
+function nameNav(dir) { NE.blink = 0; sfx('click'); const k = NE_GRID[NE.cur];
+  if (dir === 'left' || dir === 'right') { const row = NE_GRID.map((q, i) => [q, i]).filter(([q]) => q.r === k.r), j = row.findIndex(([, i]) => i === NE.cur); NE.cur = row[(j + (dir === 'right' ? 1 : row.length - 1)) % row.length][1]; return; }
+  const r = (k.r + (dir === 'down' ? 1 : 4)) % 5, mid = k.c + (k.w - 1) / 2; NE.cur = NE_GRID.findIndex((q) => q.r === r && mid >= q.c - 0.01 && mid < q.c + q.w); }
 const nameEntryOn = () => NE.on && STATE === 'game' && G && G.state === 'dead';
-// canvas-space hit test for taps (keys grid, check, backspace; the gold leaderboard row on the credits)
 function stageTap(e) {
   if (!(STATE === 'game' && G && G.state === 'dead')) return false; const c = document.getElementById('c'), b = c.getBoundingClientRect(); if (!b.width) return false;
   const x = (e.clientX - b.left) / b.width * N, y = (e.clientY - b.top) / b.height * N, inR = (q) => q && x >= q[0] && x < q[0] + q[2] && y >= q[1] && y < q[1] + q[3];
-  if (NE.on) { audioInit(); if (inR(NE.check)) nameConfirm(); else if (inR(NE.back)) neType('<'); else if (NE.slotR && inR(NE.slotR)) { NE.cur = Math.max(0, Math.min(NE_SLOTS - 1, Math.floor((x - NE.slotR[0]) / NE.slotR[4]))); NE.blink = 0; }
-    else { const k = NE.keys && NE.keys.find((q) => inR(q)); if (k) neType(k[4]); } return true; } // never restarts from the name screen
+  if (NE.on) { audioInit(); const i = NE.keys ? NE.keys.findIndex((q) => inR(q)) : -1; if (i >= 0) { NE.cur = i; neType(NE_GRID[i].ch); } return true; } // never restarts from the name grid
   if (CR.mineR && inR(CR.mineR) && G.deadT > 0.25) { nameOpen('change'); return true; }
   return false;
 }
 function drawNameEntry(t, dt) {
-  NE.blink += dt; NE.shake = Math.max(0, NE.shake - dt); hx.fillStyle = 'rgba(9,11,10,.86)'; hx.fillRect(0, 0, N, N);
-  const sh = NE.shake > 0 ? Math.round(Math.sin(NE.shake * 60) * 3) : 0, cx = N / 2;
-  // context, no instructions: plucked hen + your time, then the blank slots
-  if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], Math.round(cx - 25), Math.round(N * 0.03));
-  text(fmtTime(G.st) + '   ' + G.kills, cx, Math.round(N * 0.03) + 58, 8, HGOLD, 'center');
-  const sw = Math.min(26, Math.floor((N - 60) / NE_SLOTS)), sx0 = Math.round(cx - (sw * NE_SLOTS) / 2) + sh, sy = Math.round(N * 0.33);
-  NE.slotR = [sx0, sy - 4, sw * NE_SLOTS, 30, sw];
-  NE.slots.forEach((ch, i) => { const x = sx0 + i * sw, on = i === NE.cur;
-    hx.fillStyle = on ? 'rgba(255,196,47,.22)' : 'rgba(248,245,233,.07)'; hx.fillRect(x + 1, sy - 3, sw - 2, 26);
-    if (on) { const W = ' ' + ABC, k = W.indexOf(ch); text(W[(k + 1) % W.length].trim() || '-', x + sw / 2, sy - 13, 8, 'rgba(255,196,47,.45)', 'center', false); text(W[(k + W.length - 1) % W.length].trim() || '-', x + sw / 2, sy + 25, 8, 'rgba(255,196,47,.45)', 'center', false); } // the letter wheel
-    if (ch !== ' ') text(ch, x + sw / 2, sy, 16, HGOLD, 'center');
-    hx.fillStyle = on ? (Math.floor(NE.blink * 3) % 2 ? 'rgba(255,196,47,.25)' : HGOLD) : 'rgba(248,245,233,.45)'; hx.fillRect(x + 3, sy + 20, sw - 6, 2); }); // blinking cursor
-  // check (greyed until valid) + backspace
-  const ok = neValid(), bs = 22, kx = Math.min(N - bs - 4, sx0 + sw * NE_SLOTS + 6), ky = sy - 2;
-  NE.check = [kx, ky, bs, bs];
-  hx.fillStyle = ok ? HGREEN : 'rgba(248,245,233,.12)'; hx.fillRect(kx, ky, bs, bs); hx.fillStyle = INK; hx.fillRect(kx, ky, bs, 1); hx.fillRect(kx, ky + bs - 1, bs, 1); hx.fillRect(kx, ky, 1, bs); hx.fillRect(kx + bs - 1, ky, 1, bs);
-  { hx.fillStyle = ok ? (Math.floor(t * 4) % 2 ? '#ffffff' : CREAM) : 'rgba(248,245,233,.3)'; const c = [[5, 11], [6, 12], [7, 13], [8, 14], [9, 13], [10, 12], [11, 11], [12, 10], [13, 9], [14, 8], [15, 7], [16, 6]]; for (const [px, py] of c) hx.fillRect(kx + px, ky + py - 1, 2, 3); }
-  const bx = Math.max(4, sx0 - bs - 6); NE.back = [bx, ky, bs, bs]; hx.fillStyle = 'rgba(248,245,233,.12)'; hx.fillRect(bx, ky, bs, bs);
-  { hx.fillStyle = CREAM; for (let i = 0; i < 6; i++) { hx.fillRect(bx + 5 + i, ky + 11 - i, 1, 1 + i * 2); } hx.fillRect(bx + 11, ky + 8, 7, 7); hx.fillStyle = INK; hx.fillRect(bx + 13, ky + 10, 1, 3); hx.fillRect(bx + 15, ky + 10, 1, 3); }
-  // tappable A-Z grid (9 x 3)
-  const cols = 9, gw = Math.min(N - 8, 236), cw = Math.floor(gw / cols), ch = Math.min(26, Math.floor(N * 0.1)), gx = Math.round(cx - (cw * cols) / 2), gy = Math.round(N * 0.56); NE.keys = [];
-  for (let i = 0; i < 27; i++) { const L = i < 26 ? ABC[i] : '<', x = gx + (i % cols) * cw, y = gy + Math.floor(i / cols) * (ch + 3);
-    NE.keys.push([x, y, cw - 2, ch, L]); hx.fillStyle = CREAM; hx.fillRect(x, y, cw - 2, ch); hx.fillStyle = INK; hx.fillRect(x, y + ch - 2, cw - 2, 2);
-    if (L === '<') { hx.fillStyle = INK; const m = x + (cw - 2) / 2, my = y + ch / 2 - 1; for (let k = 0; k < 5; k++) hx.fillRect(Math.round(m - 5 + k), Math.round(my - k), 1, 1 + k * 2); hx.fillRect(Math.round(m), Math.round(my - 2), 6, 5); }
-    else text(L, x + (cw - 2) / 2, y + Math.round(ch / 2) - 5, 8, INK, 'center', false); }
+  NE.blink += dt; NE.shake = Math.max(0, NE.shake - dt);
+  hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N); // bright: the farm stays visible
+  const pw = Math.min(N - 6, 248), px = Math.round(N / 2 - pw / 2) + (NE.shake > 0 ? Math.round(Math.sin(NE.shake * 60) * 3) : 0), py = Math.round(N * 0.05), ph = Math.min(N - py - 4, 236);
+  panel(px, py, pw, ph); hx.fillStyle = HGOLD; hx.fillRect(px + 1, py + 1, pw - 2, 3);
+  // header: the plucked hen + this run, no instructions
+  if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], 0, 0, 50, 53, px + 4, py + 5, 30, 32);
+  text('PLUCKED', px + 40, py + 7, 16, HRED, 'left'); inkText(fmtTime(G.st) + '  /  ' + G.kills, px + 40, py + 27, INK);
+  // name slots (12)
+  const sw = Math.min(19, Math.floor((pw - 12) / NE_MAX)), sx = Math.round(px + pw / 2 - (sw * NE_MAX) / 2), sy = py + 44;
+  for (let i = 0; i < NE_MAX; i++) { const x = sx + i * sw, ch = NE.name[i], here = i === NE.name.length;
+    hx.fillStyle = 'rgba(9,11,10,.07)'; hx.fillRect(x + 1, sy, sw - 2, 22);
+    if (ch) text(ch, x + sw / 2, sy + 2, 16, INK, 'center', false);
+    hx.fillStyle = here ? (Math.floor(NE.blink * 3) % 2 ? 'rgba(255,196,47,.3)' : '#d99a00') : i < 3 && !ch ? 'rgba(255,51,71,.55)' : 'rgba(9,11,10,.3)'; hx.fillRect(x + 2, sy + 21, sw - 4, 2); }
+  // the grid
+  const ok = neValid(), cw = Math.floor((pw - 8) / 9), ch = Math.min(24, Math.floor((py + ph - (sy + 32) - 6) / 5) - 2), gx = Math.round(px + pw / 2 - (cw * 9) / 2), gy = sy + 32; NE.keys = [];
+  NE_GRID.forEach((k, i) => { const x = gx + k.c * cw, y = gy + k.r * (ch + 2), w = cw * k.w - 2, sel = i === NE.cur; NE.keys.push([x, y, w, ch]);
+    const isOk = k.ch === 'OK', isDel = k.ch === 'DEL', dis = isOk && !ok;
+    hx.fillStyle = sel ? HGOLD : isOk ? (ok ? HGREEN : '#d9d4c3') : isDel ? '#ffd3d8' : '#ffffff'; hx.fillRect(x, y, w, ch);
+    hx.fillStyle = INK; hx.fillRect(x, y + ch - 2, w, 2); hx.fillRect(x, y, w, 1); hx.fillRect(x, y, 1, ch); hx.fillRect(x + w - 1, y, 1, ch);
+    if (sel) { hx.fillStyle = INK; hx.fillRect(x - 1, y - 1, w + 2, 1); hx.fillRect(x - 1, y + ch, w + 2, 1); hx.fillRect(x - 1, y - 1, 1, ch + 2); hx.fillRect(x + w, y - 1, 1, ch + 2); }
+    const col = dis ? 'rgba(9,11,10,.35)' : INK, ty = y + Math.round(ch / 2) - 5;
+    if (isOk) { text('OK', x + w / 2 + 5, ty, 8, col, 'center', false); hx.fillStyle = col; for (const [a, b2] of [[0, 3], [1, 4], [2, 5], [3, 4], [4, 3], [5, 2], [6, 1], [7, 0]]) hx.fillRect(x + w / 2 - 18 + a, ty + 2 + b2, 2, 2); }
+    else if (isDel) { hx.fillStyle = INK; for (let q = 0; q < 4; q++) hx.fillRect(x + w / 2 - 22 + q, ty + 4 - q, 1, 1 + q * 2); hx.fillRect(x + w / 2 - 18, ty + 2, 5, 5); text('DEL', x + w / 2 + 5, ty, 8, INK, 'center', false); }
+    else text(k.ch, x + w / 2, ty, 8, col, 'center', false); });
 }
 // ---- the credits roll
 const CR = { g: null, rows: null, H: 0, t: 0 };
@@ -1489,7 +1564,7 @@ function bigGold(s, x, y, maxW) { const sz = CW(s, 16) <= maxW ? 16 : 8, img = t
 const fmtMs = (ms) => { const s = ms / 1000; return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') + '.' + Math.floor((ms % 1000) / 100); };
 function buildCredits() {
   const rows = [], add = (h, draw, mark) => rows.push({ h, draw, mark }), W = N - 10, r = RUN && RUN.g === G ? RUN : null;
-  const hens = FLOCK.length ? flockPick(Math.min(FLOCK.length, 12)) : []; let hi = 0; const nextHen = () => (hens.length ? hens[hi++ % hens.length] : null);
+  const hens = FLOCK.length ? flockPick(Math.min(FLOCK.length, 12)) : []; let hi = 0;
   // 1. PLUCKED
   add(24, (y) => { bigGold('PLUCKED', N / 2, y, W); });
   add(56, (y) => { if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], Math.round(N / 2 - 25), y + 2); });
@@ -1501,15 +1576,10 @@ function buildCredits() {
   if (hens.length) { const sal = hens.slice(0, 3); add(12, (y) => text('THE FLOCK SALUTES YOU', N / 2, y, 8, HGOLD, 'center'));
     add(30, (y) => sal.forEach((f, i) => { const x = Math.round(N / 2 + (i - (sal.length - 1) / 2) * 30 - 10), b = Math.round(Math.abs(Math.sin(CR.t * 5 + i * 1.3)) * -3); pfp(f, x, y + 2 + b, 20); })); hi = 3; }
   add(26, () => {});
-  // 2. ACHIEVEMENTS (cast list)
-  const got = [...new Set(G.achList || [])];
-  add(24, (y) => { bigGold('ACHIEVEMENTS', N / 2, y, W); });
-  add(14, (y) => text(got.length ? got.length + (got.length === 1 ? ' THIS RUN' : ' THIS RUN') : 'NONE YET. SURVIVE 1:00!', N / 2, y, 8, CREAM, 'center'));
-  for (const id of got) { const [t1, t2] = achDef(id), n = G.achGot[id] > 1 ? ' X' + G.achGot[id] : '', f = nextHen();
-    add(22, (y) => bigGold(t1 + n, N / 2, y, W));
-    add(20, (y) => { if (f) { const s = '...... @' + f.h.toUpperCase(), w = CW(s, 8), x = Math.round(N / 2 - (w + 18) / 2); text(s, x, y + 3, 8, CREAM, 'left'); pfp(f, x + w + 4, y, 14); }
-      else text(t2, N / 2, y + 3, 8, CREAM, 'center'); });
-    add(6, () => {}); }
+  // 2. ACHIEVEMENTS: just the count (lifetime unlocked / 100) + this run
+  add(24, (y) => { bigGold('ACHIEVEMENTS', N / 2, y, W); }, 'ach');
+  add(24, (y) => { text(achCount() + '/' + ACH_TOTAL, N / 2, y, 16, '#ffffff', 'center'); });
+  add(14, (y) => { const n = new Set(G.achList || []).size; if (n) text('+' + n + ' THIS RUN', N / 2, y, 8, HGOLD, 'center'); });
   add(30, () => {});
   // 3. TOP 20 FLOCK
   add(24, (y) => bigGold('TOP 20 FLOCK', N / 2, y, W), 'board');
@@ -1541,13 +1611,13 @@ function drawCredits(t, dt) {
   G.deadT = (G.deadT || 0) + dt; if (CR.askG !== G) { CR.askG = G; if (!lbName) nameOpen('death'); }
   if (NE.on) { drawNameEntry(t, dt); return; } // the roll waits for a name
   CR.t += dt; CR.mineR = null;
-  hx.fillStyle = `rgba(9,11,10,${Math.min(0.88, 0.2 + G.deadT * 0.9)})`; hx.fillRect(0, 0, N, N);
+  hx.fillStyle = `rgba(9,11,10,${Math.min(0.42, 0.1 + G.deadT * 0.6)})`; hx.fillRect(0, 0, N, N); // v18: no going dark, the farm stays bright
   const sp = N / 256 * 19, L = CR.H + N, pos = (CR.t * sp + N * 0.42) % L; let y = Math.round(N - pos);
   const r = RUN && RUN.g === G ? RUN : null; let boardY = null;
   for (const row of CR.rows) { if (y + row.h > -4 && y < N) row.draw(y); if (row.mark === 'board') boardY = y; y += row.h; }
   if (r && boardY !== null && boardY < N * 0.9) lbPost(r); if (r && G.deadT > 14) lbPost(r);
   // soft top/bottom fades so lines appear and disappear like a film roll
-  for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.6 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 1 - i, N, 1); }
+  for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.3 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 1 - i, N, 1); }
 }
 function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); newGame(); sfx('dawn'); }
 // ================================================================ v16 "BOK-A-POLKA": an ORIGINAL chiptune polka (not the Chicken Dance melody)
