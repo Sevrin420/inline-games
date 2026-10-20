@@ -165,3 +165,8 @@ How these terms appear in the game:
 - Pickups drawn 3x (48 px) as a ground layer under every actor (so they never hide the hen), with a pulsing gold halo ellipse (#ffc42f, ink rim), bob and sparkle. Pickup reach 22x20 (was 10x10).
 - Shell (Last Tower only, CSS in last-tower/index.html): `.hh-select` hidden; the START pill spans both slots (92x24, label "START · PAUSE" inside the pill). Shared handheld.js/css untouched. Touch (`?handheld=0`): one big PAUSE button.
 - Achievements (ach.js): gold #ffc42f title, 2 px ink outline, 4 px hard ink offset shadow, scale-in pop, bok fanfare, queued (backlog plays faster), top band at 29% of the screen. Saved in localStorage `lasttower.ach1`; title shows TROPHIES n/26; death screen lists the run's achievements.
+
+## v14 (Oct 19 2026)
+- No pause: the START/SELECT pills are hidden (Last Tower CSS only), the pause menu and Enter/Esc/P are gone. A screen tap, the SHOOT stick, Space or any shoot key starts and restarts.
+- No instructions: hint line, title controls panel, start/restart prompts and tutorial messages removed. HUD, EQUIPPED, achievements, title and death screens stay.
+- Round analog SHOOT stick (`.lt-astick`, mounted by game.js into the shell's `.hh-spad` slot and into `#tAim` in `?handheld=0`): cream base, 5 px ink ring + hard ink shadow, red knob (gold + gold ring glow past the 22% deadzone), springs back on release, ring pulses gold on title/death. Exact 360-degree aim; keyboard keeps 8-way arrows/IJKL. Shared handheld.js/css untouched.
