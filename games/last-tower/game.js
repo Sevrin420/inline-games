@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v24 (quote band 70% size, flush bottom-right beside the gun panel, fades to 35% over the hen) v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -1277,6 +1277,7 @@ function drawHUD0(dt, t) {
   // messages
   let my = 40; const achOn = G.achQ && G.achQ.length; for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
   if (G.state === 'play') drawAch(dt); // v13 achievement pop-up (top band)
+  flockGhost(); // v24: see-through quote band over the hen
   G.msg = G.msg.filter((m) => m.t > 0);
   if (G.state === 'dead') drawCredits(t, dt); // v16 ending credits (credits.js)
 }
@@ -1529,6 +1530,17 @@ function flockPick(n = 1) {
   for (const f of out) { _flockRecent.push(f.h); if (_flockRecent.length > Math.min(5, Math.max(0, FLOCK.length - 2))) _flockRecent.shift(); }
   return out; }
 const _esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// v24: the quote band sits in the bottom-right corner at 70% size. Its left edge clears the gun/ammo panel (bottom-left, width depends
+// on the gun name): 65.8% wide (70% of v23's 94%) when that fits, narrower otherwise (the quote auto-fits). While the player hen is
+// under the band or its pfp, the band fades to 35% instead of moving.
+const FK_W = 0.658;
+function flockPlace(el) { const w = WEAPONS[G && G.weapon] || { name: 'PECK' }, ww = Math.max(74, 22 + w.name.length * 6), hudR = (2 + ww + 2 + 3) / N; // panel + ink shadow + 3 px air
+  const left = Math.max(hudR, 1 - 0.012 - FK_W); el.style.left = (left * 100).toFixed(2) + '%'; }
+function flockGhost() { const el = _flockPopEl; if (!el || !el.parentNode || !player) return; const c = document.getElementById('c'), cb = c && c.getBoundingClientRect(); if (!cb || !cb.width) return;
+  const k = N / cb.width, img = el.querySelector('img'), rs = [el.getBoundingClientRect(), img && img.getBoundingClientRect()].filter(Boolean);
+  const [sx, sy] = w2s(player.x, player.y), px0 = sx - 12, px1 = sx + 12, py0 = sy - 32 - Math.round(player.jz || 0), py1 = sy + 3;
+  const hit = rs.some((r) => { const x0 = (r.left - cb.left) * k, x1 = (r.right - cb.left) * k, y0 = (r.top - cb.top) * k, y1 = (r.bottom - cb.top) * k; return px1 > x0 && px0 < x1 && py1 > y0 && py0 < y1; });
+  el.classList.toggle('fk-ghost', hit); }
 function flockFont() { if (!FLOCK_LAYER) return; const w = FLOCK_LAYER.offsetWidth || 256; /* layout px: the shell scales the screen with a CSS transform */ FLOCK_LAYER.style.fontSize = (w / 256 * 7.4).toFixed(2) + 'px'; }
 let _flockPopEl = null, _flockSide = 0;
 function flockPop(id) {
@@ -1541,7 +1553,7 @@ function flockPop(id) {
   flockFont(); if (_flockPopEl) _flockPopEl.remove();
   const el = document.createElement('div'); el.className = 'fk-pop fk-' + side;
   el.innerHTML = `<img src="${_esc(f.src)}" alt=""><div class="fk-txt"><b>@${_esc(f.h)}</b><span>${_esc(body)}</span></div>`;
-  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 2000);
+  FLOCK_LAYER.appendChild(el); flockPlace(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 2000);
   { const tx = el.querySelector('.fk-txt'), sp = el.querySelector('.fk-txt span'); for (let z = 3.2; z >= 1.5; z -= 0.1) { sp.style.fontSize = z.toFixed(1) + 'em'; if (tx.scrollHeight <= tx.clientHeight + 1 && tx.scrollWidth <= tx.clientWidth + 1) break; } } // v19: biggest quote that fits the slim band
 }
 // death screen: 2-3 cheering hens ("the flock salutes you"), placed in canvas coords
