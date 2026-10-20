@@ -235,7 +235,7 @@ test('anon claim moves leaderboard entries only for the real owner', async () =>
 
 // ---- Last Tower: survival metric (server time, lowered to the client's run clock), kills tiebreak, best per player, top 20
 const LT = { metric: 'survival', order: 'desc', outcome: 'died', minMs: 5000, maxMs: 7_200_000, maxScorePerSec: 15, postWindowHours: 2, top: 20, bestPerPlayer: true, nameMin: 1, nameMax: 12, blankName: 'ANON HEN', postsPerPlayer: 20 };
-const LTG = [{ id: 'last-tower', title: 'Last Tower', access: 'open', leaderboard: LT }];
+const LTG = [{ id: 'last-tower', title: 'Zombie Farm', access: 'open', leaderboard: LT }];
 async function ltSetup() {
   const ctx = await makeApp({ games: LTG, env: { ADMIN_TOKEN: ADMIN } });
   ctx.run = async (c, serverMs, kills, clientMs = serverMs, outcome = 'died') => {
