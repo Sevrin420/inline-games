@@ -63,7 +63,7 @@
   #flockLayer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; }
   /* v18: the community hen card is BIG and lives in the bottom band (the hen sits at screen centre, the gold title in the top band) */
   /* v19: same big pfp, but a LOW-PROFILE quote band: the box is shorter than the pfp (the pfp pokes up out of it), the quote text is as big as fits (auto-fit in game.js) */
-  .fk-pop { position: absolute; left: 3%; right: 3%; bottom: 10%; /* v22: raised (was 2%); the pfp circle must stay below the hen at screen centre */ height: 6.4em; display: flex; align-items: center; padding: .3em .7em .3em 12.2em; background: #fff8e7; border: .4em solid #090b0a; border-radius: 1.3em; box-shadow: .5em .6em 0 #090b0a; box-sizing: border-box; animation: fkInB 3.4s cubic-bezier(.2, 1.4, .4, 1) both; }
+  .fk-pop { position: absolute; left: 3%; right: 3%; bottom: 10%; /* v22: raised (was 2%); the pfp circle must stay below the hen at screen centre */ height: 6.4em; display: flex; align-items: center; padding: .3em .7em .3em 12.2em; background: #fff8e7; border: .4em solid #090b0a; border-radius: 1.3em; box-shadow: .5em .6em 0 #090b0a; box-sizing: border-box; animation: fkInB 2s cubic-bezier(.2, 1.4, .4, 1) both; }
   .fk-pop img { position: absolute; left: .5em; bottom: .45em; width: 10.5em; height: 10.5em; flex: none; border-radius: 50%; border: .45em solid #090b0a; box-shadow: .3em .35em 0 #090b0a; object-fit: cover; background: #ffc42f; }
   .fk-txt { min-width: 0; max-height: 100%; overflow: hidden; line-height: 1.04; }
   .fk-txt b { display: block; color: #ff3347; font-size: 1.25em; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: .2em; }
@@ -80,7 +80,7 @@
   @keyframes fkTick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   #tAim .lt-astick-ring { background: radial-gradient(circle, rgba(255,248,231,.55) 0 55%, rgba(242,230,196,.7) 100%); }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=22">
+<link rel="stylesheet" href="skin/hens-skin.css?v=23">
 </head>
 <body>
 <div id="stage">
@@ -93,15 +93,15 @@
   <div id="tAim"></div>
 </div>
 <!-- v16: shared accounts client (no badge: no data-game). Gives the TOP 20 FLOCK leaderboard its play records; missing = local board -->
-<script src="../shared/auth.js?v=22"></script>
-<script src="sharecard.js?v=22"></script>
-<script src="game.js?v=22"></script>
+<script src="../shared/auth.js?v=23"></script>
+<script src="sharecard.js?v=23"></script>
+<script src="game.js?v=23"></script>
 <!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
      D-pad = WASD (run). START = Enter pauses (v13: the SELECT pill is hidden; one big START). No jump, no eat. Best weapon auto-equips.
      ?handheld=0 opts out (touch: stick + the same compass pad). -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="ZOMBIE FARM" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"","select":"","su":"","sd":"","sl":"","sr":""}'
         data-labels='{"pad":""}'></script>
-<script src="skin/hens-skin.js?v=22"></script>
+<script src="skin/hens-skin.js?v=23"></script>
 </body>
 </html>
