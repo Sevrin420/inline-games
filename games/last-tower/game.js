@@ -1,4 +1,4 @@
-/* LAST TOWER v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=11';
+HENS_SHEET.src = 'hens-sprites.png?v=13';
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water', 'mg', 'belt', 'ammobox'];
 const ITEM_ART = {
   food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
@@ -750,7 +750,7 @@ function gibs(z, kx, ky) { // v9: feathers + goo burst on a kill
 function hurtZombie(z, dmg, kx, ky, kbk = 1) {
   z.hp -= dmg; z.hurt = 0.18; z.flash = 0.07; z.kb = [kx * (z.brute ? 40 : 110) * kbk, ky * (z.brute ? 40 : 110) * kbk]; z.state = 'chase'; if (!z.brute || (kbk >= 2 && !z.hop)) z.atk = 0; // a hit interrupts a hen's wind-up; roostrs only stagger from a shotgun blast
   G.hits.push({ x: z.x, y: z.y - 12, t: 0.25 });
-  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; z.jz = 0; G.kills++; sfx('splat'); gibs(z, kx, ky); if (G.kills % TUNE.gunEvery === 0 || Math.random() < (z.brute ? TUNE.dropB : z.thrower ? 0.7 : TUNE.dropZ)) dropItem(killDrop(z), z.x, z.y, 0); }
+  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; z.jz = 0; G.kills++; achKill(z); sfx('splat'); gibs(z, kx, ky); if (G.kills % TUNE.gunEvery === 0 || Math.random() < (z.brute ? TUNE.dropB : z.thrower ? 0.7 : TUNE.dropZ)) dropItem(killDrop(z), z.x, z.y, 0); }
   else sfx('thud');
 }
 function updateZombies(dt) {
@@ -863,7 +863,7 @@ function attack() {
 function hurtPlayer(dmg, from, cause) {
   if (!G || !['play', 'bag', 'camp'].includes(G.state)) return;
   // v8: every hit counts (no invulnerability window; several hits in one frame all land)
-  G.hp -= dmg; player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT!');
+  G.hp -= dmg; achHurt(dmg); player.hurtT = 0.3; G.shake = 3; sfx('hurt'); if (G.eat) cancelEat('HIT!');
   if (from && typeof from === 'object' && !player.air) { const dx = player.x - from.x, dy = player.y - from.y, d = Math.hypot(dx, dy) || 1; player.kb = [dx / d * 90, dy / d * 90]; }
   if (G.hp <= 0) die(cause);
 }
@@ -906,13 +906,13 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
     else if (player.jz <= 0 && player.vz < 0) land(); }
   player.atkT = Math.max(0, player.atkT - dt); player.hurtT = Math.max(0, player.hurtT - dt); player.jumpBuf = Math.max(0, (player.jumpBuf || 0) - dt);
   G.cdT = Math.max(0, G.cdT - dt);
-  for (const it of itemPool) if (it.alive && Math.abs(it.x - player.x) < 10 && Math.abs(it.y - player.y) < 10 && it.level === player.level) pickup(it);
+  for (const it of itemPool) if (it.alive && Math.abs(it.x - player.x) < 22 && Math.abs(it.y - player.y) < 20 && it.level === player.level) pickup(it); // v13: 3x pickups, 3x reach
 }
 // ================================================================ input (keyboard = shell buttons = touch)
 const held = { up: 0, down: 0, left: 0, right: 0, SU: 0, SD: 0, SL: 0, SR: 0 }; // v10: the four SHOOT directions are held (aim + auto-fire)
 const SHOOTS = ['SU', 'SD', 'SL', 'SR'];
 let shootT0 = 0, shootFired = true; // shootFired: a shot has gone out since the first press (a quick tap fires on release)
-let _noop0 = 0; // v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
+// v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
 const isShoot = (b) => b === 'SU' || b === 'SD' || b === 'SL' || b === 'SR';
 const stick = { x: 0, y: 0, on: false };
 const queue = [];
@@ -966,7 +966,7 @@ function updateTouchLabels() {}
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
 const LABELS = { // v10: no A/B, no eat, no flap. shoot = the compass pad (or arrows)
   shell: { move: 'D-PAD', shoot: 'SHOOT PAD', START: 'START' },
-  touch: { move: 'STICK', shoot: 'SHOOT PAD', START: 'BAG' },
+  touch: { move: 'STICK', shoot: 'SHOOT PAD', START: 'PAUSE' },
   keys: { move: 'WASD', shoot: 'ARROWS', START: 'ENTER' },
 };
 const L = (k) => LABELS[mode()][k];
@@ -1063,6 +1063,7 @@ let _alive = 0;
 function updateSurvival(dt) {
   G.st += dt;
   if (G.cdT <= 0) G.stam = Math.min(100, G.stam + 16 * dt);
+  updateAch(); // v13
   G.lootT -= dt;
   if (G.lootT <= 0) { G.lootT = TUNE.lootEvery; const n = itemPool.filter((i) => i.alive).length; if (n < TUNE.lootFloor) scatterLoot(TUNE.lootAdd); }
 }
@@ -1123,12 +1124,12 @@ const inkText = (s, x, y, col = INK, align = 'left') => text(s, x, y, 8, col, al
 function drawItemIcon(i, x, y) { hx.drawImage(ITEM_IMG, i * 16, 0, 16, 16, x - 2, y - 3, 16, 16); }
 function startTxt() { const m = mode(); return m === 'keys' ? 'PRESS SPACE' : m === 'shell' ? 'PRESS START' : 'TAP SHOOT PAD'; }
 function hintText() {
-  const mv = L('move'), SH = L('shoot'), S = L('START'), bag = S === 'BAG' ? 'BAG' : S;
+  const mv = L('move'), SH = L('shoot'), S = L('START');
   if (WEAPONS[G.weapon].kind === 'gun' && (G.shots || 0) < 4) return 'HOLD ' + SH + ' TO FIRE ' + WEAPONS[G.weapon].name; // v9
   if (G.st < 7) return mv + ' RUN   ' + SH + ' AIM + SHOOT';
   if (G.st < 14) return (L('shoot') === 'ARROWS' ? 'TWO ARROWS' : 'TWO SHOOT BUTTONS') + ' = DIAGONAL (NE/SE/SW/NW)';
   if (G.st < 17) return 'ONLY HITS HURT. NO HEALING. KEEP MOVING';
-  if (G.st < 20) return bag + ' PAUSE.  BEST WEAPON AUTO-EQUIPS';
+  if (G.st < 20) return S + ' = PAUSE.  BEST WEAPON AUTO-EQUIPS';
   if (G.hp < 35) return 'LOW LIFE. DON\'T GET HIT';
   return '';
 }
@@ -1166,7 +1167,8 @@ function drawHUD0(dt, t) {
   panel(2, 31, 22 + String(G.kills).length * 6, 11);
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
   // messages
-  let my = 40; for (const m of G.msg) { text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
+  let my = 40; const achOn = G.achQ && G.achQ.length; for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
+  if (G.state === 'play') drawAch(dt); // v13 achievement pop-up (top band)
   G.msg = G.msg.filter((m) => m.t > 0);
   // context hint
   const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, HGOLD, 'center');
@@ -1179,7 +1181,7 @@ function drawMenu() {
   hx.fillStyle = 'rgba(9,11,10,.4)'; hx.fillRect(0, 0, N, N);
   panel(x, y, w, h, 0.97);
   skinShow('pause', x + w - 46, y - 38, 42, 42); // v11: the hens.farm detective hen peeks over the pause card
-  inkText('BAG  -  PAUSED', N / 2, y + 3, HRED, 'center');
+  inkText('PAUSED', N / 2, y + 3, HRED, 'center');
   items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
   const inv = 'EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells + '  ROUNDS ' + G.inv.belt;
   inkText(inv, N / 2, y + h - 10, INK, 'center');
@@ -1188,7 +1190,7 @@ function drawMenu() {
 function drawDead(t) {
   G.deadT += 1 / 60;
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.55, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
-  const y = N / 2 - 46, pw = Math.min(N - 12, 196), px0 = Math.round(N / 2 - pw / 2);
+  const y = N / 2 - 66, pw = Math.min(N - 12, 196), px0 = Math.round(N / 2 - pw / 2); // v13: moved up to make room for the achievements list
   panel(px0, y - 6, pw, 94);
   if (!skinShow('dead', px0 + 2, y + 30, 50, 53)) { if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34); }
   text('PLUCKED', N / 2, y, 16, HRED, 'center');
@@ -1197,6 +1199,13 @@ function drawDead(t) {
   inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#036b2b' : INK, 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
   if (G.deadT > 1.2 && (t % 1) < 0.65) text(startTxt() + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
+  // v13: achievements earned this run
+  const got = [...new Set(G.achList || [])], rows = got.slice(0, 6), ay = y + 106, ah = 14 + Math.max(1, rows.length) * 9 + (got.length > 6 ? 9 : 0);
+  panel(px0, ay, pw, ah); hx.fillStyle = HGOLD; hx.fillRect(px0 + 1, ay + 1, pw - 2, 10);
+  inkText('ACHIEVEMENTS THIS RUN: ' + got.length, N / 2, ay + 2, INK, 'center');
+  if (!rows.length) inkText('NONE YET. SURVIVE 1:00!', N / 2, ay + 14, INK, 'center');
+  rows.forEach((id, i) => { const n = G.achGot[id] > 1 ? ' X' + G.achGot[id] : ''; inkText('* ' + achDef(id)[0] + n, px0 + 6, ay + 14 + i * 9, i % 2 ? INK : '#036b2b'); });
+  if (got.length > 6) inkText('+' + (got.length - 6) + ' MORE', N / 2, ay + 14 + 6 * 9, HRED, 'center');
 }
 function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
@@ -1212,10 +1221,83 @@ function drawTitle(t) {
   inkText('BILLIONS MUST BOK.', tx, y + 70, INK, 'center');
   const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
   panel(Math.round(N / 2 - 92), cy - 5, 184, 62);
-  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('shoot') === 'ARROWS' ? '2 ARROWS' : '2 BUTTONS', 'DIAGONAL SHOT'], [L('START'), 'PAUSE'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
+  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('shoot') === 'ARROWS' ? '2 ARROWS' : '2 BUTTONS', 'DIAGONAL SHOT'], [L('START'), 'PAUSE / RESUME'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
   rows.forEach(([k, v], i) => { inkText(k, N / 2 - 28, cy + i * 9, HRED, 'right'); inkText(v, N / 2 - 22, cy + i * 9); });
   if ((t % 1) < 0.65) text(startTxt() + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
+  { const ids = Object.keys(ACH_UNLOCKED).sort((a, b) => ACH_UNLOCKED[b] - ACH_UNLOCKED[a]); text('TROPHIES ' + ids.length + '/' + ACH_TOTAL + (ids.length ? '  ' + achDef(ids[0])[0] : ''), N / 2, cy + 63, 8, HGOLD, 'center'); }
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
+}
+// ================================================================ v13 achievements: big gold hens.farm pop-ups, queued, saved in localStorage
+const ACH_KEY = 'lasttower.ach1';
+const MIN_NAMES = ['', "STILL BOKKIN'", 'HARD-BOILED', 'FREE RANGE LEGEND', 'COOP CHAMPION', 'BILLIONS MUST BOK'];
+const ACH_DEF = { // id -> [title, subtitle]; minute + kill tiers are generated
+  gun1: ['LOCKED AND BOKKED', 'FIRST GUN'],
+  mg: ['BRRRT-AWK!', 'MACHINE GUN ACQUIRED'],
+  spree: ['FRENZY!', '10 KILLS IN 3 SECONDS'],
+  shot5: ['CORN-SPLOSION!', '5 KILLS IN ONE SHOTGUN BLAST'],
+  roostr: ['ROOSTR SLAYER', 'A ZOMBIE ROOSTR GOES DOWN'],
+  thrower: ['EGG-SLINGER DOWN', 'NO MORE ROTTEN EGGS (FOR NOW)'],
+  close: ['CLOSE CALL', 'STILL ALIVE AT 10 LIFE OR LESS'],
+  clean1: ['UNTOUCHED', '1 MINUTE WITHOUT A HIT'],
+  clean2: ['FEATHERS INTACT', '2 MINUTES WITHOUT A HIT'],
+  clean3: ['TEFLON HEN', '3 MINUTES WITHOUT A HIT'],
+};
+const KILL_TIERS = [[25, 'PECKING ORDER'], [50, 'FOWL PLAY'], [100, 'CENTURY CHIKN'], [250, 'HEN-DEMIC'], [500, 'COOP DE GRACE'], [1000, 'KILLERGAINZ']];
+for (const [n, nm] of KILL_TIERS) ACH_DEF['k' + n] = [nm, n + ' UNDEAD CHIKN PLUCKED'];
+for (let m = 1; m <= 10; m++) ACH_DEF['m' + m] = [MIN_NAMES[m] || 'UNPLUCKABLE', m + (m === 1 ? ' MINUTE' : ' MINUTES') + ' SURVIVED (' + m + ':00)'];
+const ACH_TOTAL = Object.keys(ACH_DEF).length;
+let ACH_UNLOCKED = {}; try { ACH_UNLOCKED = JSON.parse(localStorage.getItem(ACH_KEY)) || {}; } catch (e) {}
+function achDef(id) { if (ACH_DEF[id]) return ACH_DEF[id]; const m = /^m(\d+)$/.exec(id); if (m) return ['UNPLUCKABLE', m[1] + ' MINUTES SURVIVED (' + m[1] + ':00)']; return [id, '']; }
+function award(id, repeatable) {
+  if (!G || G.state === 'dead') return false;
+  G.achGot = G.achGot || {}; if (G.achGot[id] && !repeatable) return false;
+  G.achGot[id] = (G.achGot[id] || 0) + 1; (G.achList = G.achList || []).push(id);
+  const isNew = !ACH_UNLOCKED[id]; if (isNew) { ACH_UNLOCKED[id] = Math.floor(Date.now() / 1000); try { localStorage.setItem(ACH_KEY, JSON.stringify(ACH_UNLOCKED)); } catch (e) {} }
+  (G.achQ = G.achQ || []).push({ id, t: 0, isNew }); return true;
+}
+function achKill(z) { if (!G) return; const now = G.st; (G.killT = G.killT || []).push(now); while (G.killT.length && now - G.killT[0] > 3) G.killT.shift();
+  if (G.killT.length >= 10) award('spree'); if (z.brute) award('roostr'); if (z.thrower) award('thrower'); }
+function achHurt(dmg) { if (G && dmg > 0) { G.lastHit = G.st; G.cleanTier = 0; } }
+function updateAch() {
+  if (!G || G.state !== 'play') return;
+  const m = Math.floor(G.st / 60); if (m >= 1) award('m' + m);
+  for (const [n] of KILL_TIERS) if (G.kills >= n) award('k' + n);
+  if (G.owned.some((w) => WEAPONS[w].kind === 'gun')) award('gun1');
+  if (G.owned.includes('mg')) award('mg');
+  if (G.hp > 0 && G.hp <= 10) award('close');
+  const clean = G.st - (G.lastHit || 0), tier = Math.min(3, Math.floor(clean / 60)); // tiered, and repeatable once a streak is broken and rebuilt
+  if (tier > (G.cleanTier || 0)) { G.cleanTier = tier; award('clean' + tier, true); }
+}
+// shotgun multi-kill: count kills inside one blast
+{ const _attack = attack; attack = function () { const k0 = G ? G.kills : 0, w = G && G.weapon; _attack(); if (w === 'shotgun' && G.kills - k0 >= 5) award('shot5'); }; }
+function sfxAch() { tone(523, 523, 0.08, 'square', 0.07); tone(659, 659, 0.08, 'square', 0.07, 0.08); tone(784, 784, 0.1, 'square', 0.07, 0.16); tone(1046, 1046, 0.22, 'triangle', 0.08, 0.26); noise(0.05, 2600, 0.1, 3, 0.26); } // bok-bok-BOK fanfare
+// the pop-up: cached card (gold title, 3px ink outline, hard ink offset shadow), punchy scale-in, top band so it never covers the hen
+const _achImg = new Map();
+function achCard(id) {
+  let c = _achImg.get(id); if (c) return c; const [t1, t2] = achDef(id);
+  const big = textImg(t1, 16, HGOLD, false), inkB = textImg(t1, 16, INK, false), sub = textImg(t2, 8, CREAM, true), lab = textImg('ACHIEVEMENT', 8, INK, false);
+  const w = Math.max(big.width + 10, sub.width + 8, 90), h = big.height + 30; let x; [c, x] = mk(w + 6, h + 6);
+  // label tab
+  x.fillStyle = INK; x.fillRect(Math.floor(w / 2 - lab.width / 2) - 4, 0, lab.width + 10, 12); x.fillStyle = HGOLD; x.fillRect(Math.floor(w / 2 - lab.width / 2) - 3, 1, lab.width + 6, 10); x.drawImage(lab, Math.floor(w / 2 - lab.width / 2), 1);
+  const by = 13; // big text: hard offset shadow (+3,+3) then a 2px ink outline then gold
+  for (let k = 1; k <= 4; k++) x.drawImage(inkB, 5 + k, by + k); // hard offset shadow
+  for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) if (dx || dy) x.drawImage(inkB, 5 + dx, by + dy); // 2px ink outline
+  x.drawImage(big, 5, by);
+  x.drawImage(sub, Math.floor(w / 2 - sub.width / 2) + 1, by + big.height + 3);
+  _achImg.set(id, c); return c;
+}
+const ACH_T = 2.6;
+function drawAch(dt) {
+  if (!G || !G.achQ || !G.achQ.length) return; const a = G.achQ[0], AT = G.achQ.length > 2 ? 1.6 : ACH_T; // a backlog plays faster
+  if (a.t === 0) sfxAch(); a.t += dt;
+  const c = achCard(a.id), e = Math.min(1, a.t / 0.22), s = a.t < 0.22 ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - 0.25 ? Math.max(0.05, (AT - a.t) / 0.25) : 1;
+  const fit = Math.min(1, (N - 6) / c.width); // never wider than the screen
+  const w = Math.round(c.width * s * fit), h = Math.round(c.height * s * fit), cx = Math.round(N / 2), cy = Math.round(N * 0.29); // top-centre band (the hen is always at screen centre)
+  hx.drawImage(c, cx - (w >> 1), cy - (h >> 1), w, h);
+  const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > 0.25 && a.t < AT - 0.25;
+  if (a.isNew && steady) text('NEW!', cx + (fw >> 1) - 10, cy - (fh >> 1) - 2, 8, HRED, 'center');
+  if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 18, cy - (fh >> 1) - 2, 8, HGOLD, 'center');
+  if (a.t >= AT) G.achQ.shift();
 }
 
 // ================================================================ dynamic props (tall things that can stand in front of the player: they fade)
@@ -1319,7 +1401,14 @@ function renderWorld(dt, t) {
     P.length = n;
     for (const p of P) if (p.z <= 0) drawPart(p); }
   // items
-  for (const it of itemPool) if (it.alive) { const bobY = Math.round(Math.sin(t * 3 + it.ph) * 1.5); list.push({ y: it.y, draw: () => { const [sx, sy] = w2s(it.x, it.y); hx.drawImage(SHADOW.i, sx - 5, sy - 3); hx.drawImage(ITEM_IMG, ITEMS.indexOf(it.kind) * 16, 0, 16, 16, sx - 8, sy - 15 + bobY, 16, 16); if (((t * 2 + it.ph) % 3) < 0.15) { hx.fillStyle = '#fff4c0'; hx.fillRect(sx + 3, sy - 13 + bobY, 1, 1); } } }); }
+  // v13: pickups 3x (48 px) with a gold pulsing halo + bob + sparkle. Drawn as a ground layer BEFORE every actor, so they can never hide the hen.
+  for (const it of itemPool) if (it.alive) { const [sx, sy] = w2s(it.x, it.y); if (sx < -30 || sx > N + 30 || sy < -10 || sy > N + 52) continue;
+    const bobY = Math.round(Math.sin(t * 3 + it.ph) * 3), pulse = 0.5 + 0.5 * Math.sin(t * 5 + it.ph), rx = 20 + Math.round(pulse * 3), ry = 7 + Math.round(pulse);
+    hx.globalAlpha = 0.28 + pulse * 0.3; hx.fillStyle = HGOLD; hx.beginPath(); hx.ellipse(sx, sy - 1, rx, ry, 0, 0, 6.283); hx.fill();
+    hx.globalAlpha = 0.9; hx.strokeStyle = INK; hx.lineWidth = 1; hx.beginPath(); hx.ellipse(sx, sy - 1, rx, ry, 0, 0, 6.283); hx.stroke(); hx.globalAlpha = 1;
+    hx.drawImage(SHADOW.i, sx - 5, sy - 3, 10, 5);
+    hx.drawImage(ITEM_IMG, ITEMS.indexOf(it.kind) * 16, 0, 16, 16, sx - 24, sy - 45 + bobY, 48, 48);
+    if (((t * 2 + it.ph) % 2) < 0.25) { const k = Math.floor(it.ph * 7) % 3; hx.fillStyle = '#ffffff'; const px = sx + [-14, 10, 4][k], py = sy - 36 + bobY + [0, 6, -4][k]; hx.fillRect(px - 2, py, 5, 1); hx.fillRect(px, py - 2, 1, 5); } }
   // zombies (live and falling corpses)
   let onScreen = 0; const slashes = [];
   for (const z of zombiePool) {
