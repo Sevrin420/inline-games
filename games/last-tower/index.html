@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the round analog SHOOT stick (push it any direction to keep firing, 360 degrees; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Big glowing pickups, gold achievement pop-ups for every minute survived and kill milestones. Just run, shoot and try not to die. Billions must bok.">
+<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the round analog SHOOT stick (360 degrees). Two guns, MG and SHOTGUN: every minute survived, tougher tiers drop and ammo comes faster. No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Big glowing pickups, gold achievement pop-ups for every minute survived and kill milestones. Just run, shoot and try not to die. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Last Tower: Chikn Edition">
@@ -55,9 +55,28 @@
   .lt-astick-idle .lt-astick-ring { animation: ltIdle 1.1s ease-in-out infinite; }
   @keyframes ltIdle { 0%, 100% { box-shadow: 4px 5px 0 #090b0a, 0 0 0 0 rgba(255,196,47,0); } 50% { box-shadow: 4px 5px 0 #090b0a, 0 0 0 7px rgba(255,196,47,.9); } }
   #tAim { position: absolute; width: 168px; height: 168px; right: calc(16px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); pointer-events: auto; touch-action: none; }
+  /* v15 THE FLOCK: community hen pfps cheer achievements (DOM over the canvas, crisp) */
+  #flockLayer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; }
+  .fk-pop { position: absolute; top: 40%; width: 38%; display: flex; align-items: center; gap: .5em; padding: .45em .6em .45em .45em; background: #fff8e7; border: .35em solid #090b0a; border-radius: 1.1em; box-shadow: .5em .6em 0 #090b0a; box-sizing: border-box; animation: fkInL 1.65s cubic-bezier(.2, 1.4, .4, 1) both; }
+  .fk-pop.fk-right { right: 1.5%; animation-name: fkInR; } .fk-pop.fk-left { left: 1.5%; }
+  .fk-pop img { width: 4.2em; height: 4.2em; flex: none; border-radius: 50%; border: .35em solid #090b0a; box-shadow: .25em .3em 0 #090b0a; object-fit: cover; background: #ffc42f; }
+  .fk-txt { min-width: 0; line-height: 1.15; }
+  .fk-txt b { display: block; color: #ff3347; font-size: .92em; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-text-stroke: 0; }
+  .fk-txt span { display: block; color: #090b0a; font-size: .84em; font-family: Arial, "Helvetica Neue", sans-serif; font-weight: 800; }
+  @keyframes fkInL { 0% { transform: translateX(-130%) rotate(-8deg); } 16% { transform: translateX(3%) rotate(1deg); } 24%, 84% { transform: translateX(0) rotate(0); } 100% { transform: translateX(-130%) rotate(-6deg); } }
+  @keyframes fkInR { 0% { transform: translateX(130%) rotate(8deg); } 16% { transform: translateX(-3%) rotate(-1deg); } 24%, 84% { transform: translateX(0) rotate(0); } 100% { transform: translateX(130%) rotate(6deg); } }
+  .fk-salute { position: absolute; transform: translateX(-50%); display: flex; gap: 1.2em; }
+  .fk-salute i { position: relative; height: 100%; aspect-ratio: 1; animation: fkCheer .7s cubic-bezier(.2, 1.6, .4, 1) both, fkHop 1.1s ease-in-out .8s infinite; }
+  .fk-salute img { width: 100%; height: 100%; border-radius: 50%; border: .3em solid #090b0a; box-shadow: .25em .3em 0 #090b0a; object-fit: cover; box-sizing: border-box; background: #ffc42f; }
+  .fk-salute b { position: absolute; left: 100%; top: 50%; transform: translate(.25em, -50%); color: #ffc42f; font-size: .78em; white-space: nowrap; text-shadow: .12em .12em 0 #090b0a; display: none; }
+  @keyframes fkCheer { 0% { transform: translateY(80%) scale(.3); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  @keyframes fkHop { 0%, 100% { transform: none; } 30% { transform: translateY(-14%) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+  .fk-cred { position: absolute; left: 0; right: 0; bottom: 1%; overflow: hidden; white-space: nowrap; color: #fff8e7; font-size: .95em; text-shadow: .12em .12em 0 #090b0a; }
+  .fk-cred span { display: inline-block; animation: fkTick 60s linear infinite; }
+  @keyframes fkTick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   #tAim .lt-astick-ring { background: radial-gradient(circle, rgba(255,248,231,.55) 0 55%, rgba(242,230,196,.7) 100%); }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=14">
+<link rel="stylesheet" href="skin/hens-skin.css?v=15">
 </head>
 <body>
 <div id="stage">
@@ -76,6 +95,6 @@
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"","select":"","su":"","sd":"","sl":"","sr":""}'
         data-labels='{"pad":""}'></script>
-<script src="skin/hens-skin.js?v=14"></script>
+<script src="skin/hens-skin.js?v=15"></script>
 </body>
 </html>
