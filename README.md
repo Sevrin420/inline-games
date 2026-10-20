@@ -95,6 +95,8 @@ block in `server/games.json` (`metric` `duration`, `score` or `survival`, `order
 Zombie Farm (formerly Last Tower; board id `last-tower`, v16) has a global top 20 with its own in-game credits roll (`survival`: server-measured
 time capped by the run clock, ties by kills, best per player).
 
+Zombie Farm audio (v21) uses real game clips under the site owner's parody license. The Halo: Reach announcer (© Microsoft / Bungie) says Slayer, the multi-kills and Game Over. The Unreal Tournament UT99 announcer (© Epic Games) says First Blood and the no-hit streak tiers. Street Fighter II SNES UI sounds (© Capcom) cover the power switch, START, the name grid and the title slam. Callouts are rare: one 13 s cooldown is shared by both announcers. Sources and processing are listed in `games/last-tower/sfx/{halo,ut,sf2}/README.md`, and the end credits carry the copyright lines. `?announcer=original` switches to the old synthesized voice, and `?announcer=0` turns the voices off.
+
 **Removing a bad name (admin).** Admin endpoints need `ADMIN_TOKEN`, which
 lives only in `/etc/inline-games-api.env` on the VPS (root-readable;
 `deploy-api.yml` generates a random one if it's missing and never prints it).

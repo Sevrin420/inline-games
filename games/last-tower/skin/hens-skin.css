@@ -71,9 +71,9 @@ html.lt-skin-hens .hh-bezel-label, html.lt-skin-hens .hh-leds > span:not([class]
 /* ---- v19: the golden egg + the 2 small hens are gone; ONE large real hens.farm hen covers the lower shell, the D-pad sits on top of her */
 .lt-sk-egg, .lt-sk-peek, .lt-sk-word { display: none !important; }
 html.lt-skin-hens .hh-theme-matcha .hh-speaker { visibility: hidden; }
-.lt-sk-hen { position: absolute; z-index: 0; left: 0; bottom: 6px; width: 236px; height: auto; pointer-events: none; -webkit-user-drag: none;
+.lt-sk-hen { position: absolute; z-index: 0; left: 16px; bottom: 18px; width: 168px; /* v21: smaller, sits fully inside the button panel (was 236px and spilled under the screen + off the left edge) */ height: auto; pointer-events: none; -webkit-user-drag: none;
   filter: drop-shadow(4px 5px 0 rgba(9, 11, 10, .9)); }
-.hh-land .lt-sk-hen { left: -4px; bottom: 4px; width: 206px; }
+.hh-land .lt-sk-hen { left: 12px; bottom: 12px; width: 176px; }
 html.lt-skin-hens .hh-dpad, html.lt-skin-hens .hh-ab, html.lt-skin-hens .hh-mute, html.lt-skin-hens .hh-bezel, html.lt-skin-hens .hh-top, html.lt-skin-hens .hh-brand { position: relative; z-index: 2; }
 /* the big power switch: low on the body, centred between the D-pad and the SHOOT stick (portrait) / under the screen (landscape) */
 html.lt-skin-hens .hh-pwr.lt-sk-pwr { position: absolute; z-index: 5; left: 50%; bottom: 14px; margin: 0; padding: 10px 8px; transform: translateX(-50%); gap: 0; }
