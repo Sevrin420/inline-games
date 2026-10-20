@@ -1,105 +1,579 @@
 {
- "note": "Community hens for Last Tower achievement pop-ups. Remove a hen by deleting its entry (and file).",
+ "note": "Community hens for Last Tower pop-ups + credits. hegg = approx # of $HEGG/hens.farm posts found via X search (Oct 2026); higher = shown earlier/more. requested = always in the first few pop-ups. lines = her own quotes ({h} = handle). Remove a hen by deleting its entry (and file).",
  "flock": [
   {
-   "handle": "0xAinur",
-   "file": "0xainur.webp",
-   "posted_about_url": "https://x.com/0xAinur/status/2112415578837360753"
+   "handle": "chiknstitute",
+   "file": "chiknstitute.webp",
+   "posted_about_url": "https://x.com/chiknstitute/status/2107247036307476604",
+   "requested": true,
+   "lines": [
+    "{h}: 'peer-reviewed: that was egg-cellent'",
+    "the {h} research team is taking notes",
+    "{h}: 'restard & development approves'"
+   ],
+   "hegg": 45
   },
   {
-   "handle": "4v4xd393n",
-   "file": "4v4xd393n.webp",
-   "posted_about_url": "https://x.com/4v4xd393n/status/2112408512135647574"
+   "handle": "onecalledthomas",
+   "file": "onecalledthomas.webp",
+   "lines": [
+    "{h}: 'B.M.B. — billions must bok'",
+    "{h} has an acronym for this: O.M.G.H. (oh my good hen)"
+   ],
+   "hegg": 31
   },
   {
-   "handle": "63Hzz",
-   "file": "63hzz.webp",
-   "posted_about_url": "https://x.com/63Hzz/status/2112376233074012632"
-  },
-  {
-   "handle": "CryptoApe16",
-   "file": "cryptoape16.webp",
-   "posted_about_url": "https://x.com/CryptoApe16/status/2110764622777368671"
-  },
-  {
-   "handle": "CryptoQuine",
-   "file": "cryptoquine.webp",
-   "posted_about_url": "https://x.com/CryptoQuine/status/2103233529433977228"
-  },
-  {
-   "handle": "MikeIsaak",
-   "file": "mikeisaak.webp",
-   "posted_about_url": "https://x.com/MikeIsaak/status/2112418960910221655"
-  },
-  {
-   "handle": "Nickcaragwa",
-   "file": "nickcaragwa.webp",
-   "posted_about_url": "https://x.com/Nickcaragwa/status/2112383894548779155"
-  },
-  {
-   "handle": "RaistilinCrypto",
-   "file": "raistilincrypto.webp",
-   "posted_about_url": "https://x.com/RaistilinCrypto/status/2107950678257635731"
-  },
-  {
-   "handle": "Scott_Marlett",
-   "file": "scott_marlett.webp",
-   "posted_about_url": "https://x.com/Scott_Marlett/status/2112374902347252104"
-  },
-  {
-   "handle": "chiknskull",
-   "file": "chiknskull.webp",
-   "posted_about_url": "https://x.com/chiknskull/status/2112406679878766692"
-  },
-  {
-   "handle": "chiknsultan",
-   "file": "chiknsultan.webp",
-   "posted_about_url": "https://x.com/chiknsultan/status/2111589183319863409"
-  },
-  {
-   "handle": "featherw8money",
-   "file": "featherw8money.webp",
-   "posted_about_url": "https://x.com/featherw8money/status/2112372566652498354"
-  },
-  {
-   "handle": "grenvilleriley",
-   "file": "grenvilleriley.webp",
-   "posted_about_url": "https://x.com/grenvilleriley/status/2112372658419695725"
-  },
-  {
-   "handle": "ikegochain",
-   "file": "ikegochain.webp",
-   "posted_about_url": "https://x.com/ikegochain/status/2112386504295112898"
-  },
-  {
-   "handle": "onesimu_s",
-   "file": "onesimu_s.webp",
-   "posted_about_url": "https://x.com/onesimu_s/status/2112357872961282050"
-  },
-  {
-   "handle": "onethird_nerd",
-   "file": "onethird_nerd.webp",
-   "posted_about_url": "https://x.com/onethird_nerd/status/2111152020736647313"
-  },
-  {
-   "handle": "striver_7",
-   "file": "striver_7.webp",
-   "posted_about_url": "https://x.com/striver_7/status/2112403161923338330"
+   "handle": "SirCluxalott",
+   "file": "sircluxalott.webp",
+   "lines": [
+    "{h}: 'by royal decree: more bok'",
+    "Sir {h} knights you Lady of the Coop",
+    "{h}: 'all things poultry. especially YOU'"
+   ],
+   "hegg": 28,
+   "requested": true
   },
   {
    "handle": "struccc",
    "file": "struccc.webp",
-   "posted_about_url": "https://x.com/struccc/status/2112431500885139910"
+   "posted_about_url": "https://x.com/struccc/status/2112431500885139910",
+   "hegg": 28
   },
   {
-   "handle": "ZatAmazer",
-   "file": "zatamazer.webp",
-   "posted_about_url": "https://x.com/ZatAmazer/status/2112356416518263173"
+   "handle": "chiknskull",
+   "file": "chiknskull.webp",
+   "posted_about_url": "https://x.com/chiknskull/status/2112406679878766692",
+   "hegg": 27
+  },
+  {
+   "handle": "featherw8money",
+   "file": "featherw8money.webp",
+   "posted_about_url": "https://x.com/featherw8money/status/2112372566652498354",
+   "hegg": 24
+  },
+  {
+   "handle": "63Hzz",
+   "file": "63hzz.webp",
+   "posted_about_url": "https://x.com/63Hzz/status/2112376233074012632",
+   "hegg": 19
+  },
+  {
+   "handle": "BMeeeps",
+   "file": "bmeeeps.webp",
+   "lines": [
+    "{h}: 'meeeeeep! burn the hegg, win the pot'",
+    "{h} ran the numbers. you're a calls-only hen"
+   ],
+   "hegg": 16
+  },
+  {
+   "handle": "hensdotfarm",
+   "file": "hensdotfarm.webp",
+   "lines": [
+    "{h}: 'billions must bok.'",
+    "the official {h} account felt that"
+   ],
+   "hegg": 16
+  },
+  {
+   "handle": "ikegochain",
+   "file": "ikegochain.webp",
+   "posted_about_url": "https://x.com/ikegochain/status/2112386504295112898",
+   "hegg": 15
+  },
+  {
+   "handle": "4v4xd393n",
+   "file": "4v4xd393n.webp",
+   "posted_about_url": "https://x.com/4v4xd393n/status/2112408512135647574",
+   "hegg": 14
+  },
+  {
+   "handle": "CryptoApe16",
+   "file": "cryptoape16.webp",
+   "posted_about_url": "https://x.com/CryptoApe16/status/2110764622777368671",
+   "hegg": 14
+  },
+  {
+   "handle": "MikeIsaak",
+   "file": "mikeisaak.webp",
+   "posted_about_url": "https://x.com/MikeIsaak/status/2112418960910221655",
+   "hegg": 14
+  },
+  {
+   "handle": "0xAinur",
+   "file": "0xainur.webp",
+   "posted_about_url": "https://x.com/0xAinur/status/2112415578837360753",
+   "hegg": 13
+  },
+  {
+   "handle": "FutureHumanism",
+   "file": "futurehumanism.webp",
+   "lines": [
+    "{h} is adding you to the Hen Terminal",
+    "{h}: 'new metric unlocked: zombies per minute'"
+   ],
+   "hegg": 13
+  },
+  {
+   "handle": "Scott_Marlett",
+   "file": "scott_marlett.webp",
+   "posted_about_url": "https://x.com/Scott_Marlett/status/2112374902347252104",
+   "hegg": 12
+  },
+  {
+   "handle": "striver_7",
+   "file": "striver_7.webp",
+   "posted_about_url": "https://x.com/striver_7/status/2112403161923338330",
+   "hegg": 12
+  },
+  {
+   "handle": "ohhhhhYeeah",
+   "file": "ohhhhhyeeah.webp",
+   "lines": [
+    "{h}: 'gm hen. gm zombies. gn zombies'",
+    "{h}: 'ohhhh YEAH. brave chikn energy'"
+   ],
+   "hegg": 11
+  },
+  {
+   "handle": "chiknsultan",
+   "file": "chiknsultan.webp",
+   "posted_about_url": "https://x.com/chiknsultan/status/2111589183319863409",
+   "hegg": 9
+  },
+  {
+   "handle": "onethird_nerd",
+   "file": "onethird_nerd.webp",
+   "posted_about_url": "https://x.com/onethird_nerd/status/2111152020736647313",
+   "lines": [
+    "{h}: 'one third nerd, three thirds hen'",
+    "{h} just open-sourced your aim",
+    "{h}: 'i built a bok detector. it's going off'"
+   ],
+   "hegg": 9,
+   "requested": true
+  },
+  {
+   "handle": "CryptoMad89",
+   "file": "cryptomad89.webp",
+   "lines": [
+    "{h}: 'top hen by value: you'",
+    "{h} would list you on Blockz for a LOT"
+   ],
+   "hegg": 8
+  },
+  {
+   "handle": "0x_dano",
+   "file": "0x_dano.webp",
+   "lines": [
+    "{h}: 'disciple of the bok, witness of this'",
+    "{h} is adding you to the coop explorer"
+   ],
+   "hegg": 6
+  },
+  {
+   "handle": "Coqmstrnu",
+   "file": "coqmstrnu.webp",
+   "lines": [
+    "{h}: 'coq master approves this pecking'"
+   ],
+   "hegg": 6
+  },
+  {
+   "handle": "hello2urmom4me",
+   "file": "hello2urmom4me.webp",
+   "lines": [
+    "{h}: 'smart-ass hen, full-time legend'",
+    "{h} is burning more $HEGG in your honour"
+   ],
+   "hegg": 6
+  },
+  {
+   "handle": "jiriw8",
+   "file": "jiriw8.webp",
+   "lines": [
+    "{h}: 'what if I buy a chikn now? (yes)'",
+    "{h} would surf this zombie wave"
+   ],
+   "hegg": 6
+  },
+  {
+   "handle": "MrCoq414",
+   "file": "mrcoq414.webp",
+   "lines": [
+    "{h}: 'Mr. Coq salutes Ms. Hen'",
+    "{h}: 'that was coq-tastic'"
+   ],
+   "hegg": 6
+  },
+  {
+   "handle": "0nlyfarms",
+   "file": "0nlyfarms.webp",
+   "lines": [
+    "{h}: 'only farms. only bangers.'",
+    "{h}: 'bet more. bok more.'"
+   ],
+   "hegg": 5
+  },
+  {
+   "handle": "CoqCapital",
+   "file": "coqcapital.webp",
+   "lines": [
+    "{h}: 'chikn lives and COQ is eternal'",
+    "{h} just reinvested in your survival"
+   ],
+   "hegg": 5
   },
   {
    "handle": "cant_bempty",
    "file": "cant_bempty.webp",
-   "posted_about_url": "https://x.com/cant_bempty/status/2111521879722955231"
+   "posted_about_url": "https://x.com/cant_bempty/status/2111521879722955231",
+   "hegg": 4
+  },
+  {
+   "handle": "gtreece",
+   "file": "gtreece.webp",
+   "lines": [
+    "{h}: '👀🐓👀'",
+    "{h} is watching this one closely"
+   ],
+   "hegg": 4
+  },
+  {
+   "handle": "RaistilinCrypto",
+   "file": "raistilincrypto.webp",
+   "posted_about_url": "https://x.com/RaistilinCrypto/status/2107950678257635731",
+   "hegg": 4
+  },
+  {
+   "handle": "SerafinJon",
+   "file": "serafinjon.webp",
+   "lines": [
+    "{h}: 'keeping it STEADY, the hen way'"
+   ],
+   "hegg": 4
+  },
+  {
+   "handle": "CapricornCrypto",
+   "file": "capricorncrypto.webp",
+   "lines": [
+    "{h}: 'billions WILL bok'",
+    "sheriff {h} deputizes you"
+   ],
+   "hegg": 3
+  },
+  {
+   "handle": "grenvilleriley",
+   "file": "grenvilleriley.webp",
+   "posted_about_url": "https://x.com/grenvilleriley/status/2112372658419695725",
+   "hegg": 3
+  },
+  {
+   "handle": "KINGETH22",
+   "file": "kingeth22.webp",
+   "lines": [
+    "{h}: 'BOK BOK. relentless.'",
+    "{h}: 'it's not that serious... except this. this is serious'"
+   ],
+   "hegg": 3
+  },
+  {
+   "handle": "Liochain",
+   "file": "liochain.webp",
+   "lines": [
+    "{h}: 'big coq since 2021, never seen THIS'"
+   ],
+   "hegg": 3
+  },
+  {
+   "handle": "Mythone__",
+   "file": "mythone__.webp",
+   "lines": [
+    "{h}: 'send the mint link to the world'",
+    "{h}: 'sky's the limit. billions must bok'"
+   ],
+   "hegg": 3
+  },
+  {
+   "handle": "shoe404luvah",
+   "file": "shoe404luvah.webp",
+   "lines": [
+    "{h}: 'shoes off. claws out.'"
+   ],
+   "hegg": 3
+  },
+  {
+   "handle": "0xbitmaker",
+   "file": "0xbitmaker.webp",
+   "posted_about_url": "https://x.com/chiknstitute/status/2107247036307476604",
+   "requested": true,
+   "lines": [
+    "{h}: 'early days chikn vibes. you're cooking'",
+    "{h} is minting this moment on-chain",
+    "{h}: 'bok per second: unreal'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "Chodi_avax",
+   "file": "chodi_avax.webp",
+   "lines": [
+    "{h}: 'fresh hens up for grabs. not this one'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "CoqDudes",
+   "file": "coqdudes.webp",
+   "lines": [
+    "{h}: 'golden eggs and golden plays'",
+    "{h}: 'bok bok, dude'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "Crypt0Tim0x",
+   "file": "crypt0tim0x.webp",
+   "lines": [
+    "{h}: 'intrigued. what IS this hen?'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "darkcoin___",
+   "file": "darkcoin___.webp",
+   "lines": [
+    "{h}: 'round two is live. so are you'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "Nickcaragwa",
+   "file": "nickcaragwa.webp",
+   "posted_about_url": "https://x.com/Nickcaragwa/status/2112383894548779155",
+   "hegg": 2
+  },
+  {
+   "handle": "onesimu_s",
+   "file": "onesimu_s.webp",
+   "posted_about_url": "https://x.com/onesimu_s/status/2112357872961282050",
+   "hegg": 2
+  },
+  {
+   "handle": "Truthexpounder",
+   "file": "truthexpounder.webp",
+   "lines": [
+    "{h}: 'deep dive: this hen is built different'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "wooddeeeee",
+   "file": "wooddeeeee.webp",
+   "lines": [
+    "{h}: 'ah ok, haven't checked that yet... WOW'"
+   ],
+   "hegg": 2
+  },
+  {
+   "handle": "1st_colonist",
+   "file": "1st_colonist.webp",
+   "lines": [
+    "{h}: 'is she freestyling daily? yes.'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "big_j_on_x",
+   "file": "big_j_on_x.webp",
+   "lines": [
+    "{h}: 'share some alpha, hen'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "BlockzGG",
+   "file": "blockzgg.webp",
+   "lines": [
+    "{h} has the perfect hen for you: this one",
+    "{h}: 'bok bok. listed: legend'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "chasexbtt",
+   "file": "chasexbtt.webp",
+   "lines": [
+    "{h}: '😭😭 she did it'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Chris457271",
+   "file": "chris457271.webp",
+   "lines": [
+    "{h}: '100 dollars of $HEGG or 100 $HEGG? both'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "ChrisCoffee",
+   "file": "chriscoffee.webp",
+   "lines": [
+    "{h}: 'great call. somehow just seeing this'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Cryptoguy777",
+   "file": "cryptoguy777.webp",
+   "lines": [
+    "{h}: '👀 bok bok'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "CryptoQuine",
+   "file": "cryptoquine.webp",
+   "posted_about_url": "https://x.com/CryptoQuine/status/2103233529433977228",
+   "hegg": 1
+  },
+  {
+   "handle": "cryptossjared",
+   "file": "cryptossjared.webp",
+   "lines": [
+    "{h} is sketching this moment"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "dawz9",
+   "file": "dawz9.webp",
+   "lines": [
+    "{h}: 'came for chikn, stayed for this'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Degenjson",
+   "file": "degenjson.webp",
+   "lines": [
+    "{h}: 'incredible stuff, hen'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "doctorj717",
+   "file": "doctorj717.webp",
+   "lines": [
+    "dr. {h} prescribes more eggs"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "EzHaxx",
+   "file": "ezhaxx.webp",
+   "lines": [
+    "{h}: 'lmao great hen'",
+    "{h} checks for haxx. it's just skill"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "FOCGERS",
+   "file": "focgers.webp",
+   "lines": [
+    "{h}: 'fun onchain games. this is it'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "JafarTHEdegen",
+   "file": "jafarthedegen.webp",
+   "lines": [
+    "{h}: 'meme lord certifies this bok'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "LinkstromSergey",
+   "file": "linkstromsergey.webp",
+   "lines": [
+    "{h}: 'hens in a row'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Mariavanesz",
+   "file": "mariavanesz.webp",
+   "lines": [
+    "{h} is painting this run"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Ofer_Nan",
+   "file": "ofer_nan.webp",
+   "lines": [
+    "{h}: 'what's that? oh. a LEGEND'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "piweb_",
+   "file": "piweb_.webp",
+   "lines": [
+    "{h}: 'nice addition to the flock'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "robinhoodjesus",
+   "file": "robinhoodjesus.webp",
+   "lines": [
+    "{h}: 'bok bok, my child'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "sallyfbaby",
+   "file": "sallyfbaby.webp",
+   "lines": [
+    "{h}: 'I love my hens. she's so clean'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "Shaukat1530",
+   "file": "shaukat1530.webp",
+   "lines": [
+    "{h}: 'iron-coq approved ✅'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "SherbokH",
+   "file": "sherbokh.webp",
+   "lines": [
+    "{h}: 'elementary, my dear hen'",
+    "{h}: 'these clips are goated'"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "TheBokcast",
+   "file": "thebokcast.webp",
+   "lines": [
+    "live on {h}: 'she's still standing, folks'",
+    "{h} is clipping this for the next episode"
+   ],
+   "hegg": 1
+  },
+  {
+   "handle": "ZatAmazer",
+   "file": "zatamazer.webp",
+   "posted_about_url": "https://x.com/ZatAmazer/status/2112356416518263173",
+   "hegg": 0
   }
  ]
 }

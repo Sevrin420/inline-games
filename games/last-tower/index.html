@@ -58,11 +58,12 @@
   /* v15 THE FLOCK: community hen pfps cheer achievements (DOM over the canvas, crisp) */
   #flockLayer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; }
   /* v18: the community hen card is BIG and lives in the bottom band (the hen sits at screen centre, the gold title in the top band) */
-  .fk-pop { position: absolute; left: 3%; right: 3%; bottom: 3%; display: flex; align-items: center; gap: .8em; padding: .6em .9em .6em .6em; background: #fff8e7; border: .4em solid #090b0a; border-radius: 1.3em; box-shadow: .5em .6em 0 #090b0a; box-sizing: border-box; animation: fkInB 2s cubic-bezier(.2, 1.4, .4, 1) both; }
-  .fk-pop img { width: 10.5em; height: 10.5em; flex: none; border-radius: 50%; border: .45em solid #090b0a; box-shadow: .3em .35em 0 #090b0a; object-fit: cover; background: #ffc42f; }
-  .fk-txt { min-width: 0; line-height: 1.12; }
-  .fk-txt b { display: block; color: #ff3347; font-size: 1.45em; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: .2em; }
-  .fk-txt span { display: block; color: #090b0a; font-size: 1.75em; font-family: Arial, "Helvetica Neue", sans-serif; font-weight: 900; }
+  /* v19: same big pfp, but a LOW-PROFILE quote band: the box is shorter than the pfp (the pfp pokes up out of it), the quote text is as big as fits (auto-fit in game.js) */
+  .fk-pop { position: absolute; left: 3%; right: 3%; bottom: 2%; height: 6.4em; display: flex; align-items: center; padding: .3em .7em .3em 12.2em; background: #fff8e7; border: .4em solid #090b0a; border-radius: 1.3em; box-shadow: .5em .6em 0 #090b0a; box-sizing: border-box; animation: fkInB 2s cubic-bezier(.2, 1.4, .4, 1) both; }
+  .fk-pop img { position: absolute; left: .5em; bottom: .45em; width: 10.5em; height: 10.5em; flex: none; border-radius: 50%; border: .45em solid #090b0a; box-shadow: .3em .35em 0 #090b0a; object-fit: cover; background: #ffc42f; }
+  .fk-txt { min-width: 0; max-height: 100%; overflow: hidden; line-height: 1.04; }
+  .fk-txt b { display: block; color: #ff3347; font-size: 1.25em; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: .2em; }
+  .fk-txt span { display: block; color: #090b0a; font-size: 2.6em; letter-spacing: -.01em; font-family: Arial, "Helvetica Neue", sans-serif; font-weight: 900; }
   @keyframes fkInB { 0% { transform: translateY(140%) rotate(-3deg); } 14% { transform: translateY(-4%) rotate(.6deg); } 22%, 86% { transform: translateY(0) rotate(0); } 100% { transform: translateY(140%) rotate(2deg); } }
   .fk-salute { position: absolute; transform: translateX(-50%); display: flex; gap: 1.2em; }
   .fk-salute i { position: relative; height: 100%; aspect-ratio: 1; animation: fkCheer .7s cubic-bezier(.2, 1.6, .4, 1) both, fkHop 1.1s ease-in-out .8s infinite; }
@@ -75,7 +76,7 @@
   @keyframes fkTick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   #tAim .lt-astick-ring { background: radial-gradient(circle, rgba(255,248,231,.55) 0 55%, rgba(242,230,196,.7) 100%); }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=19">
+<link rel="stylesheet" href="skin/hens-skin.css?v=19c">
 </head>
 <body>
 <div id="stage">
@@ -89,13 +90,13 @@
 </div>
 <!-- v16: shared accounts client (no badge: no data-game). Gives the TOP 20 FLOCK leaderboard its play records; missing = local board -->
 <script src="../shared/auth.js"></script>
-<script src="game.js?v=19"></script>
+<script src="game.js?v=19c"></script>
 <!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
      D-pad = WASD (run). START = Enter pauses (v13: the SELECT pill is hidden; one big START). No jump, no eat. Best weapon auto-equips.
      ?handheld=0 opts out (touch: stick + the same compass pad). -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"","select":"","su":"","sd":"","sl":"","sr":""}'
         data-labels='{"pad":""}'></script>
-<script src="skin/hens-skin.js?v=19"></script>
+<script src="skin/hens-skin.js?v=19c"></script>
 </body>
 </html>
