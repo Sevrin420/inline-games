@@ -23,6 +23,7 @@
  *   mine(gameId)                -> { stats, plays } | null
  *   leaderboard(gameId, playId) -> { status, json } board (+ candidate for playId), see /plays/leaderboard
  *   postLeaderboard(gameId, playId, name) -> { status, json }
+ *   share(gameId, playId, name) -> { status, json } v22 share link for a finished run
  *   mountBadge({ gameId, formatScore, corner })  small sign-in chip + panel
  */
 (function () {
@@ -137,6 +138,10 @@
   // so the panel can show the server's message; status 0 = unreachable.
   A.leaderboard = function (gameId, playId) {
     return api('GET', '/plays/leaderboard/' + encodeURIComponent(gameId) + (playId ? '?play_id=' + encodeURIComponent(playId) : ''));
+  };
+  // v22: a share link (TIME CARD) for a finished run: { id, url, image, ... } from the server's own records
+  A.share = function (gameId, playId, name) {
+    return api('POST', '/plays/share/' + encodeURIComponent(gameId), { play_id: playId, name: name });
   };
   A.postLeaderboard = function (gameId, playId, name) {
     return api('POST', '/plays/leaderboard/' + encodeURIComponent(gameId), { play_id: playId, name: name });

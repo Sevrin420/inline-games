@@ -1,6 +1,8 @@
 name: Leaderboard admin (manual)
 
-# List recent leaderboard entries, or remove one (a bad name). Talks to the API
+# List recent leaderboard entries, remove one (a bad name), or reset a whole
+# board (v22: hides every entry of that game, closes its unfinished plays and
+# bumps the board season; type the game id again in "confirm"). Talks to the API
 # on the VPS itself (127.0.0.1:3100) with ADMIN_TOKEN read from
 # /etc/inline-games-api.env on the server; the token never leaves the box and
 # is never printed.
@@ -9,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'list = show the latest entries with their ids; remove = hide one entry'
+        description: 'list = show the latest entries with their ids; remove = hide one entry; reset = wipe the whole board (new season)'
         type: choice
-        options: [list, remove]
+        options: [list, remove, reset]
         default: list
       game:
         description: 'Game id'
@@ -20,6 +22,10 @@ on:
         default: coop-sweep
       entry_id:
         description: 'Entry id to remove (from "list"); ignored for list'
+        required: false
+        default: ''
+      confirm:
+        description: 'For reset only: type the game id again (e.g. last-tower)'
         required: false
         default: ''
 
@@ -32,8 +38,10 @@ jobs:
           ACTION: ${{ inputs.action }}
           GAME: ${{ inputs.game }}
           ENTRY: ${{ inputs.entry_id }}
+          CONFIRM: ${{ inputs.confirm }}
         run: |
-          [[ "$ACTION" =~ ^(list|remove)$ ]] || { echo "::error::bad action"; exit 1; }
+          [[ "$ACTION" =~ ^(list|remove|reset)$ ]] || { echo "::error::bad action"; exit 1; }
+          if [ "$ACTION" = reset ] && [ "$CONFIRM" != "$GAME" ]; then echo "::error::reset needs confirm = the game id"; exit 1; fi
           [[ "$GAME" =~ ^[a-z0-9-]{1,40}$ ]] || { echo "::error::bad game id"; exit 1; }
           if [ "$ACTION" = remove ] && ! [[ "$ENTRY" =~ ^[0-9]{1,12}$ ]]; then echo "::error::entry_id must be a number"; exit 1; fi
 
@@ -64,7 +72,7 @@ jobs:
           ENTRY: ${{ inputs.entry_id }}
         run: |
           # Inputs were validated above; re-check what goes into the remote command line.
-          [[ "$ACTION" =~ ^(list|remove)$ && "$GAME" =~ ^[a-z0-9-]{1,40}$ ]] || exit 1
+          [[ "$ACTION" =~ ^(list|remove|reset)$ && "$GAME" =~ ^[a-z0-9-]{1,40}$ ]] || exit 1
           [ "$ACTION" = remove ] || ENTRY=0
           [[ "$ENTRY" =~ ^[0-9]{1,12}$ ]] || exit 1
           ssh vps "ACTION=$ACTION GAME=$GAME ENTRY=$ENTRY bash -s" <<'REMOTE'
@@ -76,6 +84,10 @@ jobs:
           if [ "$ACTION" = list ]; then
             printf 'X-Admin-Token: %s\n' "$TOKEN" | curl -sS -H @- "http://127.0.0.1:3100/plays/leaderboard/$GAME/admin?limit=100" \
               | /opt/inline-games-node/bin/node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);if(!j.entries){console.log(s);process.exit(1)}for(const e of j.entries)console.log([`#${e.id}`,e.name,(e.value/1000).toFixed(1)+"s",e.created_at,e.removed_at?"REMOVED "+e.removed_at:""].join("  "))})'
+          elif [ "$ACTION" = reset ]; then
+            printf 'X-Admin-Token: %s\n' "$TOKEN" | curl -sS -X POST -H @- -H "Origin: $ORIGIN" -H 'Content-Type: application/json' \
+              --data "{\"confirm\":\"$GAME\"}" "http://127.0.0.1:3100/plays/leaderboard/$GAME/reset"; echo
+            curl -sS "http://127.0.0.1:3100/plays/leaderboard/$GAME" | /opt/inline-games-node/bin/node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log(`after reset: total=${j.total} top=${j.top.length} season=${j.season}`)})'
           else
             printf 'X-Admin-Token: %s\n' "$TOKEN" | curl -sS -X DELETE -H @- -H "Origin: $ORIGIN" "http://127.0.0.1:3100/plays/leaderboard/$GAME/entries/$ENTRY"; echo
           fi
