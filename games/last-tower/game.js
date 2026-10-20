@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -1082,6 +1082,7 @@ const L = (k) => LABELS[mode()][k];
 
 // ================================================================ audio (WebAudio synth, honours the shell mute)
 let AC = null, master = null, rainGain = null, muted = false;
+const PWR = { off: false, gain: null, susT: 0, cycles: 0 }; // v22: the handheld power switch gates ALL game audio
 const LT_BOOT = !/[?&]handheld=0/.test(location.search) && !/[?&]boot=0/.test(location.search); // v19 power-on boot (see bootOn)
 function audioInit() {
   if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
@@ -1089,7 +1090,7 @@ function audioInit() {
   master = AC.createGain(); master.gain.value = muted ? 0 : 0.6;
   // v19: a brick-wall-ish limiter on the whole mix, so the louder music + gunfire never clip
   const lim = AC.createDynamicsCompressor(); lim.threshold.value = -2; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
-  master.connect(lim); lim.connect(AC.destination); master.lim = lim;
+  const pwr = AC.createGain(); pwr.gain.value = PWR.off ? 0 : 1; master.connect(pwr); pwr.connect(lim); lim.connect(AC.destination); master.lim = lim; PWR.gain = pwr; // v22: power gate (mute is upstream on master, so it still overrides)
   const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   noiseBuf = buf;
@@ -1153,6 +1154,8 @@ function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + f
     if (STATE === 'title') { if (T0 - INTRO.popAt < 0.45) continue; if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); uiSnd('select'); } continue; }
     if (G.state === 'dead') {
       const dir = b === 'up' || b === 'down' || b === 'left' || b === 'right';
+      if (TC.on) { if (go && T0 - TC.openAt > 0.35) tcPress(TC.cur); else if (dir) tcNav(b); continue; } // v22 time card: shoot = the focused button (CONTINUE unless moved)
+      if (go && T0 - TC.closeAt < 0.3) continue;
       if (NE.on) { if (go && G.deadT > 0.25) nameSelect(); else if (dir) nameNav(b); continue; } // v18 name grid: shoot presses the key under the cursor (OK greyed until valid)
       if (go && G.deadT > 0.25) { creditsRestart(); queue.length = 0; return; } // 0.25 s guard: a shot fired in the same instant as the fatal hit doesn't skip the credits
       continue; }
@@ -1390,9 +1393,9 @@ function award(id, repeatable) {
   // queue: 3+ waiting cards merge into one "+N ACHIEVEMENTS" card so a burst never stalls the screen
   const q = (G.achQ = G.achQ || []), last = q[q.length - 1];
   if (NOHIT_ACH.has(id)) { const e = { id, t: 0, isNew, nohit: true, hitN: G.hitN || 0 }; if (q.length && q[0].t > 0) { q[0].cut = true; q.splice(1, 0, e); } else q.unshift(e); }
-  else if (q.length >= 3 && last && last.multi && last.t === 0 && !last.nohit) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
-  else if (q.length >= 3 && last && !last.nohit) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
-  else q.push({ id, t: 0, isNew });
+  else if (q.length >= ACH_MERGE_AT && last && last.multi && last.t === 0 && !last.nohit) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
+  else if (q.length >= ACH_MERGE_AT && last && !last.nohit && last.t === 0) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
+  else q.push({ id, t: 0, isNew, at: G.st });
   if (id !== 'bok') { const R = G.rs; if (R) { R.awT.push(G.st); while (R.awT.length && G.st - R.awT[0] > 10) R.awT.shift(); if (R.awT.length >= 3) award('bok'); } }
   metaCheck(); return true;
 }
@@ -1442,24 +1445,31 @@ function achCard(id) {
   x.drawImage(sub, Math.floor(w / 2 - sub.width / 2) + 1, by + big.height + 3);
   _achImg.set(id, c); return c;
 }
-const ACH_T = 2.6;
+// v22 slower pop-ups: hold 4.2 s (was 2.6), ease in 0.36 s / out 0.4 s (was 0.22 / 0.25), and a 1.6 s quiet gap before the next card.
+// A backlog (3+ queued) plays at 2.8 s with a 0.9 s gap; 2+ waiting cards merge into one '+N ACHIEVEMENTS' card, and a plain card that
+// has waited over 15 s is folded away (still earned + saved), so the queue never falls far behind the game.
+const ACH_TOP = 33; // the HUD's top row (life + timer panels and their shadows) ends at y = 32
+const ACH_T = 4.2, ACH_T_FAST = 2.8, ACH_IN = 0.36, ACH_OUT = 0.4, ACH_GAP = 1.6, ACH_GAP_FAST = 0.9, ACH_STALE = 15, ACH_MERGE_AT = 2;
 // v15 gun-tier pop-ups share the big gold card (not saved as trophies)
 function upgradePop(k, t) { (G.achQ = G.achQ || []).push({ id: 'up:' + k + ':' + t, t: 0, isNew: false }); }
 function tierDropPop(t) { (G.achQ = G.achQ || []).push({ id: 'drop:' + t, t: 0, isNew: false }); }
 function drawAch(dt) {
   if (!G || !G.achQ || !G.achQ.length) return;
   while (G.achQ.length && G.achQ[0].nohit && G.achQ[0].t === 0 && (G.hitN || 0) > G.achQ[0].hitN) achRevoke(G.achQ.shift()); // v19: hit before it showed = no award
-  if (!G.achQ.length) return; const a = G.achQ[0], AT = G.achQ.length > 2 ? 1.6 : ACH_T; // a backlog plays faster
+  if (!G.achQ.length) { G.achGap = 0; return; }
+  if (G.achGap > 0 && !G.achQ[0].nohit) { G.achGap -= dt; return; } // the quiet gap between cards (a no-hit award never waits)
+  while (G.achQ.length > 1 && G.achQ[0].t === 0 && !G.achQ[0].nohit && !G.achQ[0].multi && G.achQ[0].at != null && G.st - G.achQ[0].at > ACH_STALE) G.achQ.shift(); // stale: fold away
+  const a = G.achQ[0], AT = G.achQ.length > 2 ? ACH_T_FAST : ACH_T; // a backlog plays faster
   if (a.cut) { a.cut = false; if (a.t > 0) a.t = Math.max(a.t, AT - 0.2); } // a no-hit award is waiting: wrap this card up now
   if (a.t === 0) { sfxAch(); flockPop(a.id); } a.t += dt;
-  const c = achCard(a.id), e = Math.min(1, a.t / 0.22), s = a.t < 0.22 ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - 0.25 ? Math.max(0.05, (AT - a.t) / 0.25) : 1;
+  const c = achCard(a.id), e = Math.min(1, a.t / ACH_IN), eo = Math.min(1, Math.max(0, (AT - a.t) / ACH_OUT)), s = a.t < ACH_IN ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - ACH_OUT ? Math.max(0.05, 1 - Math.pow(1 - eo, 2)) : 1;
   const fit = Math.min(1, (N - 6) / c.width); // never wider than the screen
-  const w = Math.round(c.width * s * fit), h = Math.round(c.height * s * fit), cx = Math.round(N / 2), cy = Math.round(N * 0.29); // top-centre band (the hen is always at screen centre)
+  const w = Math.round(c.width * s * fit), h = Math.round(c.height * s * fit), fh0 = Math.round(c.height * fit), cx = Math.round(N / 2), cy = Math.max(Math.round(N * 0.17), ACH_TOP + (fh0 >> 1)); // v22: higher (was 0.29 N), but never under the top HUD row; the hen is always at screen centre
   hx.drawImage(c, cx - (w >> 1), cy - (h >> 1), w, h);
-  const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > 0.25 && a.t < AT - 0.25;
-  if (a.isNew && steady) text('NEW!', cx + (fw >> 1) - 10, cy - (fh >> 1) - 2, 8, HRED, 'center');
-  if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 18, cy - (fh >> 1) - 2, 8, HGOLD, 'center');
-  if (a.t >= AT) G.achQ.shift();
+  const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > ACH_IN && a.t < AT - ACH_OUT;
+  if (a.isNew && steady) text('NEW!', cx + (fw >> 1) - 12, cy + (fh >> 1) + 2, 8, HRED, 'center'); // v22: tags under the card (clear of the label tab + the HUD)
+  if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 22, cy + (fh >> 1) + 2, 8, HGOLD, 'center');
+  if (a.t >= AT) { G.achQ.shift(); G.achGap = G.achQ.length > 2 ? ACH_GAP_FAST : ACH_GAP; }
 }
 // v16 no-hit streak meter (under the kill count): fills over each minute without a hit, one gold pip per minute banked
 // (UNTOUCHED / FEATHERS INTACT / TEFLON HEN), flashes red and empties when a hit lands. Wordless.
@@ -1536,7 +1546,7 @@ function flockPop(id) {
   flockFont(); if (_flockPopEl) _flockPopEl.remove();
   const el = document.createElement('div'); el.className = 'fk-pop fk-' + side;
   el.innerHTML = `<img src="${_esc(f.src)}" alt=""><div class="fk-txt"><b>@${_esc(f.h)}</b><span>${_esc(body)}</span></div>`;
-  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 2000);
+  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 3400); // v22: 3.4 s (was 2 s), matches the slower gold card
   { const tx = el.querySelector('.fk-txt'), sp = el.querySelector('.fk-txt span'); for (let z = 3.2; z >= 1.5; z -= 0.1) { sp.style.fontSize = z.toFixed(1) + 'em'; if (tx.scrollHeight <= tx.clientHeight + 1 && tx.scrollWidth <= tx.clientWidth + 1) break; } } // v19: biggest quote that fits the slim band
 }
 // death screen: 2-3 cheering hens ("the flock salutes you"), placed in canvas coords
@@ -1576,6 +1586,15 @@ function lbRunStart() { // called by newGame
   RUN = r; const A = window.MembersAuth;
   if (A && A.ready) A.ready.then(() => (A.available ? A.startPlay(LB_GAME) : null)).then((id) => { r.play = id || null; }).catch(() => {});
 }
+// ---- v22 board seasons: the API serves a season id with every board; an admin reset bumps it. A device that last saw an
+// older season starts fresh: no remembered name (blank name grid), no achievements / lifetime stats, an empty device board.
+const SEASON_KEY = 'lasttower.season';
+const SEASON = { seen: null, wiped: null };
+function seasonWipe() { lbName = null; ACH_UNLOCKED = {}; for (const k in LIFE) LIFE[k] = 0; best = { time: 0, kills: 0, days: 0 };
+  for (const k of [NAME_KEY, ACH_KEY, LIFE_KEY, LOCAL_LB_KEY, BEST_KEY, 'lasttower.flockseen']) { try { localStorage.removeItem(k); } catch (e) {} } }
+function seasonCheck(s) { if (!Number.isSafeInteger(s) || s < 1) return; SEASON.seen = s; let had = null; try { had = localStorage.getItem(SEASON_KEY); } catch (e) {}
+  const h = had === null ? 1 : Number(had); if (h !== s) { seasonWipe(); SEASON.wiped = s; } try { localStorage.setItem(SEASON_KEY, String(s)); } catch (e) {} }
+{ const A = window.MembersAuth; if (A && A.ready) A.ready.then(() => (A.available ? A.leaderboard(LB_GAME) : null)).then((b) => { if (b && b.status === 200 && b.json) seasonCheck(b.json.season); }).catch(() => {}); }
 function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) {} return Array.isArray(l) ? l : []; }
 function lbRunEnd() { // called by die()
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
@@ -1583,9 +1602,9 @@ function lbRunEnd() { // called by die()
     if (r.ms >= 5000) l.push(me); l.sort((a, b) => b.ms - a.ms || b.kills - a.kills); const top = l.slice(0, 20); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(top)); } catch (e) {}
     r.localMe = me; r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; if (top.includes(me)) achEvent('top20'); };
   if (!A || !r.play) { fallback(); return; }
-  A.endPlay(r.play, { outcome: 'died', score: r.kills, meta: { ms: r.ms, mg: G.tier.mg || 0, sg: G.tier.shotgun || 0 } })
+  A.endPlay(r.play, { outcome: 'died', score: r.kills, meta: { ms: r.ms, mg: G.tier.mg || 0, sg: G.tier.shotgun || 0, ach: achCount() } })
     .then((p) => (p ? A.leaderboard(LB_GAME) : null))
-    .then((b) => { if (!b || b.status !== 200 || !b.json) { fallback(); return; } r.board = b.json;
+    .then((b) => { if (!b || b.status !== 200 || !b.json) { fallback(); return; } seasonCheck(b.json.season); r.board = b.json;
       const me = b.json.me; r.wantPost = r.ms >= 5000 && (!me || r.ms > me.ms || (r.ms - (r.ms % 100) === me.ms && r.kills > me.kills)); if (!r.wantPost) r.posted = true; else if (r.postOnReady) lbPost(r); })
     .catch(fallback);
 }
@@ -1634,6 +1653,7 @@ function stageTap(e) {
   if (!(STATE === 'game' && G && G.state === 'dead')) return false; const c = document.getElementById('c'), b = c.getBoundingClientRect(); if (!b.width) return false;
   const x = (e.clientX - b.left) / b.width * N, y = (e.clientY - b.top) / b.height * N, inR = (q) => q && x >= q[0] && x < q[0] + q[2] && y >= q[1] && y < q[1] + q[3];
   if (NE.on) { audioInit(); const i = NE.keys ? NE.keys.findIndex((q) => inR(q)) : -1; if (i >= 0) { NE.cur = i; neType(NE_GRID[i].ch); } return true; } // never restarts from the name grid
+  if (TC.on) { audioInit(); const i = TC.btns ? TC.btns.findIndex((q) => inR(q)) : -1; if (i >= 0 && T0 - TC.openAt > 0.35) { TC.cur = i; tcPress(i); } return true; } // v22: taps only hit the card buttons
   if (CR.mineR && inR(CR.mineR) && G.deadT > 0.25) { nameOpen('change'); return true; }
   return false;
 }
@@ -1716,6 +1736,8 @@ function drawCredits(t, dt) {
   if (CR.g !== G || CR.n !== N || (CR.flockN !== FLOCK.length)) { buildCredits(); CR.flockN = FLOCK.length; }
   G.deadT = (G.deadT || 0) + dt; if (CR.askG !== G) { CR.askG = G; if (lbName === null) nameOpen('death'); }
   if (NE.on) { drawNameEntry(t, dt); return; } // the roll waits for a name
+  if (TC.g !== G && G.deadT > 0.7) tcOpen(); // v22: the TIME CARD, once per death, after the name
+  if (TC.on) { drawTimeCard(t, dt); return; }
   CR.t += dt; CR.mineR = null;
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.42, 0.1 + G.deadT * 0.6)})`; hx.fillRect(0, 0, N, N); // v18: no going dark, the farm stays bright
   const sp = N / 256 * 19, L = CR.H + N, pos = (CR.t * sp + N * 0.42) % L; let y = Math.round(N - pos);
@@ -1726,6 +1748,76 @@ function drawCredits(t, dt) {
   for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.3 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 1 - i, N, 1); }
 }
 function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); newGame(); sfx('dawn'); }
+// ================================================================ v22 TIME CARD: a shareable 1200x675 card right after the run
+// (after the name grid, once the rank is known). sharecard.js draws it, the same file the server uses for a share link's
+// og:image. Buttons: CONTINUE (default focus: a plain shoot goes on to the credits), SHARE ON X, SAVE IMAGE. D-pad moves the
+// focus, shoot presses it; on phones tap a button. Share: Web Share with the PNG when the device can share files, else the
+// X post intent; the text links the server share page (/plays/s/<id>, og:image = this card) when the run is on the board.
+const TC = { on: false, g: null, cur: 0, openAt: 0, closeAt: -9, key: '', cv: null, blob: null, file: null, link: null, linking: false, btns: null, msg: '', msgT: 0, pend: null };
+const TC_PLAY = 'https://membersonly.cc/zombie-farm/';
+function tcOpen() { Object.assign(TC, { on: true, g: G, cur: 0, openAt: T0, key: '', blob: null, file: null, link: null, linking: false, btns: null, msg: '', msgT: 0, pend: null });
+  const r = RUN && RUN.g === G ? RUN : null; if (r) lbPost(r); uiSnd('select'); }
+function tcClose() { TC.on = false; TC.closeAt = T0; CR.t = 0; } // the credits roll starts now
+function tcStats() { // what the card shows for this run; pending until the board answers (max ~6 s, then OFFLINE)
+  const r = RUN && RUN.g === G ? RUN : null, ms = Math.round(G.st * 1000), o = { name: showName(lbName || ''), ms, kills: G.kills, ach: achCount(), achMax: ACH_TOTAL };
+  const late = T0 - TC.openAt > 6;
+  if (!r || r.local || (r.board && r.board.local)) { o.offline = true; return o; }
+  if (r.entry) { o.rank = r.entry.rank; o.total = r.board && r.board.total; return o; }
+  if (r.posted && r.board && !r.local) { const me = r.board.me; if (me && !r.err) { o.rank = me.rank; o.total = r.board.total; o.rankLabel = 'YOUR BEST'; return o; } o.offline = true; o.rankText = r.ms < 5000 ? 'UNRANKED' : 'OFFLINE'; return o; }
+  if (late) { o.offline = true; return o; }
+  o.pending = true; return o;
+}
+function tcFmt(ms) { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function tcText(o) { return 'I survived ' + tcFmt(o.ms) + ' on ZOMBIE FARM' + (o.rank && !o.rankLabel ? ' and ranked #' + o.rank : '') + ' \u{1F414}\u{1F9DF} Billions must bok. Can you beat me?'; }
+function tcRender(o) { // (re)draw the card when what it shows changes; the PNG blob/File is prepared ahead so a share runs inside the tap
+  const key = JSON.stringify(o); if (key === TC.key && TC.cv) return; TC.key = key; const Z = window.ZFCard; if (!Z) return;
+  const img = Z.render(o); let cv = TC.cv; if (!cv) { cv = TC.cv = document.createElement('canvas'); cv.width = img.w; cv.height = img.h; }
+  cv.getContext('2d').putImageData(new ImageData(img.data, img.w, img.h), 0, 0); TC.blob = null; TC.file = null;
+  if (!o.pending) { const k = key; cv.toBlob((b) => { if (!b || TC.key !== k) return; TC.blob = b; try { TC.file = new File([b], 'zombie-farm-' + tcFmt(o.ms).replace(':', 'm') + 's.png', { type: 'image/png' }); } catch (e) { TC.file = null; } }, 'image/png'); }
+  // the share link: only for a run the server has (a rank), made once per run
+  const r = RUN && RUN.g === G ? RUN : null, A = MA();
+  if (o.rank && r && r.play && A && A.share && !TC.link && !TC.linking) { TC.linking = true; A.share(LB_GAME, r.play, showName(lbName || '')).then((res) => { if (TC.g !== r.g) return; if (res && (res.status === 200 || res.status === 201) && res.json && res.json.url) TC.link = res.json.url; }).catch(() => {}); }
+}
+function tcNav(dir) { if (!uiSnd('cursor')) sfx('click'); if (dir === 'left') TC.cur = TC.cur === 2 ? 1 : TC.cur === 1 ? 0 : 2; else if (dir === 'right') TC.cur = TC.cur === 0 ? 1 : TC.cur === 1 ? 2 : 0; else TC.cur = TC.cur === 0 ? 1 : 0; }
+// Web Share / window.open / downloads need a fresh user gesture. A key press or mouse click still counts while the game loop
+// handles it; a phone touch only counts once the finger lifts, so then the action runs in the next pointerup / touchend.
+function tcGesture(fn) { const ua = navigator.userActivation; if (ua && ua.isActive) { fn(); return; }
+  TC.pend = fn; const go = () => { off(); const f = TC.pend; TC.pend = null; if (f) f(); }, off = () => { for (const ev of ['pointerup', 'touchend', 'click', 'keyup']) window.removeEventListener(ev, go, true); };
+  for (const ev of ['pointerup', 'touchend', 'click', 'keyup']) window.addEventListener(ev, go, true); setTimeout(() => { if (TC.pend === fn) { off(); TC.pend = null; fn(); } }, 1200); }
+function tcPress(i) { if (i === 0) { uiSnd('select'); tcClose(); queue.length = 0; return; }
+  uiSnd('select'); const o = tcStats(); if (o.pending) { TC.msg = 'ONE SEC: RANKING...'; TC.msgT = 1.6; return; }
+  tcGesture(i === 1 ? () => tcShare(o) : () => tcSave(o)); }
+function tcSave(o) { if (!TC.blob) { TC.msg = 'ONE SEC...'; TC.msgT = 1.2; return; }
+  const u = URL.createObjectURL(TC.blob), a = document.createElement('a'); a.href = u; a.download = TC.file ? TC.file.name : 'zombie-farm.png'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 30000); TC.msg = 'IMAGE SAVED'; TC.msgT = 2; TC.did = 'save'; }
+function tcShare(o) { const url = TC.link || TC_PLAY, text = tcText(o);
+  const data = TC.file ? { files: [TC.file], text: text + ' ' + url, title: 'ZOMBIE FARM' } : null;
+  if (data && navigator.canShare && navigator.share) { let ok = false; try { ok = navigator.canShare(data); } catch (e) { ok = false; }
+    if (ok) { TC.did = 'webshare'; navigator.share(data).then(() => { TC.msg = 'SHARED!'; TC.msgT = 2; }).catch((e) => { if (e && e.name === 'NotAllowedError') tcIntent(text, url); }); return; } }
+  tcIntent(text, url); }
+function tcIntent(text, url) { const u = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url); TC.did = 'intent'; TC.lastIntent = u;
+  const w = window.open(u, '_blank', 'noopener'); if (!w) { try { window.top.location.href = u; } catch (e) { location.href = u; } } TC.msg = 'OPENING X...'; TC.msgT = 2; }
+function drawTimeCard(t, dt) {
+  const o = tcStats(); tcRender(o); TC.msgT = Math.max(0, TC.msgT - dt);
+  const a = Math.min(1, (T0 - TC.openAt) / 0.22), e = 1 - Math.pow(1 - a, 3);
+  hx.fillStyle = `rgba(9,11,10,${0.55 * e})`; hx.fillRect(0, 0, N, N);
+  const cw = Math.min(N - 8, 520), ch = Math.round(cw * 675 / 1200), s = 0.86 + 0.14 * e, w = Math.round(cw * s), h = Math.round(ch * s);
+  const bh = 22, gap = 6, totalH = ch + gap + bh + 4 + bh, y0 = Math.max(4, Math.round((N - totalH) / 2) - 6), x = Math.round(N / 2 - w / 2), y = Math.round(y0 + (ch - h) / 2);
+  hx.fillStyle = INK; hx.fillRect(x - 2, y - 2, w + 4, h + 4);
+  if (TC.cv) { const sm = hx.imageSmoothingEnabled; hx.imageSmoothingEnabled = true; try { hx.imageSmoothingQuality = 'high'; } catch (er) {} hx.drawImage(TC.cv, x, y, w, h); hx.imageSmoothingEnabled = sm; }
+  if (a < 1) { hx.fillStyle = `rgba(255,196,47,${0.6 * (1 - a)})`; hx.fillRect(x, y, w, h); }
+  // buttons: [SHARE ON X] [SAVE IMAGE] / [CONTINUE]
+  const by = y0 + ch + gap, bw = Math.floor((cw - 6) / 2), bx = Math.round(N / 2 - cw / 2);
+  TC.btns = [[bx, by + bh + 4, cw, bh], [bx, by, bw, bh], [bx + bw + 6, by, bw, bh]];
+  const lab = ['CONTINUE', 'SHARE ON X', 'SAVE IMAGE'], col = ['#ffffff', HGOLD, '#ffffff'];
+  TC.btns.forEach((q, i) => { const sel = i === TC.cur, [qx, qy, qw, qh] = q;
+    hx.fillStyle = sel ? HGOLD : col[i] === HGOLD ? '#fff1c2' : '#ffffff'; hx.fillRect(qx, qy, qw, qh);
+    hx.fillStyle = INK; hx.fillRect(qx, qy + qh - 2, qw, 2); hx.fillRect(qx, qy, qw, 1); hx.fillRect(qx, qy, 1, qh); hx.fillRect(qx + qw - 1, qy, 1, qh);
+    if (sel) { hx.fillRect(qx - 1, qy - 1, qw + 2, 1); hx.fillRect(qx - 1, qy + qh, qw + 2, 1); hx.fillRect(qx - 1, qy - 1, 1, qh + 2); hx.fillRect(qx + qw, qy - 1, 1, qh + 2); }
+    if (i === 1) { const lx = Math.round(qx + qw / 2 - CW(lab[i], 8) / 2) - 8, ly = qy + Math.round(qh / 2) - 4; hx.fillStyle = INK; for (let k = 0; k < 7; k++) { hx.fillRect(lx + k, ly + k, 2, 1); hx.fillRect(lx + 6 - k, ly + k, 1, 1); } text(lab[i], qx + qw / 2 + 5, qy + Math.round(qh / 2) - 5, 8, INK, 'center', false); }
+    else text(lab[i] + (i === 0 ? (lastInput === 'touch' ? '' : '  (SHOOT)') : ''), qx + qw / 2, qy + Math.round(qh / 2) - 5, 8, INK, 'center', false); });
+  if (TC.msgT > 0) { const m = TC.msg, mw = CW(m, 8) + 12, mx = Math.round(N / 2 - mw / 2), my = y + h - 22; hx.fillStyle = INK; hx.fillRect(mx, my, mw, 16); text(m, N / 2, my + 3, 8, HGOLD, 'center', false); }
+}
 // ================================================================ v16 "BOK-A-POLKA": an ORIGINAL chiptune polka (not the Chicken Dance melody)
 // 2/4 oom-pah: triangle bass on the beat, square chord "pah" on the off-beat, a 12.5% pulse lead with tick-tick-tick-tick
 // bursts, noise clap on beat 2, and bok / bwak cluck hits written into the arrangement. 48 bars (A B C) ~ 44 s at 132 bpm, loops.
@@ -1787,7 +1879,7 @@ function musicTick() {
   if (MUS.duckT > 0) MUS.duckT -= 0.04; else MUS.duck = Math.min(1, MUS.duck + 0.04);
   const base = muted ? 0 : dead ? 0.36 : mode === 'title' ? 0.42 : 0.5; MUS.bus.gain.setTargetAtTime(base * MUS.duck, now, 0.05);
   MUS.lp.frequency.setTargetAtTime(dead ? 900 : 9000, now, 0.4);
-  if (muted) { MUS.nextT = now + 0.05; return; } // nothing to hear: don't spend nodes
+  if (muted || PWR.off || PWR.hidden) { MUS.nextT = now + 0.05; return; } // nothing to hear (muted / powered off): don't spend nodes
   while (MUS.nextT < now + 0.16) {
     const [ch, line] = SONG[MUS.bar], s = MUS.step, t = MUS.nextT;
     const bpm = dead ? 78 : mode === 'play' ? Math.min(156, 132 + 3 * Math.floor(((G && G.st) || 0) / 60)) : 126, sixteenth = 60 / bpm / 4 / (dead ? 1 : ACCEL[MUS.bar] || 1);
@@ -2133,7 +2225,7 @@ function annNow() { return performance.now() / 1000; }
 // SF2 UI sound (waits up to 0.4 s for its decode on the very first gesture)
 function uiSnd(k, rate = 1, gain = 0.9, tries = 0) { if (!AC) return false; const b = ANN.buf[k]; if (!b) { if (tries < 8 && ANN.raw[k]) setTimeout(() => uiSnd(k, rate, gain, tries + 1), 50); return false; }
   const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = b; s.playbackRate.value = rate; g.gain.value = gain; s.connect(g); g.connect(master); s.start(); (window.__ltUi = window.__ltUi || []).push(k); return true; }
-function announce(k, prio = 1, force = false) { if (ANN.mode === 'off' || !ANN_FILES[k]) return false; const t = annNow();
+function announce(k, prio = 1, force = false) { if (ANN.mode === 'off' || !ANN_FILES[k] || PWR.off) return false; const t = annNow();
   if (!force && t - ANN.lastT < ANN_CD) return false; // the shared global cooldown (Slayer / Game Over use force)
   (window.__ltAnnTry = window.__ltAnnTry || []).push(k); ANN.lastT = t; if (!AC) return false; const b = ANN.buf[k]; if (!b) return false; const now = AC.currentTime;
   if (ANN.cur && now < ANN.curEnd) { if (prio <= ANN.curP) return false; try { ANN.cur.stop(); } catch (e) {} }
@@ -2157,6 +2249,23 @@ setInterval(() => { if (!G || G.state !== 'play' || STATE !== 'game') { ANN.pend
 const INTRO = { t: 0, T: 5.6, cuts: [0, 1.7, 2.8, 3.9], popAt: -9, shot: -1 }; // v20: silo intro
 function bootOn() { resize(); setTimeout(resize, 60); setTimeout(resize, 400); STATE = 'intro'; INTRO.t = 0; INTRO.shot = -1; INTRO.slam = false; setTimeout(() => uiSnd('mode'), 30); /* v21 SF2 power-on */ G = null; zombiePool.length = 0; itemPool.length = 0; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } queue.length = 0; for (const k in held) held[k] = 0; }
 function bootOff() { STATE = 'off'; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } skinBegin(); skinEnd(); }
+// v22 power audio: OFF = quick fade (80 ms) of everything, the announcer clip is stopped and its queue cleared, the music scheduler idles,
+// then the AudioContext is suspended (no CPU, no stray notes). ON = resume, the gate opens and the polka restarts from bar 1 with the same
+// fade-in as the first boot. One music scheduler for the page lifetime (musicStart runs once), so off/on cycles never stack loops.
+function powerAudio(on) { PWR.off = !on; clearTimeout(PWR.susT); if (!AC) return; const now = AC.currentTime;
+  if (!on) { PWR.cycles++; if (PWR.gain) { PWR.gain.gain.cancelScheduledValues(now); PWR.gain.gain.setValueAtTime(PWR.gain.gain.value, now); PWR.gain.gain.linearRampToValueAtTime(0, now + 0.08); }
+    if (ANN.cur) { try { ANN.cur.stop(now + 0.09); } catch (e) {} } ANN.cur = null; ANN.q = null; ANN.pend = 0;
+    if (MUS.bus) { MUS.bus.gain.cancelScheduledValues(now); MUS.bus.gain.setTargetAtTime(0, now, 0.03); }
+    PWR.susT = setTimeout(() => { if (PWR.off && AC && AC.state === 'running') AC.suspend().catch(() => {}); }, 250); return; }
+  const open = () => { const t = AC.currentTime; if (PWR.gain) { PWR.gain.gain.cancelScheduledValues(t); PWR.gain.gain.setValueAtTime(1, t); }
+    if (MUS.bus) { MUS.bus.gain.cancelScheduledValues(t); MUS.bus.gain.setValueAtTime(0, t); MUS.bus.gain.setTargetAtTime(0.5, t, 0.6); } MUS.nextT = t + 0.1; MUS.step = 0; MUS.bar = 0; MUS.duck = 1; MUS.duckT = 0; };
+  if (AC.state === 'suspended') AC.resume().then(open, open); else open(); }
+{ const _off = bootOff, _on = bootOn; bootOff = function () { _off(); powerAudio(false); }; bootOn = function () { _on(); powerAudio(true); }; }
+// v22 hidden tab: the game loop (rAF) stops but timers keep ticking at ~1 Hz, so the 0.16 s music lookahead came out as
+// choppy blips in a background tab. Hidden = suspend the AudioContext; visible again = resume (unless powered off or muted).
+document.addEventListener('visibilitychange', () => { if (!AC) return;
+  if (document.hidden) { PWR.hidden = true; if (AC.state === 'running') AC.suspend().catch(() => {}); return; }
+  PWR.hidden = false; if (PWR.off || muted) return; const go = () => { MUS.nextT = AC.currentTime + 0.05; }; if (AC.state === 'suspended') AC.resume().then(go, go); else go(); });
 function introEnd() { if (STATE !== 'intro') return; STATE = 'title'; INTRO.popAt = T0; sfx('dawn'); }
 if (LT_BOOT) {
   addEventListener('handheld:power', (e) => { if (e.detail && e.detail.on === false) bootOff(); else bootOn(); });
@@ -2216,6 +2325,17 @@ function ziTracers() { for (const q of ZI.tr) { pixLine(q.x0, q.y0 + 1, q.x1, q.
 function flash(x, y, k, big) { const r = Math.round((big ? 5 : 3) * k); hx.fillStyle = '#fff6c8'; hx.fillRect(x - r, y - 1, r * 2 + 2, 3); hx.fillRect(x, y - r, 3, r * 2 + 2); hx.fillStyle = '#ffc42f'; hx.fillRect(x - Math.round(r / 2), y - Math.round(r / 2), r + 2, r + 2); hx.fillStyle = '#ffffff'; hx.fillRect(x, y, 2, 2); }
 function buffDraw(x, y, k, t, fire) { if (!BUFF.complete || !BUFF.naturalWidth) return; const rec = fire ? Math.round(Math.sin(t * 60) * k * 0.6) : 0; hx.drawImage(BUFF, Math.round(x) - rec, Math.round(y), 50 * k, 48 * k);
   if (fire) BUFF_MZ.forEach(([mx, my], i) => { if ((Math.floor(t * 30) + i) % 2) flash(Math.round(x + mx * k) - rec, Math.round(y + my * k), k, k > 2); }); }
+// v22: the hen must always STAND on the silo. domeTop() = the close-up's silo roof: a wide galvanised dome cap (pixel rows, radial seams,
+// rivets, ink top contour, warm west rim) whose apex sits 2 art-px under the feet, so his whole stance rests on it. feetShadow() = contact shadow.
+function domeTop(cx, feetY, k) { const R = 70 * k, top = feetY - 2 * k, y1 = N; hx.fillStyle = OUT;
+  for (let y = top; y < y1; y++) { const d = y - top, half = Math.round(Math.sqrt(Math.max(0, 2 * R * d - d * d))); if (half <= 0) continue; const x0 = Math.round(cx - half), w = half * 2;
+    hx.fillStyle = OUT; hx.fillRect(x0 - k, y, w + 2 * k, 1); // ink contour
+    hx.fillStyle = d < 3 * k ? '#cfd4d8' : d < 9 * k ? '#aeb5ba' : '#9aa2a8'; hx.fillRect(x0, y + (d < k ? k - d : 0), w, 1);
+    hx.fillStyle = '#ffd08a'; hx.fillRect(x0, y, Math.max(1, Math.round(k * 1.5)), 1); // golden dusk rim (sun in the west)
+    hx.fillStyle = '#7d858c'; for (let a = -3; a <= 3; a++) { const sx = Math.round(cx + a * 12 * k * Math.min(1, d / (20 * k) + 0.35)); if (sx > x0 + k && sx < x0 + w - k) hx.fillRect(sx, y, Math.max(1, k >> 1), 1); } } // radial seams
+  hx.fillStyle = '#6b737a'; for (let a = -3; a <= 3; a++) for (let r = 1; r < 6; r++) { const yy = top + r * 7 * k, d = yy - top, sx = Math.round(cx + a * 12 * k * Math.min(1, d / (20 * k) + 0.35) + 3 * k); if (yy < y1) hx.fillRect(sx, yy, k, k); } } // rivets
+function feetShadow(cx, feetY, k, wArt = 32) { hx.fillStyle = 'rgba(9,11,10,.42)'; const rx = wArt / 2 * k, ry = Math.max(1, Math.round(1.6 * k));
+  for (let y = -ry; y <= ry; y++) { const h = Math.round(rx * Math.sqrt(1 - (y / (ry + 0.5)) ** 2)); hx.fillRect(Math.round(cx - h), Math.round(feetY + y), h * 2, 1); } }
 function drawIntro(dt) {
   INTRO.t += dt; const t = INTRO.t, C = INTRO.cuts; if (t >= INTRO.T) { introEnd(); return; }
   if (t - dt <= 0) ziReset();
@@ -2228,12 +2348,12 @@ function drawIntro(dt) {
     const sx = Math.round(N * 0.12) + ox, sy = Math.round(N * 0.9) - si.height * sk + oy, gy = Math.round(N * 0.84);
     ziStep(dt, k, gy, 0.45, N, N + 20, 1);
     hx.drawImage(si, sx, sy, si.width * sk, si.height * sk);
-    const bx = sx + Math.round(si.width * sk / 2) - 25 * k, by = sy - 46 * k; buffDraw(bx, by, k, t, true);
+    const bx = sx + Math.round(si.width * sk / 2) - 25 * k, by = sy + 6 * sk - 47 * k; feetShadow(bx + 24 * k, by + 46 * k, k, 30); buffDraw(bx, by, k, t, true); // v22: feet on the dome (row 6: 30+ px wide), not its tip
     ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.05; const m = BUFF_MZ[Math.floor(t * 20) % 2]; ziShoot(bx + m[0] * k, by + m[1] * k, k); }
     ziDraw(k); ziTracers();
   } else if (shot === 1) { // CLOSE-UP: guns blazing against the dusk sky, casings flying
     const k = Math.max(3, Math.floor(N * 0.62 / 50)), [ox, oy] = shake(4); introSky(t * 0.5, 0.95);
-    const bx = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, by = Math.round(N * 0.56 - 24 * k) + oy; buffDraw(bx, by, k, t, true);
+    const bx = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, by = Math.round(N * 0.56 - 24 * k) + oy, fy = by + 46 * k; domeTop(bx + 24 * k, fy + k, k); feetShadow(bx + 24 * k, fy + k, k); buffDraw(bx, by, k, t, true); // v22: standing on the silo roof
     for (let i = 0; i < 8; i++) { const ph = (st * 3 + i * 0.13) % 1, m = BUFF_MZ[i % 2]; const cx = bx + m[0] * k - 20 * k * 0.3 - ph * 30 * u, cy = by + m[1] * k - 8 * u - ph * 50 * u + ph * ph * 90 * u; hx.fillStyle = OUT; hx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 4 * Math.ceil(u), 3 * Math.ceil(u)); hx.fillStyle = '#ffc42f'; hx.fillRect(Math.round(cx), Math.round(cy), 2 * Math.ceil(u), Math.ceil(u)); } // ejected casings
     hx.fillStyle = 'rgba(255,196,47,.9)'; for (let i = 0; i < 6; i++) { const y0 = by + 30 * k + i * 3, x0 = bx + 48 * k + ((st * 900 + i * 37) % (N)); hx.fillRect(Math.round(x0), Math.round(y0 + (x0 - bx) * 0.25), 10 * Math.ceil(u), Math.ceil(u)); } // tracer streaks leaving frame
   } else { // GROUND: zombie hens charge the camera's left and burst under the rain of fire

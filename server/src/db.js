@@ -75,6 +75,33 @@ CREATE TABLE IF NOT EXISTS leaderboard_entries (
 );
 CREATE INDEX IF NOT EXISTS leaderboard_rank   ON leaderboard_entries(game_id, value, id);
 CREATE INDEX IF NOT EXISTS leaderboard_player ON leaderboard_entries(player_key);
+
+-- v22: board seasons. A reset (admin) soft-removes every entry of a game and
+-- bumps its season; clients that remember an older season start fresh.
+-- No row = season 1.
+CREATE TABLE IF NOT EXISTS board_seasons (
+  game_id   TEXT PRIMARY KEY,
+  season    INTEGER NOT NULL,
+  reset_at  TEXT NOT NULL
+);
+
+-- v22: share links for a finished run (the TIME CARD). Stats are copied from
+-- the server's own play record at creation (never sent by the client); one
+-- link per play.
+CREATE TABLE IF NOT EXISTS run_shares (
+  id          TEXT PRIMARY KEY,
+  game_id     TEXT NOT NULL,
+  play_id     INTEGER NOT NULL UNIQUE REFERENCES play_events(id),
+  player_key  TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  ms          INTEGER NOT NULL,
+  kills       INTEGER NOT NULL,
+  ach         INTEGER NOT NULL,
+  rank        INTEGER,
+  total       INTEGER,
+  season      INTEGER NOT NULL,
+  created_at  TEXT NOT NULL
+);
 `;
 
 export function openDb(dbPath) {

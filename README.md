@@ -42,7 +42,7 @@ deploy/
   deploy-api.yml        MANUAL: test, then ship server/ as the inline-games-api service
   test-api.yml          on PRs: server tests + local e2e on GitHub runners (no VPS)
   vps-check.yml         MANUAL: pick a fixed read-only check to run on the VPS
-  leaderboard-admin.yml MANUAL: list leaderboard entries, or remove one (bad name)
+  leaderboard-admin.yml MANUAL: list leaderboard entries, remove one (bad name), or reset a whole board (new season)
 ```
 
 The docs came from Aeterna, so where they say `web/<game>/`, read
@@ -109,6 +109,29 @@ sed -n 's/^ADMIN_TOKEN=/X-Admin-Token: /p' /etc/inline-games-api.env | curl -sS 
 # remove entry 42 (soft delete: hidden from the board, and that play can't be posted again)
 sed -n 's/^ADMIN_TOKEN=/X-Admin-Token: /p' /etc/inline-games-api.env | curl -sS -X DELETE -H @- -H 'Origin: https://membersonly.cc' http://127.0.0.1:3100/plays/leaderboard/coop-sweep/entries/42
 ```
+
+**Resetting a board (v22, admin).** Actions → **Leaderboard admin (manual)** →
+`reset`, pick the game and type its id again in `confirm`. That calls
+`POST /plays/leaderboard/<game>/reset` with body `{"confirm":"<game>"}`. The
+call soft-removes every entry of that game only, closes its unfinished play
+records (outcome `reset`), and bumps the board's `season`. Every
+`GET /plays/leaderboard/<game>` serves `season` (1 until the first reset). When
+Zombie Farm sees a season it hasn't seen before, it clears the remembered name,
+achievements, lifetime stats and the device board, so the player starts over
+with a blank name grid.
+
+**Share links (v22, Zombie Farm TIME CARD).** `POST /plays/share/last-tower
+{play_id, name}` works for the caller's own finished run within the post
+window. It returns `{id, url, image}`. Time and kills come from the server's
+play record, the same value the board ranks by; the achievement count comes
+from the run's end meta. The rank is the run's place on the board. A play
+gets exactly one link. `GET /plays/s/<id>` is the page X unfurls
+(`og:image`/`twitter:image` as a `summary_large_image`). It redirects people
+to `/zombie-farm/`. `GET /plays/s/<id>.png` is the 1200x675 card, drawn by
+`server/src/sharecard.js`. The game draws the same card with an identical
+copy at `games/last-tower/sharecard.js`, and a test checks the two files
+match. Both paths sit under `/plays/*`, so they reach the API with no Caddy
+change.
 
 ## Play / test locally
 
