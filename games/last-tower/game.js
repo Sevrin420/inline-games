@@ -1,4 +1,4 @@
-/* LAST TOWER v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=18';
+HENS_SHEET.src = 'hens-sprites.png?v=19';
 const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
@@ -1012,7 +1012,10 @@ let AC = null, master = null, rainGain = null, muted = false;
 function audioInit() {
   if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
   try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-  master = AC.createGain(); master.gain.value = muted ? 0 : 0.6; master.connect(AC.destination);
+  master = AC.createGain(); master.gain.value = muted ? 0 : 0.6;
+  // v19: a brick-wall-ish limiter on the whole mix, so the louder music + gunfire never clip
+  const lim = AC.createDynamicsCompressor(); lim.threshold.value = -2; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
+  master.connect(lim); lim.connect(AC.destination); master.lim = lim;
   const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   noiseBuf = buf;
@@ -1380,7 +1383,7 @@ function drawCleanMeter(t) {
 // Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
 const FLOCK = [], _flockRecent = [];
 const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
-if (FLOCK_LAYER) fetch('flock/manifest.json?v=18').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=19').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
 const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
   m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
   m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
@@ -1457,8 +1460,10 @@ addEventListener('resize', flockFont);
 // Leaderboard: the shared membersonly.cc API (server/src/leaderboard.js, game "last-tower": survival time measured by the
 // server, capped by the run clock, ties by kills, best per player, top 20). No API -> a local top 20 on this device.
 const LB_GAME = 'last-tower', NAME_KEY = 'lasttower.name2', LOCAL_LB_KEY = 'lasttower.lb1';
-const validName = (s) => typeof s === 'string' && /^[A-Z0-9_.\-]{3,12}$/.test(s) && /[A-Z0-9]/.test(s); // v18: 3-12 of A-Z 0-9 - _ .
-let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (validName(s)) lbName = s; localStorage.removeItem('lasttower.name'); } catch (e) {} // v17: v16's auto-assigned names (old key) are dropped, so everyone picks their own
+const validName = (s) => typeof s === 'string' && /^[A-Z0-9_.\-]{0,12}$/.test(s) && (s === '' || /[A-Z0-9]/.test(s)); // v19: blank, or 1-12 of A-Z 0-9 - _ .
+const BLANK_NAME = 'ANON HEN'; // v19: a blank name shows (and posts) as this; the server maps a blank post to the same (games.json blankName)
+const showName = (s) => (s ? s : BLANK_NAME);
+let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (s !== null && validName(s)) lbName = s; localStorage.removeItem('lasttower.name'); } catch (e) {} // v17: v16's auto-assigned names (old key) are dropped, so everyone picks their own
 const saveName = (s) => { lbName = s; try { localStorage.setItem(NAME_KEY, s); } catch (e) {} };
 const MA = () => (window.MembersAuth && window.MembersAuth.available ? window.MembersAuth : null);
 // ---- one record per run: play id (server), death result, board
@@ -1471,7 +1476,7 @@ function lbRunStart() { // called by newGame
 function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) {} return Array.isArray(l) ? l : []; }
 function lbRunEnd() { // called by die()
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
-  const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName || '???', ms: r.ms, kills: r.kills, t: Date.now() };
+  const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName === null ? '???' : showName(lbName), ms: r.ms, kills: r.kills, t: Date.now() };
     if (r.ms >= 5000) l.push(me); l.sort((a, b) => b.ms - a.ms || b.kills - a.kills); const top = l.slice(0, 20); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(top)); } catch (e) {}
     r.localMe = me; r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; if (top.includes(me)) achEvent('top20'); };
   if (!A || !r.play) { fallback(); return; }
@@ -1483,16 +1488,16 @@ function lbRunEnd() { // called by die()
 }
 function lbPost(r, onRestart) { // post this run under the current name (on restart, or once the board scrolls into view)
   if (r && onRestart) r.postOnReady = true;
-  if (!r || r.posted || r.posting || !r.board || r.local || !lbName) return; const A = MA(); if (!A) return; r.posting = true;
-  const name = lbName; A.postLeaderboard(LB_GAME, r.play, name).then((res) => { r.posting = false;
+  if (!r || r.posted || r.posting || !r.board || r.local || lbName === null) return; const A = MA(); if (!A) return; r.posting = true;
+  const name = showName(lbName); A.postLeaderboard(LB_GAME, r.play, name).then((res) => { r.posting = false;
     if (res.status === 201 && res.json) { r.posted = true; r.board = res.json; r.entry = res.json.entry; if (r.entry && r.entry.rank <= 20) achEvent('top20'); return; }
     const err = res.json && res.json.error; if (err === 'name_not_allowed' || err === 'bad_name') { lbName = null; try { localStorage.removeItem(NAME_KEY); } catch (e) {} if (G === r.g && G.state === 'dead') nameOpen('death'); return; } // refused: ask again
     r.posted = true; r.err = err || 'offline'; }).catch(() => { r.posting = false; r.posted = true; });
 }
 // ---- v18 name entry: a full alphabet grid on the first death (or whenever no name is saved), BEFORE the credits roll.
 // A-Z, 0-9, - _ . + DEL + OK. D-pad moves the gold cursor, shoot presses the key under it; on phones just tap a key.
-// 1-12 characters, blank at the start; OK stays grey until 3+ characters (with a letter or digit) that pass the same blocklist
-// as the server. Credits + restart wait for it; shoot never restarts from here. A keyboard can type, Backspace, Enter.
+// v19: 0-12 characters, blank at the start; OK is lit right away (blank = ANON HEN). It only greys for a typed name the
+// board won't take (no letter/digit, or the same blocklist as the server). Credits + restart wait for it; shoot never restarts from here. A keyboard can type, Backspace, Enter.
 // Change it later: tap your gold row on the TOP 20 (or the "YOU: #n" line).
 const NE = { on: false, name: '', cur: 0, blink: 0, shake: 0, keys: null, from: null };
 const NE_MAX = 12, NE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.';
@@ -1506,12 +1511,12 @@ const NB_LEET = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', 8: 'b', 9: 'g'
 function nameBlocked(s) { const l = s.toLowerCase().replace(/[0-9]/g, (d) => NB_LEET[d] || d), sq = l.replace(/[^a-z]/g, ''), col = (x) => x.replace(/(.)\1+/g, '$1');
   if ([sq, col(sq)].some((f) => NB_ANY.some((w) => f.includes(w)))) return true; const words = l.split(/[^a-z]+/).filter(Boolean); return words.some((w) => NB_WORD.has(w) || NB_WORD.has(col(w))) || NB_WORD.has(sq); }
 const neName = () => NE.name;
-const neValid = () => validName(NE.name) && !nameBlocked(NE.name);
+const neValid = () => NE.name === '' || (validName(NE.name) && !nameBlocked(NE.name));
 function nameOpen(from) { NE.on = true; NE.from = from || 'death'; NE.name = from === 'change' && lbName ? lbName : ''; NE.cur = 0; NE.blink = 0; }
 function nameConfirm() {
   if (!neValid()) { NE.shake = 0.3; sfx('zpeck'); return; }
-  const s = NE.name; saveName(s); NE.on = false; sfx('pick'); achEvent('name'); const r = RUN && RUN.g === G ? RUN : null;
-  if (r) { if (r.local && r.localMe) { r.localMe.name = s; r.board.top.forEach((e) => { if (e.mine) e.name = s; }); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(localBoard().map((e) => (e.t === r.localMe.t ? Object.assign(e, { name: s }) : e)))); } catch (e) {} }
+  const s = NE.name, sn = showName(s); saveName(s); NE.on = false; sfx('pick'); if (s) achEvent('name'); const r = RUN && RUN.g === G ? RUN : null;
+  if (r) { if (r.local && r.localMe) { r.localMe.name = sn; r.board.top.forEach((e) => { if (e.mine) e.name = sn; }); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(localBoard().map((e) => (e.t === r.localMe.t ? Object.assign(e, { name: sn }) : e)))); } catch (e) {} }
     else if (!r.posted) lbPost(r, true); }
   if (NE.from === 'death') CR.t = 0; // the high scores roll starts now
 }
@@ -1542,7 +1547,8 @@ function drawNameEntry(t, dt) {
   for (let i = 0; i < NE_MAX; i++) { const x = sx + i * sw, ch = NE.name[i], here = i === NE.name.length;
     hx.fillStyle = 'rgba(9,11,10,.07)'; hx.fillRect(x + 1, sy, sw - 2, 22);
     if (ch) text(ch, x + sw / 2, sy + 2, 16, INK, 'center', false);
-    hx.fillStyle = here ? (Math.floor(NE.blink * 3) % 2 ? 'rgba(255,196,47,.3)' : '#d99a00') : i < 3 && !ch ? 'rgba(255,51,71,.55)' : 'rgba(9,11,10,.3)'; hx.fillRect(x + 2, sy + 21, sw - 4, 2); }
+    else if (!NE.name && BLANK_NAME[i] && BLANK_NAME[i] !== ' ') text(BLANK_NAME[i], x + sw / 2, sy + 2, 16, 'rgba(9,11,10,.2)', 'center', false); // v19: faint ANON HEN = what a blank name shows as
+    hx.fillStyle = here ? (Math.floor(NE.blink * 3) % 2 ? 'rgba(255,196,47,.3)' : '#d99a00') : 'rgba(9,11,10,.3)'; hx.fillRect(x + 2, sy + 21, sw - 4, 2); }
   // the grid
   const ok = neValid(), cw = Math.floor((pw - 8) / 9), ch = Math.min(24, Math.floor((py + ph - (sy + 32) - 6) / 5) - 2), gx = Math.round(px + pw / 2 - (cw * 9) / 2), gy = sy + 32; NE.keys = [];
   NE_GRID.forEach((k, i) => { const x = gx + k.c * cw, y = gy + k.r * (ch + 2), w = cw * k.w - 2, sel = i === NE.cur; NE.keys.push([x, y, w, ch]);
@@ -1594,7 +1600,7 @@ function buildCredits() {
   add(14, (y) => { const b = r && r.board; if (!b || b.local) return; const me = b.me, onTop = b.top && b.top.some((e) => e.mine);
     if (me && !onTop) CR.mineR = [0, y - 2, N, 14];
     if (me && !onTop) text('YOU: #' + me.rank + '  ' + me.name + '  ' + fmtMs(me.ms), N / 2, y + 2, 8, HGOLD, 'center');
-    else if (r.posting || (!r.posted && r.wantPost)) text('POSTING ' + (lbName || ''), N / 2, y + 2, 8, CREAM, 'center'); });
+    else if (r.posting || (!r.posted && r.wantPost)) text('POSTING ' + showName(lbName), N / 2, y + 2, 8, CREAM, 'center'); });
   add(30, () => {});
   // 4. THE FLOCK credits
   if (FLOCK.length) { add(24, (y) => bigGold('THE FLOCK', N / 2, y, W)); add(14, (y) => text('COMMUNITY HENS OF HENS.FARM', N / 2, y, 8, CREAM, 'center'));
@@ -1608,7 +1614,7 @@ function buildCredits() {
 }
 function drawCredits(t, dt) {
   if (CR.g !== G || CR.n !== N || (CR.flockN !== FLOCK.length)) { buildCredits(); CR.flockN = FLOCK.length; }
-  G.deadT = (G.deadT || 0) + dt; if (CR.askG !== G) { CR.askG = G; if (!lbName) nameOpen('death'); }
+  G.deadT = (G.deadT || 0) + dt; if (CR.askG !== G) { CR.askG = G; if (lbName === null) nameOpen('death'); }
   if (NE.on) { drawNameEntry(t, dt); return; } // the roll waits for a name
   CR.t += dt; CR.mineR = null;
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.42, 0.1 + G.deadT * 0.6)})`; hx.fillRect(0, 0, N, N); // v18: no going dark, the farm stays bright
@@ -1626,6 +1632,7 @@ function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); 
 // Scheduled ahead on the WebAudio clock (light: ~4 short nodes per 16th). Goes through the game master gain, so the shell mute /
 // handheld:mute / power-off apply. Ducks under gunfire + achievement fanfares. Tempo +3 bpm per minute survived (cap 156).
 // Death credits: a mellow, slowed (78 bpm) triangle version behind a low-pass. ?music=0 turns it off.
+const MUS_BOOST = 1.3, MUS_COMP_DB = -20; // v19 music makeup gain (after the compressor) + its threshold
 const MUS = { on: !/[?&]music=0/.test(location.search), started: false, bus: null, lp: null, duck: 1, duckT: 0, nextT: 0, step: 0, bar: 0, pulse: null };
 const NOTE = (n) => { const m = /^([A-G])(#|b)?(\d)$/.exec(n); if (!m) return 0; const k = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12; return 440 * Math.pow(2, (k - 69) / 12); };
 const CHORD = { C: ['C3', 'E4', 'G4', 'C5'], F: ['F2', 'F4', 'A4', 'C5'], G: ['G2', 'D4', 'G4', 'B4'], G7: ['G2', 'F4', 'G4', 'B4'], Am: ['A2', 'E4', 'A4', 'C5'], D7: ['D3', 'F#4', 'A4', 'C5'], Dm: ['D3', 'F4', 'A4', 'D5'] };
@@ -1651,7 +1658,10 @@ const ACCEL = { 44: 1.03, 45: 1.06, 46: 1.09, 47: 1.12 }; // the bridge ending r
 function musicStart() {
   if (!MUS.on || MUS.started || !AC) return; MUS.started = true;
   MUS.lp = AC.createBiquadFilter(); MUS.lp.type = 'lowpass'; MUS.lp.frequency.value = 9000; MUS.bus = AC.createGain(); MUS.bus.gain.value = 0;
-  MUS.bus.connect(MUS.lp); MUS.lp.connect(master); MUS.bus.gain.setTargetAtTime(0.5, AC.currentTime, 0.6);
+  // v19: ~2x louder. Bus -> low-pass -> compressor (evens out the peaks) -> makeup gain -> master (-> limiter).
+  MUS.comp = AC.createDynamicsCompressor(); MUS.comp.threshold.value = MUS_COMP_DB; MUS.comp.knee.value = 8; MUS.comp.ratio.value = 4; MUS.comp.attack.value = 0.004; MUS.comp.release.value = 0.2;
+  MUS.out = AC.createGain(); MUS.out.gain.value = MUS_BOOST;
+  MUS.bus.connect(MUS.lp); MUS.lp.connect(MUS.comp); MUS.comp.connect(MUS.out); MUS.out.connect(master); MUS.bus.gain.setTargetAtTime(0.5, AC.currentTime, 0.6);
   // 12.5% pulse (NES duty 1) for the lead
   const n = 32, re = new Float32Array(n), im = new Float32Array(n); for (let k = 1; k < n; k++) im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * 0.125) * 1.2; MUS.pulse = AC.createPeriodicWave(re, im);
   MUS.nextT = AC.currentTime + 0.1; MUS.step = 0; MUS.bar = 0; setInterval(musicTick, 40);

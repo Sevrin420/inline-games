@@ -234,7 +234,7 @@ test('anon claim moves leaderboard entries only for the real owner', async () =>
 });
 
 // ---- Last Tower: survival metric (server time, lowered to the client's run clock), kills tiebreak, best per player, top 20
-const LT = { metric: 'survival', order: 'desc', outcome: 'died', minMs: 5000, maxMs: 7_200_000, maxScorePerSec: 15, postWindowHours: 2, top: 20, bestPerPlayer: true, nameMin: 3, nameMax: 12, postsPerPlayer: 20 };
+const LT = { metric: 'survival', order: 'desc', outcome: 'died', minMs: 5000, maxMs: 7_200_000, maxScorePerSec: 15, postWindowHours: 2, top: 20, bestPerPlayer: true, nameMin: 1, nameMax: 12, blankName: 'ANON HEN', postsPerPlayer: 20 };
 const LTG = [{ id: 'last-tower', title: 'Last Tower', access: 'open', leaderboard: LT }];
 async function ltSetup() {
   const ctx = await makeApp({ games: LTG, env: { ADMIN_TOKEN: ADMIN } });
@@ -265,7 +265,7 @@ test('last-tower: survival time is the shorter of server and client clocks, ties
   const board = (await a.get('/plays/leaderboard/last-tower')).json;
   assert.deepEqual(board.top.map((e) => [e.rank, e.name, e.ms, e.kills, e.mine]), [[1, 'BOKSTER', 90_400, 120, true], [2, 'HENRY', 60_000, 80, false], [3, 'CLUCKY', 60_000, 50, false]]);
   assert.equal(board.total, 3); assert.equal(board.me.rank, 1); assert.equal(board.me.ms, 90_400);
-  assert.equal(board.metric, 'survival'); assert.equal(board.nameMax, 12); assert.equal(board.nameMin, 3);
+  assert.equal(board.metric, 'survival'); assert.equal(board.nameMax, 12); assert.equal(board.nameMin, undefined, 'v19: nameMin 1 (not sent)');
 });
 
 test('last-tower: sanity bounds and name rules', async () => {
@@ -276,9 +276,17 @@ test('last-tower: sanity bounds and name rules', async () => {
   assert.equal((await post(a, await run(a, 10_000, 500), 'AIMBOT')).json.error, 'implausible', '500 kills in 10 s');
   assert.equal((await post(a, await run(a, 30_000, 20, 30_000, 'win'), 'WINNER')).json.error, 'not_eligible');
   const ok = await run(a, 30_000, 20);
-  assert.equal((await post(a, ok, 'AB')).json.error, 'bad_name');
   assert.equal((await post(a, ok, 'ABCDEFGHIJKLM')).json.error, 'bad_name');
   assert.equal((await post(a, ok, 'FUCKER')).json.error, 'name_not_allowed');
   assert.equal((await post(a, ok, 'BOK')).status, 201);
+  // v19: a blank name is allowed and shows as ANON HEN; short names are fine
+  const b = client(app), c2 = client(app), d = client(app);
+  const blank = await post(b, await run(b, 20_000, 5), '');
+  assert.equal(blank.status, 201); assert.equal(blank.json.entry.name, 'ANON HEN');
+  const spaces = await post(c2, await run(c2, 19_000, 5), '   ');
+  assert.equal(spaces.status, 201); assert.equal(spaces.json.entry.name, 'ANON HEN');
+  const missing = await c2.post('/plays/leaderboard/last-tower', { play_id: await run(c2, 25_000, 5) });
+  assert.equal(missing.status, 201); assert.equal(missing.json.entry.name, 'ANON HEN');
+  assert.equal((await post(d, await run(d, 18_000, 5), 'AB')).status, 201);
   // the default coop-sweep style board is unchanged (nameMin absent, top 10)
 });

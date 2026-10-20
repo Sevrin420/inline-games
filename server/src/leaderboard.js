@@ -130,7 +130,9 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
     const id = Number(req.body?.play_id);
     const e = eligibility(game, Number.isInteger(id) ? q.play.get(id) : null, player);
     if (e.error) return fail(reply, e.status, e.error, e.message);
-    const n = cleanName(req.body?.name, { min: game.leaderboard.nameMin || 1, max: game.leaderboard.nameMax || NAME_MAX });
+    // A board with blankName takes a blank name (Last Tower v19: OK works on an empty name) and stores the default instead.
+    const rawName = req.body?.name, blank = rawName === undefined || rawName === null || (typeof rawName === 'string' && !rawName.trim());
+    const n = cleanName(blank && game.leaderboard.blankName ? game.leaderboard.blankName : rawName, { min: game.leaderboard.nameMin || 1, max: game.leaderboard.nameMax || NAME_MAX });
     if (!n.ok) return fail(reply, 400, n.error, n.message);
     if (limited(reply, `lb:player:${player.key}`, game.leaderboard.postsPerPlayer || 6, 10 * MINUTE)) return;
     let entryId;

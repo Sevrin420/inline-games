@@ -199,5 +199,5 @@ test('the shipped registry loads: Coop Sweep open with a time leaderboard, Lunch
   assert.equal(g.get('lunch-rush').scoreOrder, 'desc');
   assert.equal(g.get('lunch-rush').leaderboard, null);
   const lt = g.get('last-tower').leaderboard; // v16 global top 20
-  assert.equal(lt.metric, 'survival'); assert.equal(lt.top, 20); assert.equal(lt.bestPerPlayer, true); assert.equal(lt.nameMin, 3); assert.equal(lt.nameMax, 12);
+  assert.equal(lt.metric, 'survival'); assert.equal(lt.top, 20); assert.equal(lt.bestPerPlayer, true); assert.equal(lt.nameMin, 1); assert.equal(lt.nameMax, 12); assert.equal(lt.blankName, 'ANON HEN');
 });
