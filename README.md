@@ -92,7 +92,7 @@ prefill, and whether/where a play would land), `POST /plays/leaderboard/:gameId`
 block in `server/games.json` (`metric` `duration`, `score` or `survival`, `order`, `outcome`,
 `minMs`, `postWindowHours`, and optionally `maxMs`, `maxScorePerSec`, `top`, `bestPerPlayer`,
 `nameMin`/`nameMax`, `postsPerPlayer`) and load `shared/leaderboard.js`. Coop Sweep has one;
-Last Tower (v16) has a global top 20 with its own in-game credits roll (`survival`: server-measured
+Zombie Farm (formerly Last Tower; board id `last-tower`, v16) has a global top 20 with its own in-game credits roll (`survival`: server-measured
 time capped by the run clock, ties by kills, best per player).
 
 **Removing a bad name (admin).** Admin endpoints need `ADMIN_TOKEN`, which

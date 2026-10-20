@@ -1,4 +1,4 @@
-/* LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -245,7 +245,16 @@ function sheetAtlas(c, cw, ch) {
   // v9: hit flash (all white) and wind-up warning tint (all red)
   const [wh, whx] = mk(c.width, c.height); whx.drawImage(c, 0, 0); whx.globalCompositeOperation = 'source-in'; whx.fillStyle = '#ffffff'; whx.fillRect(0, 0, c.width, c.height);
   const [rd, rdx] = mk(c.width, c.height); rdx.drawImage(c, 0, 0); rdx.globalCompositeOperation = 'source-in'; rdx.fillStyle = '#ff2a3c'; rdx.fillRect(0, 0, c.width, c.height);
-  return { img: c, sil: s, shd: h, wht: wh, red: rd, cw, ch, nf: Math.round(c.width / cw) };
+  // v20 Paper cutouts: cardboard edge (thickness layers) + the plain cardboard BACK, and a golden dusk rim light on the sun (west) side
+  const [cb, cbx] = mk(c.width, c.height); cbx.drawImage(c, 0, 0); cbx.globalCompositeOperation = 'source-in'; cbx.fillStyle = '#8a6238'; cbx.fillRect(0, 0, c.width, c.height);
+  const [bk, bkx] = mk(c.width, c.height); bkx.drawImage(c, 0, 0); bkx.globalCompositeOperation = 'source-in'; bkx.fillStyle = '#5e4229'; bkx.fillRect(0, 0, c.width, c.height);
+  bkx.globalCompositeOperation = 'source-atop'; bkx.fillStyle = '#4a321e'; for (let y = 1; y < c.height; y += 3) bkx.fillRect(0, y, c.width, 1); // corrugated cardboard ribs
+  const bd = bkx.getImageData(0, 0, c.width, c.height), sd = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, rim = new ImageData(c.width, c.height), rd2 = rim.data, Wd = c.width;
+  for (let p = 0; p < sd.length / 4; p++) { const i = p * 4; if (!sd[i + 3]) continue; const ink = sd[i] < 40 && sd[i + 1] < 40 && sd[i + 2] < 40;
+    if (ink) { bd.data[i] = 30; bd.data[i + 1] = 20; bd.data[i + 2] = 12; continue; }
+    const X = p % Wd, l = X > 0 ? p - 1 : -1; if (l >= 0 && sd[l * 4] < 40 && sd[l * 4 + 1] < 40 && sd[l * 4 + 2] < 40 && sd[l * 4 + 3] && X % cw > 0) { rd2[i] = 255; rd2[i + 1] = 196; rd2[i + 2] = 96; rd2[i + 3] = 200; } }
+  bkx.putImageData(bd, 0, 0); const [rm, rmx] = mk(c.width, c.height); rmx.putImageData(rim, 0, 0);
+  return { img: c, sil: s, shd: h, wht: wh, red: rd, crd: cb, back: bk, rim: rm, cw, ch, nf: Math.round(c.width / cw) };
 }
 const zFrames = (seed) => henFrames(zombify(HEN_DOWN, seed), zombify(HEN_UP, seed + 1), zombify(HEN_SIDE, seed + 2));
 const HEN_MATS = { R: 'comb', W: 'feather', w: 'fshade', k: 'ink', Y: 'beak', O: 'leg', A: 'bandana' };
@@ -258,18 +267,46 @@ const SPR = {
 // v5: the real hens.farm characters, pixelated (hens-sprites.png, built from the hens.farm base-hen reference sheet).
 // Player 30x33 cells x5 (stand, step, stand, step, PECK) per direction; undead flock 3 recolours 30x33 x4; zombie roostr 38x37 x4.
 // The hand-pixeled 16x22 hens above stay as the fallback until the sheet loads.
+// v20 (Zombie Farm): the undead flock in sickly green / grave grey / mud brown with red blood (wounds, beak drips).
+// The player hen is untouched (bright white) so she pops. Roostr = wide silhouette + dark hide + red comb; egg-slinger = pale bone + lime rot.
+const Z_PAL = [
+  { ramp: ['#2c3a24', '#56703f', '#8fa86a'], mot: '#6d6a52' },  // sickly green
+  { ramp: ['#34383a', '#666d6a', '#9ea59f'], mot: '#5a6b48' },  // grave grey (green mottling)
+  { ramp: ['#3a2c20', '#6a523b', '#998060'], mot: '#58683f' },  // mud brown (green rot)
+  { ramp: ['#2a221e', '#52443a', '#7d6d5e'], mot: '#3f4a33', comb: true }, // roostr: dark hide, red comb kept bright
+  { ramp: ['#4a4a36', '#8a8866', '#c8c49c'], mot: '#9fcf3a', accent: true }, // egg-slinger: pale bone + lime rot
+];
+function zTint(c, P, cw, ch, seed) {
+  const x = c.getContext('2d'), im = x.getImageData(0, 0, c.width, c.height), d = im.data, W = c.width, H = c.height, R = P.ramp.map(hex), M = hex(P.mot);
+  const hsh = (a, b, k) => { let h = (a * 374761393 + b * 668265263 + k * 2147483647 + seed * 1013904223) >>> 0; h = (h ^ (h >>> 13)) * 1274126177 >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const kind = new Uint8Array(W * H); // 0 none, 1 ink, 2 red, 3 beak/leg, 4 body
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) { const r = d[i], g = d[i + 1], b = d[i + 2]; if (!d[i + 3]) continue;
+    if (Math.max(r, g, b) < 56) kind[p] = 1; else if (r > 170 && g < 110 && b < 120) kind[p] = 2; else if (r > 185 && g > 95 && b < 95 && r - b > 110) kind[p] = 3; else kind[p] = 4; }
+  for (let y = 0; y < H; y++) for (let X = 0; X < W; X++) { const p = y * W + X, i = p * 4, k = kind[p]; if (!k || k === 1) continue;
+    const cx = X % cw, cy = y % ch, row = Math.floor(y / ch);
+    if (k === 2) { if (!P.comb) { d[i] = 176; d[i + 1] = 28; d[i + 2] = 40; } continue; } // combs/wattles go blood-dark (roostr keeps the bright accent)
+    if (k === 3) { d[i] = d[i] * 0.72 + 40; d[i + 1] = d[i + 1] * 0.62 + 30; d[i + 2] = d[i + 2] * 0.6 + 24; // dirty yellow beak/legs
+      if (y + 1 < H && kind[p + W] === 4 && hsh(cx, cy, row) < 0.45) { kind[p + W] = 5; } continue; } // beak drip below
+    const r = d[i], g = d[i + 1], b = d[i + 2], L = (0.3 * r + 0.59 * g + 0.11 * b) / 255, q = L < 0.42 ? (L / 0.42) * 0.5 : 0.5 + Math.min(1, (L - 0.42) / 0.5) * 0.5;
+    const A = q < 0.5 ? R[0] : R[1], B = q < 0.5 ? R[1] : R[2], u = q < 0.5 ? q * 2 : (q - 0.5) * 2;
+    let o = [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u, A[2] + (B[2] - A[2]) * u];
+    const n = hsh(cx >> 1, cy >> 1, 7); if (n < (P.accent ? 0.16 : 0.12)) o = o.map((v, j) => v * 0.45 + M[j] * 0.55); // rot / mould mottling (2x2 blobs)
+    if (cy > ch * 0.3 && hsh(cx >> 1, cy, row + 3) < 0.03) o = [168, 24, 36]; // open wounds
+    d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2]; }
+  for (let p = 0; p < W * H; p++) if (kind[p] === 5) { const i = p * 4; d[i] = 200; d[i + 1] = 30; d[i + 2] = 44; if (p + W < W * H && kind[p + W] === 4 && (p % 3)) { const j = (p + W) * 4; d[j] = 150; d[j + 1] = 20; d[j + 2] = 32; } }
+  x.putImageData(im, 0, 0); return c; }
 const HENS_SHEET = new Image();
 HENS_SHEET.onload = () => {
   const cut = (x, y, w, h) => { const [c, cx] = mk(w, h); cx.drawImage(HENS_SHEET, x, y, w, h, 0, 0, w, h); return c; };
   const ZF = HENS_SHEET.width >= 228 ? 6 : 4; // v9 sheet: 4 walk + STRIKE + WIND-UP frames for every enemy
   SPR.player = sheetAtlas(popCanvas(cut(0, 0, 150, 132)), 30, 33);
-  SPR.zombies = [0, 1, 2].map((i) => sheetAtlas(popCanvas(cut(0, 132 + i * 132, 30 * ZF, 132)), 30, 33));
-  SPR.brute = sheetAtlas(popCanvas(cut(0, 528, 38 * ZF, 148)), 38, 37);
-  if (HENS_SHEET.height >= 808) SPR.thrower = sheetAtlas(popCanvas(cut(0, 676, 30 * ZF, 132)), 30, 33);
+  SPR.zombies = [0, 1, 2].map((i) => sheetAtlas(zTint(popCanvas(cut(0, 132 + i * 132, 30 * ZF, 132)), Z_PAL[i], 30, 33, 5 + i), 30, 33));
+  SPR.brute = sheetAtlas(zTint(popCanvas(cut(0, 528, 38 * ZF, 148)), Z_PAL[3], 38, 37, 9), 38, 37);
+  if (HENS_SHEET.height >= 808) SPR.thrower = sheetAtlas(zTint(popCanvas(cut(0, 676, 30 * ZF, 132)), Z_PAL[4], 30, 33, 13), 30, 33);
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=19';
+HENS_SHEET.src = 'hens-sprites.png?v=20';
 const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
@@ -567,18 +604,19 @@ function renderMap() {
   for (let ty = 0; ty < MH; ty++) for (let tx = 0; tx < MW; tx++) drawTile(tx, ty);
   for (let ty = 0; ty < MH; ty++) for (let tx = 0; tx < MW; tx++) if (kind[id(tx, ty)] === K.PARAPET) drawParapet(tx, ty);
   for (const p of ruins) drawRuin(p);
-  for (const b of buildings) { drawBuilding(b); R_((b.x0 + b.w) * TS + 1, b.y0 * TS + 4, 6, b.h * TS - 4, DARK_SHADOW); }
+  for (const b of buildings) { drawBuilding(b); R_((b.x0 + b.w) * TS + 1, b.y0 * TS + 4, 6, b.h * TS - 4, DARK_SHADOW); R_((b.x0 + b.w) * TS + 7, b.y0 * TS + 10, 26, b.h * TS - 8, 'rgba(46,22,70,0.16)'); R_((b.x0 + b.w) * TS + 33, b.y0 * TS + 16, 14, b.h * TS - 14, 'rgba(46,22,70,0.08)'); } // v20 long dusk shadows (sun low in the west)
+  for (const c of crates) { M.fillStyle = 'rgba(46,22,70,0.16)'; M.fillRect((c.x + 2) * TS, c.y * TS + 6, 22, TS * 2 - 6); M.fillStyle = 'rgba(46,22,70,0.08)'; M.fillRect((c.x + 2) * TS + 22, c.y * TS + 9, 12, TS * 2 - 9); }
   for (const c of crates) drawCrate(c);
   for (const c of cars) { M.drawImage(carCanvas(c), c.x * TS, c.y * TS); R_((c.x + c.w) * TS, c.y * TS + 4, 3, c.h * TS - 6, DARK_SHADOW); }
   for (const p of props) if (p.type === 'barrel') { const X = p.tx * TS + 3, Y = p.ty * TS + 1; R_(X - 1, Y - 1, 12, 16, OUT); R_(X, Y, 10, 14, RAMP.metal[2]); R_(X, Y, 10, 3, RAMP.metal[3]); R_(X + 1, Y + 1, 8, 1, '#1a0c08'); R_(X, Y + 3, 2, 11, RAMP.metal[0]); R_(X + 8, Y + 3, 2, 11, RAMP.metal[3]); R_(X, Y + 5, 10, 1, RAMP.brick[1]); R_(X, Y + 10, 10, 1, RAMP.brick[1]); }
   // v9 shadows, one light direction (sun top-left -> shadows fall right/down): trees, lamps, antennas, barrels, fences
   const ell = (cx, cy, rx, ry, a) => { M.fillStyle = `rgba(9,11,10,${a})`; for (let y = -ry; y <= ry; y++) { const h = Math.round(rx * Math.sqrt(1 - (y / (ry + 0.5)) ** 2)); M.fillRect(Math.round(cx - h), Math.round(cy + y), h * 2, 1); } };
   for (const p of props) { const bx = p.tx * TS, by = p.ty * TS;
-    if (p.type === 'tree') { ell(bx + 12, by + 14, 15, 5, 0.26); ell(bx + 18, by + 10, 10, 4, 0.16); }
+    if (p.type === 'tree') { ell(bx + 12, by + 14, 15, 5, 0.26); ell(bx + 18, by + 10, 10, 4, 0.16); ell(bx + 34, by + 13, 18, 4, 0.12); }
     else if (p.type === 'lamp' || p.type === 'antenna') { M.fillStyle = 'rgba(9,11,10,0.24)'; for (let k = 0; k < 16; k++) M.fillRect(bx + 4 + k, by + 14 + (k >> 2), 2, 1); ell(bx + 4, by + 15, 4, 1, 0.3); }
     else if (p.type === 'barrel' || p.type === 'campfire') ell(bx + 10, by + 15, 8, 2, 0.28); }
   for (let ty = 0; ty < MH - 1; ty++) for (let tx = 0; tx < MW; tx++) if (kind[id(tx, ty)] === K.BARRIER && kind[id(tx, ty + 1)] !== K.BARRIER) R_(tx * TS + 2, ty * TS + TS, TS, 2, 'rgba(9,11,10,0.26)');
-  popCanvas(MAPC);
+  popCanvas(MAPC); duskGrade(MAPC);
   M = null;
 }
 
@@ -791,14 +829,15 @@ function stomp(z, perched) { // v9 roostr landing: shockwave ring + damage in an
 }
 const PART_MAX = 360;
 function gibs(z, kx, ky) { // v9: feathers + goo burst on a kill
-  const pal = z.brute ? ['#96603a', '#5e3a24', '#ff283c'] : z.thrower ? ['#28aab4', '#146c7c', '#a03cdc'] : [['#a0de56', '#60a034', '#aa2846'], ['#e8c480', '#aa8050', '#aa2846'], ['#b896f0', '#7a5eba', '#aa2846']][z.sprI || 0];
+  const pal = z.brute ? ['#7d6d5e', '#52443a', '#d0202e'] : z.thrower ? ['#c8c49c', '#9fcf3a', '#d0202e'] : [['#8fa86a', '#56703f', '#c81e30'], ['#9ea59f', '#666d6a', '#c81e30'], ['#998060', '#6a523b', '#c81e30']][z.sprI || 0]; // v20 zombie hides + blood
   const n = z.brute ? 16 : 10;
-  for (let k = 0; k < n; k++) { const feather = k < n * 0.65; G.parts.push({ x: z.x, y: z.y, z: 6 + Math.random() * 10, vx: (kx || 0) * 50 + (Math.random() - 0.5) * 80, vy: (ky || 0) * 40 + (Math.random() - 0.5) * 60, vz: 30 + Math.random() * 70, t: 0, T: 2 + Math.random() * 1.5, k: feather ? 'f' : 'g', c: feather ? pal[k % 2] : (k % 3 ? '#9ac83a' : pal[2]) }); }
+  for (let k = 0; k < n; k++) { const feather = k < n * 0.65; G.parts.push({ x: z.x, y: z.y, z: 6 + Math.random() * 10, vx: (kx || 0) * 50 + (Math.random() - 0.5) * 80, vy: (ky || 0) * 40 + (Math.random() - 0.5) * 60, vz: 30 + Math.random() * 70, t: 0, T: 2 + Math.random() * 1.5, k: feather ? 'f' : 'g', c: feather ? pal[k % 2] : (k % 3 ? pal[2] : '#7a0e1a') }); }
+  for (let k = 0; k < (z.brute ? 8 : 5); k++) G.parts.push({ x: z.x + (Math.random() - 0.5) * 8, y: z.y + (Math.random() - 0.5) * 4, z: 0, vx: (kx || 0) * 30 + (Math.random() - 0.5) * 50, vy: (ky || 0) * 20 + (Math.random() - 0.5) * 30, vz: 0, t: 0, T: 4 + Math.random() * 2, k: 'g', c: k % 2 ? '#c81e30' : '#8a1020' }); // red splats on the ground
   if (G.parts.length > PART_MAX) G.parts.splice(0, G.parts.length - PART_MAX);
 }
 function hurtZombie(z, dmg, kx, ky, kbk = 1) {
   z.hp -= dmg; z.hurt = 0.18; z.flash = 0.07; z.kb = [kx * (z.brute ? 40 : 110) * kbk, ky * (z.brute ? 40 : 110) * kbk]; z.state = 'chase'; if (!z.brute || (kbk >= 2 && !z.hop)) z.atk = 0; // a hit interrupts a hen's wind-up; roostrs only stagger from a shotgun blast
-  G.hits.push({ x: z.x, y: z.y - 12, t: 0.25 });
+  G.hits.push({ x: z.x, y: z.y - 12, t: 0.25 }); if (G.parts) for (let k = 0; k < 2; k++) G.parts.push({ x: z.x, y: z.y, z: 8 + Math.random() * 6, vx: kx * 40 + (Math.random() - 0.5) * 40, vy: ky * 30 + (Math.random() - 0.5) * 30, vz: 20 + Math.random() * 40, t: 0, T: 2.5, k: 'g', c: k ? '#c81e30' : '#8a1020' }); // v20 blood drops
   if (z.hp <= 0) { z.alive = false; z.dead = 0.6; z.jz = 0; G.kills++; achKill(z); sfx('splat'); gibs(z, kx, ky); if ((G.kills % TUNE.gunEvery === 0 || z.brute || aliveItems() < TUNE.itemCap) && (G.kills % TUNE.gunEvery === 0 || Math.random() < (z.brute ? TUNE.dropB : z.thrower ? 0.7 : TUNE.dropZAt(Math.floor(G.st / 60))))) dropItem(killDrop(z), z.x, z.y, 0); }
   else sfx('thud');
 }
@@ -1248,8 +1287,8 @@ function drawTitle(t) {
   { const bobY = Math.round(Math.sin(t * 3) * 1); if (!skinShow('title', cx0 + cw - 60, y + 2 + bobY, 56, 60)) { if (artOk('hen-title')) hx.drawImage(ART['hen-title'], cx0 + cw - 52, y + 10 + bobY); } }
   skinShow('egg', cx0 + 6, y + 53, 12, 15);
   const tx = cx0 + Math.round((cw - 56) / 2);
-  text('LAST', tx, y, 16, HRED, 'center');
-  text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
+  text('ZOMBIE', tx, y, 16, HRED, 'center'); // v20: the game is ZOMBIE FARM now
+  text('FARM', tx, y + 17, 16, '#ffffff', 'center');
   inkText('CHIKN EDITION', tx, y + 38, '#036b2b', 'center');
   inkText('BILLIONS MUST BOK.', tx, y + 58, INK, 'center'); // v14: no instructions
   const cy = Math.max(y + 96, Math.round(N * 0.5)); // v14: controls panel + start prompt removed
@@ -1434,7 +1473,7 @@ function drawCleanMeter(t) {
 // Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
 const FLOCK = [], _flockRecent = [], _flockDeck = [];
 const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
-if (FLOCK_LAYER) fetch('flock/manifest.json?v=19c').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file + '?v=19c'; FLOCK.push({ h: f.handle, src: img.src, img, w: 1 + Math.max(0, +f.hegg || 0), req: !!f.requested, lines: Array.isArray(f.lines) ? f.lines.filter((x) => typeof x === 'string' && x.includes('{h}')) : [] }); } FLOCK.sort((a, b) => b.w - a.w); _flockDeck.length = 0; flockCredits(); }).catch(() => {});
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=20').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file + '?v=20'; FLOCK.push({ h: f.handle, src: img.src, img, w: 1 + Math.max(0, +f.hegg || 0), req: !!f.requested, lines: Array.isArray(f.lines) ? f.lines.filter((x) => typeof x === 'string' && x.includes('{h}')) : [] }); } FLOCK.sort((a, b) => b.w - a.w); _flockDeck.length = 0; flockCredits(); }).catch(() => {});
 const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
   m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
   m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
@@ -1803,6 +1842,20 @@ function disc(r, col) { // posterised 3-band light pool with a 1px ordered-dithe
 }
 let camX = 0, camY = 0;
 const w2s = (x, y) => [Math.round(x - camX), Math.round(y - camY)];
+// v20 static DUSK: a warm-orange (top) to violet (bottom) soft-light wash. Soft-light keeps mid-tones put, so overall brightness/readability stays the same.
+const DUSK = !/[?&]dusk=0/.test(location.search); let _duskG = null, _duskV = null, _duskN = 0; const DUSK_V = +((location.search.match(/[?&]dv=([\d.]+)/) || [])[1] || 0.5), DUSK_LIFT = +((location.search.match(/[?&]lift=([\d.]+)/) || [])[1] || 0.16);
+function duskOverlay() { if (!DUSK) return; if (!_duskG || _duskN !== N) { _duskN = N; const [c, x] = mk(N, N), g = x.createLinearGradient(0, 0, N * 0.25, N);
+    g.addColorStop(0, '#ffa04a'); g.addColorStop(0.55, '#ff8a6a'); g.addColorStop(1, '#8a5ac8'); x.fillStyle = g; x.fillRect(0, 0, N, N); _duskG = c;
+    const [c2, x2] = mk(N, N), rg = x2.createRadialGradient(N / 2, N * 0.58, N * 0.28, N / 2, N * 0.5, N * 0.78); rg.addColorStop(0, 'rgba(120,70,200,0)'); rg.addColorStop(1, 'rgba(120,70,200,0.85)'); x2.fillStyle = rg; x2.fillRect(0, 0, N, N);
+    const tg = x2.createLinearGradient(0, 0, 0, N * 0.3); tg.addColorStop(0, 'rgba(150,80,200,0.5)'); tg.addColorStop(1, 'rgba(150,80,200,0)'); x2.fillStyle = tg; x2.fillRect(0, 0, N, N); _duskV = c2; }
+  hx.globalCompositeOperation = 'soft-light'; hx.globalAlpha = 0.34; hx.drawImage(_duskG, 0, 0); hx.globalCompositeOperation = 'color'; hx.globalAlpha = DUSK_V; hx.drawImage(_duskV, 0, 0); /* violet dusk edges + sky band: hue only, luminance kept */ hx.globalCompositeOperation = 'screen'; hx.globalAlpha = DUSK_LIFT; hx.fillStyle = '#ffb27a'; hx.fillRect(0, 0, N, N); hx.globalAlpha = 1; /* tiny warm lift = same brightness as plain day */ hx.globalCompositeOperation = 'source-over'; }
+// v20: bake the dusk colour grade into the map (warm highlights, violet shadows) at the SAME luminance per pixel
+function duskGrade(c) { if (!DUSK) return; const x = c.getContext('2d'), im = x.getImageData(0, 0, c.width, c.height), d = im.data;
+  for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const r = d[i], g = d[i + 1], b = d[i + 2], L = 0.299 * r + 0.587 * g + 0.114 * b; if (L < 1) continue;
+    const u = Math.min(1, Math.max(0, (L - 60) / 150)), mr = 0.97 + 0.15 * u, mg = 0.9 + 0.07 * u, mb = 1.16 - 0.3 * u;
+    let R = r * mr, Gg = g * mg, B = b * mb; const L2 = 0.299 * R + 0.587 * Gg + 0.114 * B, k = L / L2; R *= k; Gg *= k; B *= k;
+    d[i] = R > 255 ? 255 : R; d[i + 1] = Gg > 255 ? 255 : Gg; d[i + 2] = B > 255 ? 255 : B; }
+  x.putImageData(im, 0, 0); }
 function applyLight(t) {
   const dl = daylight(); if (dl >= 1 && !(G && G.lightning > 0)) return;
   const dusk = dl > 0 && dl < 1 ? 1 - Math.abs(dl * 2 - 1) : 0;
@@ -1858,6 +1911,29 @@ function drawPart(p) { const [x, y] = w2s(p.x, p.y), Y = y - Math.round(p.z), a 
   else if (p.k === 'c') { hx.fillStyle = OUT; hx.fillRect(x - 1, Y - 1, 4, 3); hx.fillStyle = p.c; hx.fillRect(x, Y, 2, 1); }
   else { hx.fillStyle = OUT; hx.fillRect(x - 1, Y - 1, 3, 3); hx.fillStyle = p.c; hx.fillRect(x, Y, 1 + (p.z <= 0 ? 1 : 0), 1); }
   if (a < 1) hx.globalAlpha = 1; }
+// ================================================================ v20 Paper Mario cutouts: every chicken is a THICK cardboard standee.
+// East/west: the full flat image (plus a 3-layer cardboard edge behind it). North/south: the standee is turned partly edge-on,
+// drawn ~60% wide with half of it showing the plain cardboard BACK. Any facing change plays a quick paper-flip squash.
+// Pure drawing: hitboxes are untouched. ?paper=0 = the old flat sprites.
+const PAPER = !/[?&]paper=0/.test(location.search), PAPER_FLIP = 0.14, PAPER_THICK = 3;
+function paperState(o, row, t) { let P = o._pp; if (!P || o._ppG !== G) { P = o._pp = { row, sign: row === 2 ? -1 : 1, t0: -9, prev: null }; o._ppG = G; }
+  if (row !== P.row) { P.prev = { row: P.row, sign: P.sign }; P.row = row; if (row === 2) P.sign = -1; else if (row === 3) P.sign = 1; P.t0 = t; } return P; }
+const paperGeom = (L) => ({ sign: L.sign, scale: L.row < 2 ? 0.6 : 1, dark: L.row === 1 ? 'head' : L.row === 0 ? 'tail' : null });
+function paperDraw(o, s, img, row, col, cx, Y, h, t, opt = {}) {
+  const w = s.cw, ch = s.ch;
+  if (!PAPER || !s.crd) { hx.drawImage(img, col * w, row * ch, w, ch, Math.round(cx - w / 2), Y, w, h); return; }
+  const P = paperState(o, row, t), k = (t - P.t0) / PAPER_FLIP; let g = paperGeom(P), sc = g.scale;
+  if (k >= 0 && k < 1 && P.prev) { if (k < 0.5) { g = paperGeom(P.prev); sc = g.scale * (1 - k * 2); } else sc = g.scale * ((k - 0.5) * 2); sc = Math.max(0.1, sc); }
+  const fx = col * w, fy = (g.sign < 0 ? 2 : 3) * ch, dw = Math.max(2, Math.round(w * sc)), X = Math.round(cx - dw / 2), Yr = Math.round(Y);
+  if (opt.edge !== false) { const ex = sc < 0.95 ? 1 : -g.sign; for (let q = PAPER_THICK; q >= 1; q--) { hx.globalAlpha = q === PAPER_THICK ? 0.85 : 1; hx.drawImage(s.crd, fx, fy, w, ch, X + q * ex, Yr + (q > 1 ? 1 : 0), dw, h); } hx.globalAlpha = 1; } // cardboard thickness
+  hx.drawImage(img, fx, fy, w, ch, X, Yr, dw, h);
+  const full = img === s.img;
+  if (full && opt.rim && s.rim && g.sign > 0) hx.drawImage(s.rim, fx, fy, w, ch, X, Yr, dw, h); // golden dusk rim (sun in the west, so only the west-facing side catches it)
+  if (full && g.dark && s.back) { const half = w / 2, cover = (g.dark === 'head') === (g.sign > 0), d2 = Math.round(dw / 2);
+    hx.drawImage(s.back, cover ? fx + half : fx, fy, half, ch, cover ? X + dw - d2 : X, Yr, d2, h); } // half seen from behind: plain cardboard
+}
+// v20 dusk: long soft shadows thrown east by the low sun
+function longShadow(sx, sy, w) { hx.globalAlpha = 0.55; hx.drawImage(SHADOW.b, Math.round(sx - w * 0.35), sy - 3, Math.round(w * 2.3), 6); hx.globalAlpha = 0.3; hx.drawImage(SHADOW.b, Math.round(sx + w * 0.6), sy - 2, Math.round(w * 2.2), 4); hx.globalAlpha = 1; }
 function renderWorld(dt, t) {
   hx.fillStyle = '#0e0a14'; hx.fillRect(0, 0, N, N);
   hx.drawImage(MAPC, -camX, -camY);
@@ -1890,16 +1966,17 @@ function renderWorld(dt, t) {
     const rect = [z.x - w / 2, z.y - h + 1 - jz, w, h];
     list.push({ y: z.y, rect, actor: true, draw: () => {
       const [sx, sy] = w2s(z.x, z.y);
-      if (z.alive) { const sh = z.brute ? SHADOW.b : SHADOW.s; hx.drawImage(sh, Math.round(sx - sh.width / 2) + 1, sy - 3); } // v9 contact shadow
-      if (s.shd && z.alive && !jz) { hx.globalAlpha = 0.38; hx.drawImage(s.shd, ...spriteFrame(s, row, col), Math.round(sx - w / 2) + 2, sy - h + 2, w, h); hx.globalAlpha = 1; } // hard offset ink shadow
+      if (z.alive) { const sh = z.brute ? SHADOW.b : SHADOW.s; longShadow(sx, sy, sh.width); hx.drawImage(sh, Math.round(sx - sh.width / 2) + 1, sy - 3); } // v9 contact shadow + v20 long dusk shadow
+      if (s.shd && z.alive && !jz) { hx.globalAlpha = 0.38; paperDraw(z, s, s.shd, row, col, sx + 2, sy - h + 2, h, t, { edge: false }); hx.globalAlpha = 1; } // hard offset ink shadow
       if (!z.alive) { // collapse: draw squashed frames sinking, then gone
         const k = clamp(z.dead / 0.6, 0, 1), hh = Math.max(4, Math.round(h * k));
         hx.globalAlpha = 0.5 + k * 0.5; hx.drawImage(s.img, ...spriteFrame(s, row, 0), Math.round(sx - w / 2), sy - hh + 1, w, hh); hx.globalAlpha = 1; return; }
       const shake = winding && !z.thrower ? (Math.floor(t * 40) % 2 ? 1 : -1) : 0, X = Math.round(sx - w / 2) + shake, Y = sy - h + 1 - jz, fr = spriteFrame(s, row, col);
-      if (z.flash > 0 && s.wht) { hx.drawImage(s.wht, ...fr, X, Y, w, h); return; } // v9 hit flash
-      if (z.hurt > 0 && Math.floor(t * 30) % 2) { hx.drawImage(s.sil, ...fr, X, Y, w, h); return; }
-      hx.drawImage(s.img, ...fr, X, Y, w, h);
-      if (winding && s.red && Math.floor(t * 14) % 2) { hx.globalAlpha = 0.42; hx.drawImage(s.red, ...fr, X, Y, w, h); hx.globalAlpha = 1; } // v9 wind-up warning blink
+      const PX = X + w / 2;
+      if (z.flash > 0 && s.wht) { paperDraw(z, s, s.wht, row, col, PX, Y, h, t); return; } // v9 hit flash
+      if (z.hurt > 0 && Math.floor(t * 30) % 2) { paperDraw(z, s, s.sil, row, col, PX, Y, h, t, { edge: false }); return; }
+      paperDraw(z, s, s.img, row, col, PX, Y, h, t, { rim: true });
+      if (winding && s.red && Math.floor(t * 14) % 2) { hx.globalAlpha = 0.42; paperDraw(z, s, s.red, row, col, PX, Y, h, t, { edge: false }); hx.globalAlpha = 1; } // v9 wind-up warning blink
       if (z.alive && z.strikeT > 0 && !z.brute && !z.thrower) slashes.push(z); // v9 peck strike slash: drawn on top of everything below
       if (z.alive && z.thrower && z.strikeT > 0) { const k = z.strikeT / 0.22, dx2 = Math.sign(player.x - z.x) || 1; hx.fillStyle = '#ffffff'; for (let q = 0; q < 4; q++) hx.fillRect(sx + dx2 * (4 + q * 2), sy - h + 4 + q - Math.round(k * 3), 2, 1); } // release swoosh
       if (z.thrower && z.wind > 0) { const k = 1 - z.wind / TUNE.tWind, ex = sx + (row === 2 ? 5 : row === 3 ? -5 : 0), ey = sy - h - 2 - Math.round(k * 4); // the tell: a rotten egg raised overhead + flashing !
@@ -1913,10 +1990,10 @@ function renderWorld(dt, t) {
   const drawPlayer = (sil) => {
     const [sx, sy] = w2s(player.x, player.y), py = sy - PH + 1 - Math.round(player.jz);
     if (!sil && player.jz > 2) { const sh = player.jz > 6 ? SHADOW.i : SHADOW.s; hx.drawImage(sh, sx - sh.width / 2, sy - 3); } // airborne: ground spot
-    else if (!sil) hx.drawImage(SHADOW.s, sx - 5, sy - 3); // v9 contact shadow
+    else if (!sil) { longShadow(sx, sy, 12); hx.drawImage(SHADOW.s, sx - 5, sy - 3); } // v9 contact shadow + v20 long dusk shadow
     else if (!sil && ps.shd) { hx.globalAlpha = 0.38; hx.drawImage(ps.shd, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx + 2, py + pdy + 1, PW, PH); hx.globalAlpha = 1; } // hard offset ink shadow
     if (!sil && player.hurtT > 0 && Math.floor(t * 30) % 2) return;
-    hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx, py + pdy, PW, PH);
+    paperDraw(player, ps, sil ? ps.sil : ps.img, player.dir, pcol, sx + pdx, py + pdy, PH, t, { edge: !sil, rim: !sil });
     if (!sil && pecking && player.atkT < 0.16 && player.atkT > 0.08) { const [fx, fy] = [[0, 1], [0, -1], [-1, 0], [1, 0]][player.dir], tx0 = sx + pdx + fx * (PW / 2 + 1), ty0 = py + pdy + Math.round(PH * 0.42) + fy * Math.round(PH * 0.42) + (fx ? -2 : 0); // tok! spark at the beak tip
       hx.fillStyle = OUT; hx.fillRect(tx0 - 2, ty0 - 1, 5, 3); hx.fillRect(tx0 - 1, ty0 - 2, 3, 5); hx.fillStyle = '#ffffff'; hx.fillRect(tx0 - 1, ty0, 3, 1); hx.fillRect(tx0, ty0 - 1, 1, 3); }
     if (!sil && player.atkT > 0 && !player.peck) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(gunImg(G.weapon, w.tier), 0, 0, 16, 16, -8, py + PH - 16 + oy, 16, 16); hx.restore(); } else hx.drawImage(gunImg(G.weapon, w.tier), 0, 0, 16, 16, sx - 8 + ox, py + PH - 16 + oy, 16, 16); } }
@@ -1985,7 +2062,7 @@ function renderWorld(dt, t) {
     hx.fillStyle = 'rgba(255,253,245,.55)'; hx.fillRect(Math.round(tx), Math.round(ty), 1, 1); hx.fillRect(Math.round((tx + ex) / 2), Math.round((ty + ey) / 2), 1, 1); // a faint streak
     drawShotEgg(ex, ey, tr.k === 'shotgun', tr.tier || 1); tr.t -= dt; } G.tracers = G.tracers.filter((q) => q.t > 0); }
   if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); if (h.peck) { const r = Math.round((0.14 - h.t) * 40) + 2; hx.fillStyle = '#ffc42f'; for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]]) hx.fillRect(p[0] + Math.round(ax * r), p[1] + Math.round(ay * r), 2, 2); hx.fillStyle = '#ffffff'; hx.fillRect(p[0] - 1, p[1] - 1, 3, 3); h.t -= dt; continue; } for (let k = 0; k < 6; k++) { hx.fillStyle = k % 2 ? '#ffffff' : RAMP.blood[0]; hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 9), p[1] + Math.round((Math.random() - 0.5) * 9), 2, 1); } hx.fillStyle = '#ffc42f'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
-  applyLight(t);
+  applyLight(t); duskOverlay();
   drawWeather(dt);
   return covered;
 }
@@ -2056,8 +2133,8 @@ setInterval(() => { if (!ANN.pend) return; const now = performance.now() / 1000;
 // Slide (or tap) the power switch, or press Enter / Space / P: the screen fades in, the music starts (that gesture unlocks WebAudio),
 // a <5 s cinematic intro plays (the hen running for her life, close-ups of the undead flock), then the title pops up. Shoot skips it.
 // Sliding the switch off turns the game off again (P toggles too). ?handheld=0 (no shell) or ?boot=0 skips all of this.
-const INTRO = { t: 0, T: 4.8, cuts: [0, 1.45, 2.2, 3.0, 4.15], popAt: -9 };
-function bootOn() { resize(); setTimeout(resize, 60); setTimeout(resize, 400); STATE = 'intro'; INTRO.t = 0; G = null; zombiePool.length = 0; itemPool.length = 0; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } queue.length = 0; for (const k in held) held[k] = 0; }
+const INTRO = { t: 0, T: 5.6, cuts: [0, 1.7, 2.8, 3.9], popAt: -9, shot: -1 }; // v20: silo intro
+function bootOn() { resize(); setTimeout(resize, 60); setTimeout(resize, 400); STATE = 'intro'; INTRO.t = 0; INTRO.shot = -1; G = null; zombiePool.length = 0; itemPool.length = 0; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } queue.length = 0; for (const k in held) held[k] = 0; }
 function bootOff() { STATE = 'off'; NE.on = false; if (_flockPopEl) { _flockPopEl.remove(); _flockPopEl = null; } skinBegin(); skinEnd(); }
 function introEnd() { if (STATE !== 'intro') return; STATE = 'title'; INTRO.popAt = T0; sfx('dawn'); }
 if (LT_BOOT) {
@@ -2081,37 +2158,79 @@ function introBg(t, speed, a, b, horizon) { const hy = Math.round(N * horizon); 
   hx.fillStyle = '#ffc42f'; for (let x = -64; x < N + 64; x += 64) hx.fillRect(Math.round(x - (t * speed * 1.6) % 64), Math.round(N * 0.82), 30, 3); // track dashes (faster: parallax)
   hx.fillStyle = OUT; hx.fillRect(0, hy, N, 1); }
 function speedLines(t, col, n = 26) { const r = rng(7); for (let i = 0; i < n; i++) { const y = Math.round(r() * N), L = 20 + r() * 60, x = ((r() * N - t * (500 + r() * 400)) % (N + 80) + N + 80) % (N + 80) - 40; hx.fillStyle = col; hx.fillRect(Math.round(x), y, Math.round(L), 1 + (i % 3 === 0)); } }
+// v20 (Zombie Farm) intro: a BUFF hen on top of the farm silo, dual-wielding two machine guns, mowing down waves of zombie hens below.
+// WIDE -> CLOSE-UP (guns blazing) -> GROUND (zombies popping, red bits) -> WIDE + 'ZOMBIE FARM' title slam. 5.6 s, shoot skips.
+const BUFF = new Image(); BUFF.src = 'buff-hen.png?v=20'; const BUFF_MZ = [[31, 30], [48, 30]]; // muzzle tips in the 50x48 art
+let _silo = null;
+function siloImg() { if (_silo) return _silo; const w = 44, h = 132, [c, x] = mk(w + 2, h + 2), R = (X, Y, W, H, col) => { x.fillStyle = col; x.fillRect(X + 1, Y + 1, W, H); };
+  // dome (galvanised steel) + red brick-ish staves, ink outline, warm dusk rim on the west edge
+  for (let y = 0; y < 18; y++) { const half = Math.round(w / 2 * Math.sqrt(1 - Math.pow((18 - y) / 18, 2))); R(w / 2 - half, y, half * 2, 1, y < 3 ? '#cfd4d8' : '#9aa2a8'); R(w / 2 - half, y, 2, 1, '#ffd08a'); }
+  R(0, 18, w, h - 18, '#b5342c'); for (let X = 0; X < w; X += 6) R(X, 18, 1, h - 18, '#8c2420'); R(w - 8, 18, 8, h - 18, '#7a1f1c'); R(0, 18, 3, h - 18, '#ff9a5a');
+  for (let Y = 26; Y < h; Y += 12) R(0, Y, w, 2, '#5e1814'); R(0, 18, w, 3, '#6b737a');
+  R(w / 2 - 6, h - 24, 12, 24, '#3a1a14'); R(w / 2 - 5, h - 23, 10, 22, '#5a2a1c'); // door
+  for (let Y = 30; Y < h - 30; Y += 6) R(w - 14, Y, 6, 1, '#d8d8d8'); R(w - 14, 28, 1, h - 56, '#d8d8d8'); R(w - 9, 28, 1, h - 56, '#d8d8d8'); // ladder
+  const im = x.getImageData(0, 0, w + 2, h + 2), d = im.data, o = new Uint8ClampedArray(d); // 1px ink outline
+  for (let y = 0; y < h + 2; y++) for (let X = 0; X < w + 2; X++) { const i = (y * (w + 2) + X) * 4; if (d[i + 3]) continue; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = X + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= w + 2 || yy >= h + 2) continue; if (d[(yy * (w + 2) + xx) * 4 + 3]) { o[i] = 9; o[i + 1] = 11; o[i + 2] = 10; o[i + 3] = 255; break; } } }
+  im.data.set(o); x.putImageData(im, 0, 0); return (_silo = c); }
+function introSky(t, hz) { const H = Math.round(N * hz), g = hx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2b1b52'); g.addColorStop(0.55, '#a8456a'); g.addColorStop(1, '#ff9a48'); hx.fillStyle = g; hx.fillRect(0, 0, N, H);
+  hx.fillStyle = '#ffd36a'; const sr = Math.round(N * 0.07), sx = Math.round(N * 0.12), sy = H - Math.round(sr * 0.6); hx.beginPath(); hx.arc(sx, sy, sr, 0, 6.283); hx.fill(); // low sun in the west
+  hx.fillStyle = '#3a2148'; const r = rng(3); for (let x = 0; x < N; x += 6) { const hh = 3 + Math.round(r() * 5); hx.fillRect(x, H - hh, 6, hh); } // far tree line
+  hx.fillRect(Math.round(N * 0.66), H - 16, 26, 16); hx.beginPath(); hx.moveTo(N * 0.66 - 2, H - 16); hx.lineTo(N * 0.66 + 13, H - 26); hx.lineTo(N * 0.66 + 28, H - 16); hx.fill(); // far barn
+  hx.fillStyle = '#5a4a2e'; hx.fillRect(0, H, N, N - H); hx.fillStyle = '#6e5a34'; for (let y = H + 4; y < N; y += 7) hx.fillRect(0, y, N, 2); // dusk field
+  hx.fillStyle = OUT; hx.fillRect(0, H, N, 1); return H; }
+const ZI = { z: [], p: [], tr: [], fire: 0, seed: 1 };
+function ziReset() { ZI.z.length = 0; ZI.p.length = 0; ZI.tr.length = 0; ZI.fire = 0; ZI.init = false; }
+function ziPop(x, y, k) { for (let i = 0; i < 9; i++) ZI.p.push({ x, y, vx: (Math.random() - 0.4) * 90 * k, vy: -40 * k - Math.random() * 70 * k, t: 0, T: 0.7 + Math.random() * 0.4, c: i % 3 ? '#c81e30' : i % 2 ? '#56703f' : '#8a1020', s: Math.max(1, Math.round(k)) }); }
+function ziStep(dt, k, gy, sx0, sx1, spawnX, dir) { // zombie wave walkers + bursts (positions in screen px)
+  if (!ZI.init) { ZI.init = true; for (let i = 0; i < 11; i++) ZI.z.push({ x: N * (sx0 + i * 0.065) + Math.random() * 8, y: gy + Math.round(Math.random() * 18 * k) - 6 * k, v: (22 + Math.random() * 18) * k, i: i % 3, alive: true, a: Math.random() * 4 }); }
+  if (ZI.z.filter((z) => z.alive).length < 12 && Math.random() < dt * 14) ZI.z.push({ x: spawnX + Math.random() * 30 * dir * -1, y: gy + Math.round(Math.random() * 18 * k) - 6 * k, v: (22 + Math.random() * 18) * k, i: Math.floor(Math.random() * 3), alive: true, a: Math.random() * 4 });
+  for (const z of ZI.z) if (z.alive) { z.x -= z.v * dt * dir; z.a += dt * 10; }
+  for (const q of ZI.p) { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 260 * k * dt; }
+  ZI.p = ZI.p.filter((q) => q.t < q.T); ZI.tr = ZI.tr.filter((q) => (q.t += dt) < 0.07); ZI.z = ZI.z.filter((z) => z.alive && z.x > -60 && z.x < N + 80); }
+function ziDraw(k) { const Z = SPR.zombies; for (const z of [...ZI.z].sort((a, b) => a.y - b.y)) sprDraw(Z[z.i], 2, Math.floor(z.a), z.x - 15 * k, z.y - 33 * k, k);
+  for (const q of ZI.p) { hx.fillStyle = OUT; hx.fillRect(Math.round(q.x) - 1, Math.round(q.y) - 1, q.s + 2, q.s + 2); hx.fillStyle = q.c; hx.fillRect(Math.round(q.x), Math.round(q.y), q.s, q.s); } }
+function ziShoot(mx, my, k) { const live = ZI.z.filter((z) => z.alive && z.x > mx + 10); if (!live.length) return; const z = live[Math.floor(Math.random() * live.length)], tx = z.x, ty = z.y - 14 * k;
+  ZI.tr.push({ x0: mx, y0: my, x1: tx, y1: ty, t: 0 }); if (Math.random() < 0.55) { z.alive = false; ziPop(tx, ty, k); } }
+function ziTracers() { for (const q of ZI.tr) { pixLine(q.x0, q.y0 + 1, q.x1, q.y1 + 1, OUT); pixLine(q.x0, q.y0, q.x1, q.y1, '#ffc42f'); const e = 0.6 + q.t * 5; hx.fillStyle = '#fffdf5'; hx.fillRect(Math.round(q.x0 + (q.x1 - q.x0) * Math.min(1, e)) - 1, Math.round(q.y0 + (q.y1 - q.y0) * Math.min(1, e)) - 1, 3, 2); } }
+function flash(x, y, k, big) { const r = Math.round((big ? 5 : 3) * k); hx.fillStyle = '#fff6c8'; hx.fillRect(x - r, y - 1, r * 2 + 2, 3); hx.fillRect(x, y - r, 3, r * 2 + 2); hx.fillStyle = '#ffc42f'; hx.fillRect(x - Math.round(r / 2), y - Math.round(r / 2), r + 2, r + 2); hx.fillStyle = '#ffffff'; hx.fillRect(x, y, 2, 2); }
+function buffDraw(x, y, k, t, fire) { if (!BUFF.complete || !BUFF.naturalWidth) return; const rec = fire ? Math.round(Math.sin(t * 60) * k * 0.6) : 0; hx.drawImage(BUFF, Math.round(x) - rec, Math.round(y), 50 * k, 48 * k);
+  if (fire) BUFF_MZ.forEach(([mx, my], i) => { if ((Math.floor(t * 30) + i) % 2) flash(Math.round(x + mx * k) - rec, Math.round(y + my * k), k, k > 2); }); }
 function drawIntro(dt) {
   INTRO.t += dt; const t = INTRO.t, C = INTRO.cuts; if (t >= INTRO.T) { introEnd(); return; }
+  if (t - dt <= 0) ziReset();
   skinBegin(); skinEnd(); hx.imageSmoothingEnabled = false;
-  const shot = t < C[1] ? 0 : t < C[2] ? 1 : t < C[3] ? 2 : t < C[4] ? 3 : 4, st = t - C[shot], run = Math.floor(t * 14), P = SPR.player, Z = SPR.zombies, B = SPR.brute;
+  const shot = t < C[1] ? 0 : t < C[2] ? 1 : t < C[3] ? 2 : 3, st = t - C[shot], u = N / 256;
+  if (shot !== INTRO.shot) { INTRO.shot = shot; ziReset(); }
   const shake = (a) => [Math.round((Math.random() - 0.5) * a), Math.round((Math.random() - 0.5) * a)];
-  if (shot === 0) { // WIDE: the hen sprints right, the undead flock pours in behind her
-    introBg(t, 260, '#8ed8ff', '#08d14a', 0.42); const k = N >= 200 ? 2 : 1, gy = Math.round(N * 0.6);
-    for (let i = 0; i < 7; i++) { const zx = -70 + i * N * 0.06 + st * (24 + i * 4) - (i % 2) * 10, zy = gy - 6 + (i % 3) * 9 - Math.abs(Math.sin(t * 9 + i)) * 3; sprDraw(Z[i % 3], 3, run + i, zx, zy, k); }
-    const px0 = N * 0.68 + Math.sin(t * 3) * 6, py0 = gy - 4 - Math.abs(Math.sin(t * 14)) * 4; sprDraw(P, 3, run, px0, py0, k);
-    hx.fillStyle = '#f8f5e9'; for (let q = 0; q < 4; q++) { const dx = ((t * 120 + q * 13) % 50); hx.fillRect(Math.round(px0 - dx), Math.round(gy + 30 * k / 2 + q % 2 * 2), 3 - (dx > 30), 2); } // dust kicked up
-  } else if (shot === 1) { // CLOSE-UP: a zombie hen lunges (strike frame), the screen shakes
-    hx.fillStyle = '#ff3347'; hx.fillRect(0, 0, N, N); speedLines(t, 'rgba(9,11,10,.35)');
-    const k = Math.max(4, Math.floor(N * 1.25 / 33)), lunge = st > 0.45, [sx, sy] = lunge ? shake(6) : [0, 0], x = N * 0.5 - 15 * k + st * 40 * (lunge ? 2 : 1) - N * 0.08 + sx, y = N * 0.52 - 33 * k * 0.35 + sy;
-    sprDraw(Z[0], 3, lunge ? 4 : run, x, y, k);
-  } else if (shot === 2) { // CLOSE-UP: the hen, running for her life (fast legs, speed lines, sweat)
-    hx.fillStyle = '#ffc42f'; hx.fillRect(0, 0, N, N); speedLines(t * 1.3, 'rgba(255,253,245,.85)', 34);
-    const k = Math.max(4, Math.floor(N * 1.1 / 33)), [sx, sy] = shake(3), x = N * 0.5 - 15 * k + sx, y = N * 0.5 - 33 * k * 0.42 + sy - Math.abs(Math.sin(t * 18)) * k;
-    sprDraw(P, 3, Math.floor(t * 20), x, y, k);
-    hx.fillStyle = '#8ed8ff'; for (let q = 0; q < 3; q++) { const d = (st * 3 + q * 0.33) % 1; hx.fillRect(Math.round(x + 4 * k - d * 30), Math.round(y + 6 * k - q * 8 - d * 12), k, k + 2); } // sweat drops flying off
-  } else if (shot === 3) { // LOW ANGLE: the horde and a zombie roostr march at the camera, stomp-shakes
-    hx.fillStyle = '#036b2b'; hx.fillRect(0, 0, N, N); hx.fillStyle = '#08d14a'; hx.fillRect(0, Math.round(N * 0.7), N, N);
-    const grow = Math.min(1, st / 1.1), k = Math.max(2, Math.floor((N / 256) * (3 + grow * 2))), stomp = Math.floor(st * 3) !== Math.floor((st - dt) * 3), [sx, sy] = shake(stomp ? 10 : 2);
-    for (let i = 0; i < 6; i++) { const zx = N * (0.04 + i * 0.165) - 15 * k + sx, zy = N * 0.6 - 33 * k + sy + (i % 2) * 6 - Math.abs(Math.sin(t * 8 + i)) * 3; sprDraw(Z[i % 3], 0, run + i, zx, zy, k); }
-    const kb = k + 1; sprDraw(B, 0, Math.floor(st * 6), N / 2 - 19 * kb + sx, N * 0.78 - 37 * kb + sy, kb);
-  } else { // ESCAPE: the hen dashes off screen, then the title pops
-    introBg(t, 340, '#8ed8ff', '#08d14a', 0.42); const k = N >= 200 ? 2 : 1; sprDraw(P, 3, run, N * 0.4 + st * 520, N * 0.6 - 4, k);
-    for (let i = 0; i < 4; i++) sprDraw(Z[i % 3], 3, run + i, -60 + i * 22 + st * 200, N * 0.6 + (i % 2) * 8, k); }
+  if (shot === 0 || shot === 3) { // WIDE: silo on the left, the buff hen on the dome, the undead flock pouring in from the right
+    const H = introSky(t, 0.6), k = Math.max(1, Math.round(u)), sk = Math.max(1, Math.round(u)), si = siloImg(), [ox, oy] = shake(shot === 3 && st > 0.5 && st < 0.8 ? 8 : 1.5);
+    const sx = Math.round(N * 0.12) + ox, sy = Math.round(N * 0.9) - si.height * sk + oy, gy = Math.round(N * 0.84);
+    ziStep(dt, k, gy, 0.45, N, N + 20, 1);
+    hx.drawImage(si, sx, sy, si.width * sk, si.height * sk);
+    const bx = sx + Math.round(si.width * sk / 2) - 25 * k, by = sy - 46 * k; buffDraw(bx, by, k, t, true);
+    ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.05; const m = BUFF_MZ[Math.floor(t * 20) % 2]; ziShoot(bx + m[0] * k, by + m[1] * k, k); }
+    ziDraw(k); ziTracers();
+  } else if (shot === 1) { // CLOSE-UP: guns blazing against the dusk sky, casings flying
+    const k = Math.max(3, Math.floor(N * 0.62 / 50)), [ox, oy] = shake(4); introSky(t * 0.5, 0.95);
+    const bx = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, by = Math.round(N * 0.56 - 24 * k) + oy; buffDraw(bx, by, k, t, true);
+    for (let i = 0; i < 8; i++) { const ph = (st * 3 + i * 0.13) % 1, m = BUFF_MZ[i % 2]; const cx = bx + m[0] * k - 20 * k * 0.3 - ph * 30 * u, cy = by + m[1] * k - 8 * u - ph * 50 * u + ph * ph * 90 * u; hx.fillStyle = OUT; hx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 4 * Math.ceil(u), 3 * Math.ceil(u)); hx.fillStyle = '#ffc42f'; hx.fillRect(Math.round(cx), Math.round(cy), 2 * Math.ceil(u), Math.ceil(u)); } // ejected casings
+    hx.fillStyle = 'rgba(255,196,47,.9)'; for (let i = 0; i < 6; i++) { const y0 = by + 30 * k + i * 3, x0 = bx + 48 * k + ((st * 900 + i * 37) % (N)); hx.fillRect(Math.round(x0), Math.round(y0 + (x0 - bx) * 0.25), 10 * Math.ceil(u), Math.ceil(u)); } // tracer streaks leaving frame
+  } else { // GROUND: zombie hens charge the camera's left and burst under the rain of fire
+    const k = Math.max(2, Math.floor(3 * u)), H = introSky(t, 0.42), gy = Math.round(N * 0.82), [ox, oy] = shake(3);
+    hx.save(); hx.translate(ox, oy); ziStep(dt, k, gy, 0.2, N, N + 30, 1);
+    ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.045; ziShoot(-10, -10 + Math.random() * N * 0.2, k); }
+    ziDraw(k); ziTracers(); hx.restore();
+  }
+  // title slam in the last wide shot
+  if (shot === 3 && st > 0.45) { const e = Math.min(1, (st - 0.45) / 0.18), sc = 1 + (1 - e) * 2.2, sz = 16, img = textImg('ZOMBIE FARM', sz, HRED, false), ink = textImg('ZOMBIE FARM', sz, INK, false), k2 = Math.max(1, Math.round((N * 0.8) / img.width * 2) / 2) * sc;
+    const w = Math.round(img.width * k2), h = Math.round(img.height * k2), x = Math.round(N / 2 - w / 2), y = Math.round(N * 0.5 - h / 2);
+    for (let q = 1; q <= Math.round(3 * k2 / sc); q++) hx.drawImage(ink, x + q, y + q, w, h); for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) hx.drawImage(ink, x + dx, y + dy, w, h); hx.drawImage(img, x, y, w, h);
+    if (e >= 1) { const s2 = textImg('BILLIONS MUST BOK.', 8, HGOLD, true); hx.drawImage(s2, Math.round(N / 2 - s2.width / 2), y + h + 6); } }
   // letterbox + hard-cut white pop + fade in from the dark screen
-  const bar = Math.round(N * 0.1); hx.fillStyle = OUT; hx.fillRect(0, 0, N, bar); hx.fillRect(0, N - bar, N, bar);
+  const bar = Math.round(N * 0.08); hx.fillStyle = OUT; hx.fillRect(0, 0, N, bar); hx.fillRect(0, N - bar, N, bar);
   const sinceCut = shot ? t - C[shot] : 9; if (sinceCut < 0.07) { hx.fillStyle = `rgba(255,255,255,${0.9 * (1 - sinceCut / 0.07)})`; hx.fillRect(0, 0, N, N); }
-  if (t < 0.55) { hx.fillStyle = `rgba(0,0,0,${1 - t / 0.55})`; hx.fillRect(0, 0, N, N); }
+  if (shot === 3 && st > 0.45 && st < 0.6) { hx.fillStyle = `rgba(255,255,255,${0.7 * (1 - (st - 0.45) / 0.15)})`; hx.fillRect(0, 0, N, N); } // slam flash
+  if (t < 0.5) { hx.fillStyle = `rgba(0,0,0,${1 - t / 0.5})`; hx.fillRect(0, 0, N, N); }
   if (t > INTRO.T - 0.18) { hx.fillStyle = `rgba(255,255,255,${(t - (INTRO.T - 0.18)) / 0.18})`; hx.fillRect(0, 0, N, N); }
 }
 // ================================================================ main loop
