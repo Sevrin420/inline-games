@@ -1,4 +1,4 @@
-/* LAST TOWER v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -110,7 +110,7 @@ const FONT = {
   8: [0x36, 0x49, 0x49, 0x49, 0x36], 9: [0x06, 0x49, 0x49, 0x29, 0x1E],
   ' ': [0, 0], '.': [0x60, 0x60], ',': [0x80, 0x60], ':': [0x36, 0x36], '!': [0x5F], '?': [0x02, 0x01, 0x51, 0x09, 0x06], '-': [0x08, 0x08, 0x08, 0x08],
   '/': [0x60, 0x18, 0x06, 0x01], '+': [0x08, 0x08, 0x3E, 0x08, 0x08], '%': [0x23, 0x13, 0x08, 0x64, 0x62], '>': [0x41, 0x22, 0x14, 0x08],
-  '<': [0x08, 0x14, 0x22, 0x41], '(': [0x1C, 0x22, 0x41], ')': [0x41, 0x22, 0x1C], '&': [0x36, 0x49, 0x55, 0x22, 0x50], "'": [0x05, 0x03], '*': [0x2A, 0x1C, 0x3E, 0x1C, 0x2A], '$': [0x24, 0x2A, 0x7F, 0x2A, 0x12],
+  '<': [0x08, 0x14, 0x22, 0x41], '(': [0x1C, 0x22, 0x41], ')': [0x41, 0x22, 0x1C], '&': [0x36, 0x49, 0x55, 0x22, 0x50], "'": [0x05, 0x03], '*': [0x2A, 0x1C, 0x3E, 0x1C, 0x2A], '$': [0x24, 0x2A, 0x7F, 0x2A, 0x12], '@': [0x3E, 0x41, 0x5D, 0x55, 0x1E], '_': [0x40, 0x40, 0x40, 0x40], '#': [0x14, 0x7F, 0x14, 0x7F, 0x14],
 };
 const textCache = new Map();
 function textImg(str, size, col, outline) {
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=15';
+HENS_SHEET.src = 'hens-sprites.png?v=16';
 const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
@@ -610,6 +610,7 @@ function newGame() {
   scatterLoot(TUNE.loot0, true);
   for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
   setTier('mg', 0); setTier('shotgun', 0); G.owned = ['fists']; // v15: tiers reset each run
+  G.lastHit = 0; G.cleanTier = 0; if (!window.__ltNoLB) lbRunStart(); // v16 leaderboard play record
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; const last = G.msg[G.msg.length - 1]; if (last && last.s === s) { last.t = Math.max(last.t, t); return; } G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
@@ -891,6 +892,7 @@ function knockOff(z) { // a zombie roostr bowls you off the crate
 function die(cause) {
   G.hp = 0; G.state = 'dead'; G.deadT = 0; G.deathCause = cause; G.eat = null; sfx('die');
   if (G.st > best.time) { best = { time: Math.floor(G.st), kills: G.kills, days: G.day }; try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {} G.newBest = true; }
+  if (!window.__ltNoLB) lbRunEnd(); // v16: end the server play, fetch the TOP 20
 }
 function cancelEat() {} // v10: eating is gone (no meals, no healing). Kept as a no-op for old call sites.
 function updatePlayer(dt) { if (G.state === 'play') autoEquip();
@@ -957,7 +959,7 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
 {
   const base = $('tBase'), knob = $('tKnob'), area = $('tStick'); let id = null, ox = 0, oy = 0;
   const setKnob = (dx, dy) => { knob.style.transform = `translate(${dx}px,${dy}px)`; };
-  area.addEventListener('pointerdown', (e) => { audioInit(); queue.push('GO'); lastInput = 'touch'; id = e.pointerId; area.setPointerCapture(id); const r = area.getBoundingClientRect(); ox = e.clientX; oy = e.clientY; base.style.left = (e.clientX - r.left) + 'px'; base.style.top = (e.clientY - r.top) + 'px'; stick.on = true; stick.x = stick.y = 0; setKnob(0, 0); });
+  area.addEventListener('pointerdown', (e) => { audioInit(); queue.push('TAP'); lastInput = 'touch'; id = e.pointerId; area.setPointerCapture(id); const r = area.getBoundingClientRect(); ox = e.clientX; oy = e.clientY; base.style.left = (e.clientX - r.left) + 'px'; base.style.top = (e.clientY - r.top) + 'px'; stick.on = true; stick.x = stick.y = 0; setKnob(0, 0); });
   area.addEventListener('pointermove', (e) => { if (e.pointerId !== id) return; let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy), mx = 48; if (l > mx) { dx *= mx / l; dy *= mx / l; } setKnob(dx, dy); stick.x = dx / mx; stick.y = dy / mx; const mag = Math.hypot(stick.x, stick.y);
     if (mag > 0.5) { const dir = Math.abs(stick.x) > Math.abs(stick.y) ? (stick.x < 0 ? 'left' : 'right') : (stick.y < 0 ? 'up' : 'down'); if (dir !== stick.lastDir) { stick.lastDir = dir; queue.push(dir); } } else stick.lastDir = null; });
   const end = (e) => { if (e.pointerId !== id) return; id = null; stick.on = false; stick.x = stick.y = 0; stick.lastDir = null; setKnob(0, 0); };
@@ -984,7 +986,7 @@ function mountAimStick(host) {
 mountAimStick($('tAim'));
 { let n = 0; const tick = setInterval(() => { const sp = document.querySelector('.hh-spad'); if (sp) mountAimStick(sp); if ((sp && sp.querySelector('.lt-astick')) || ++n > 200) clearInterval(tick); }, 50); }
 // idle hint without words: the stick ring pulses gold on the title + death screens
-setInterval(() => { const idle = STATE === 'title' || (G && G.state === 'dead' && G.deadT > 1.2); for (const el of aimEls) el.classList.toggle('lt-astick-idle', !!idle); }, 150);
+setInterval(() => { const idle = STATE === 'title' || (G && G.state === 'dead' && G.deadT > 0.25); for (const el of aimEls) el.classList.toggle('lt-astick-idle', !!idle); }, 150);
 function updateTouchLabels() {}
 // controls labels: every on-screen hint names the real control for the current mode
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
@@ -1054,13 +1056,16 @@ function sfx(n) {
   }
 }
 
-// ================================================================ v14: no menus, no pause
+// ================================================================ v14: no menus, no pause. v16: shoot restarts at ANY moment of the death credits
 function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + fire (held, see updatePlayer). Any shoot input / Space / screen tap starts + restarts.
   while (queue.length) {
     const b = queue.shift();
     const go = isShoot(b) || b === 'GO';
-    if (STATE === 'title') { if (go) { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
-    if (G.state === 'dead') { if (go && G.deadT > 1.2) { newGame(); } continue; }
+    if (STATE === 'title') { if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
+    if (G.state === 'dead') {
+      if (go && G.deadT > 0.25) { creditsRestart(); queue.length = 0; return; } // 0.25 s guard: a shot fired in the same instant as the fatal hit doesn't skip the credits
+      if (b === 'up' || b === 'down' || b === 'left' || b === 'right') nameEdit(b); // name bar (arcade style)
+      continue; }
   }
 }
 // v14: buttons handled in menus.js (no pause)
@@ -1176,33 +1181,15 @@ function drawHUD0(dt, t) {
   // kill count + safe marker
   panel(2, 31, 22 + String(G.kills).length * 6, 11);
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
+  drawCleanMeter(t); // v16 no-hit streak
   // messages
   let my = 40; const achOn = G.achQ && G.achQ.length; for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
   if (G.state === 'play') drawAch(dt); // v13 achievement pop-up (top band)
   G.msg = G.msg.filter((m) => m.t > 0);
-  if (G.state === 'dead') drawDead(t);
+  if (G.state === 'dead') drawCredits(t, dt); // v16 ending credits (credits.js)
 }
 function pixLine(x0, y0, x1, y1, col) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy, n = 0; hx.fillStyle = col; while (n++ < 600) { hx.fillRect(x0, y0, 1, 1); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
-function drawDead(t) {
-  G.deadT += 1 / 60;
-  hx.fillStyle = `rgba(9,11,10,${Math.min(0.55, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
-  const y = N / 2 - 66, pw = Math.min(N - 12, 196), px0 = Math.round(N / 2 - pw / 2); // v13: moved up to make room for the achievements list
-  panel(px0, y - 6, pw, 94);
-  if (!skinShow('dead', px0 + 2, y + 30, 50, 53)) { if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], px0 + 4, y + 34); }
-  text('PLUCKED', N / 2, y, 16, HRED, 'center');
-  inkText('TAKEN BY ' + G.deathCause, N / 2, y + 22, INK, 'center');
-  inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, HRED, 'center');
-  inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#036b2b' : INK, 'center');
-  inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
-  // v13: achievements earned this run
-  const fk = FLOCK.length > 0, MAXR = fk ? 5 : 6, got = [...new Set(G.achList || [])], rows = got.slice(0, MAXR), ay = y + (fk ? 122 : 106), ah = 14 + Math.max(1, rows.length) * 9 + (got.length > MAXR ? 9 : 0);
-  if (fk) { text('THE FLOCK SALUTES YOU', N / 2, y + 89, 8, HGOLD, 'center'); flockSalute(G.deadT > 0.5, N / 2, y + 100, 18); } // v15 community hens
-  panel(px0, ay, pw, ah); hx.fillStyle = HGOLD; hx.fillRect(px0 + 1, ay + 1, pw - 2, 10);
-  inkText('ACHIEVEMENTS THIS RUN: ' + got.length, N / 2, ay + 2, INK, 'center');
-  if (!rows.length) inkText('NONE YET. SURVIVE 1:00!', N / 2, ay + 14, INK, 'center');
-  rows.forEach((id, i) => { const n = G.achGot[id] > 1 ? ' X' + G.achGot[id] : ''; inkText('* ' + achDef(id)[0] + n, px0 + 6, ay + 14 + i * 9, i % 2 ? INK : '#036b2b'); });
-  if (got.length > MAXR) inkText('+' + (got.length - MAXR) + ' MORE', N / 2, ay + 14 + MAXR * 9, HRED, 'center');
-}
+// v16: the death panel became the ending-credits roll (credits.js drawCredits)
 function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
   const y = Math.round(N * 0.08), cw = Math.min(N - 16, 210), cx0 = Math.round(N / 2 - cw / 2);
@@ -1298,11 +1285,21 @@ function drawAch(dt) {
   if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 18, cy - (fh >> 1) - 2, 8, HGOLD, 'center');
   if (a.t >= AT) G.achQ.shift();
 }
+// v16 no-hit streak meter (under the kill count): fills over each minute without a hit, one gold pip per minute banked
+// (UNTOUCHED / FEATHERS INTACT / TEFLON HEN), flashes red and empties when a hit lands. Wordless.
+function drawCleanMeter(t) {
+  if (!G || G.state !== 'play') return; const clean = G.st - (G.lastHit || 0), tier = Math.min(3, Math.floor(clean / 60)), f = tier >= 3 ? 1 : (clean % 60) / 60;
+  const x = 2, y = 44, w = 50; panel(x, y, w, 9); const hit = player.hurtT > 0;
+  // tiny shield
+  hx.fillStyle = hit ? HRED : tier ? HGOLD : '#9fb3a6'; hx.fillRect(x + 3, y + 2, 5, 3); hx.fillRect(x + 4, y + 5, 3, 1); hx.fillRect(x + 5, y + 6, 1, 1);
+  hx.fillStyle = INK; hx.fillRect(x + 10, y + 3, 26, 3); hx.fillStyle = hit ? HRED : HGOLD; hx.fillRect(x + 10, y + 3, Math.round(26 * f), 3);
+  for (let i = 0; i < 3; i++) { hx.fillStyle = i < tier ? HGOLD : 'rgba(9,11,10,.25)'; hx.fillRect(x + 39 + i * 3, y + 3, 2, 3); }
+}
 // ================================================================ v15 THE FLOCK: community hens (X pfps of people posting about hens.farm) cheer your achievements
 // Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
 const FLOCK = [], _flockRecent = [];
 const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
-if (FLOCK_LAYER) fetch('flock/manifest.json?v=15').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=16').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
 const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
   m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
   m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
@@ -1371,6 +1368,222 @@ function flockCredits() { if (!FLOCK_LAYER || !FLOCK.length || _cred) return; _c
   const s = 'THE FLOCK: ' + FLOCK.map((f) => '@' + _esc(f.h)).join('  \u00b7  ') + '  \u00b7  '; _cred.innerHTML = `<span>${s}${s}</span>`; FLOCK_LAYER.appendChild(_cred); }
 setInterval(() => { if (_cred) _cred.style.display = STATE === 'title' ? 'block' : 'none'; if (STATE !== 'game' || !G || G.state !== 'dead') flockSalute(false); }, 150);
 addEventListener('resize', flockFont);
+// ================================================================ v16 death = ending credits + THE GLOBAL TOP 20 FLOCK + arcade name
+// Death screen is a movie-credits roll (rises bottom -> top, loops): PLUCKED + stats, the run's achievements as a cast list
+// (big gold title + "...... @hen" with her pfp), the TOP 20 FLOCK leaderboard, then THE FLOCK credits.
+// Shoot (stick / arrows / Space / screen tap) restarts at any moment. D-pad / WASD edits the name bar (dice = random chikn name).
+// Leaderboard: the shared membersonly.cc API (server/src/leaderboard.js, game "last-tower": survival time measured by the
+// server, capped by the run clock, ties by kills, best per player, top 20). No API -> a local top 20 on this device.
+const LB_GAME = 'last-tower', NAME_KEY = 'lasttower.name', LOCAL_LB_KEY = 'lasttower.lb1';
+const CHIKN_NAMES = ['BOKSTER', 'CLUCKNORRIS', 'HENDRIX', 'EGGBERT', 'YOLKO', 'BWAKZILLA', 'NUGGET', 'HENNY', 'ROOSTA', 'OMELETTA', 'BOKCHOY', 'EGGSY', 'BEAKER',
+  'SCRAMBLES', 'CHIKNLORD', 'DRUMSTIX', 'BOKBOK', 'HENGINEER', 'WINGDING', 'CLUCKSTAR', 'PLUCKY', 'COOPZILLA', 'EGGSPRESSO', 'FEATHERLY', 'PECKASSO', 'HENIGMA', 'YOLKSTER', 'BAWKSTAR'];
+const randName = (not) => { let n; do n = CHIKN_NAMES[Math.floor(Math.random() * CHIKN_NAMES.length)]; while (n === not && CHIKN_NAMES.length > 1); return n; };
+const validName = (s) => typeof s === 'string' && /^[A-Z]{3,12}$/.test(s);
+let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (validName(s)) lbName = s; } catch (e) {}
+const saveName = (s) => { lbName = s; try { localStorage.setItem(NAME_KEY, s); } catch (e) {} };
+const MA = () => (window.MembersAuth && window.MembersAuth.available ? window.MembersAuth : null);
+// ---- one record per run: play id (server), death result, board
+let RUN = null;
+function lbRunStart() { // called by newGame
+  const r = { g: G, play: null, board: null, posted: false, posting: false, local: false, st: 0, kills: 0, done: false, entry: null };
+  RUN = r; const A = window.MembersAuth;
+  if (A && A.ready) A.ready.then(() => (A.available ? A.startPlay(LB_GAME) : null)).then((id) => { r.play = id || null; }).catch(() => {});
+}
+function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) {} return Array.isArray(l) ? l : []; }
+function lbRunEnd() { // called by die()
+  const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
+  const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName || randName(), ms: r.ms, kills: r.kills, t: Date.now() };
+    if (r.ms >= 5000) l.push(me); l.sort((a, b) => b.ms - a.ms || b.kills - a.kills); const top = l.slice(0, 20); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(top)); } catch (e) {}
+    r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; };
+  if (!A || !r.play) { fallback(); return; }
+  A.endPlay(r.play, { outcome: 'died', score: r.kills, meta: { ms: r.ms, mg: G.tier.mg || 0, sg: G.tier.shotgun || 0 } })
+    .then((p) => (p ? A.leaderboard(LB_GAME) : null))
+    .then((b) => { if (!b || b.status !== 200 || !b.json) { fallback(); return; } r.board = b.json;
+      const me = b.json.me; r.wantPost = r.ms >= 5000 && (!me || r.ms > me.ms || (r.ms - (r.ms % 100) === me.ms && r.kills > me.kills)); if (!r.wantPost) r.posted = true; else if (r.postOnReady) lbPost(r); })
+    .catch(fallback);
+}
+function lbPost(r, onRestart) { // post this run under the current name (on restart, or once the board scrolls into view)
+  if (r && onRestart) r.postOnReady = true;
+  if (!r || r.posted || r.posting || !r.board || r.local || !lbName) return; const A = MA(); if (!A) return; r.posting = true;
+  const name = lbName; A.postLeaderboard(LB_GAME, r.play, name).then((res) => { r.posting = false;
+    if (res.status === 201 && res.json) { r.posted = true; r.board = res.json; r.entry = res.json.entry; return; }
+    const err = res.json && res.json.error; if (err === 'name_not_allowed' || err === 'bad_name') { saveName(randName(name)); r.retry = (r.retry || 0) + 1; if (r.retry < 3) setTimeout(() => lbPost(r), 50); return; }
+    r.posted = true; r.err = err || 'offline'; }).catch(() => { r.posting = false; r.posted = true; });
+}
+// ---- name bar (arcade style: dice + letters). D-pad up/down = letter, left/right = move; dice slot = random name
+const NB = { cur: 0, slots: null, blink: 0 };
+const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
+function nbSync() { const n = lbName || ''; NB.slots = n.padEnd(Math.max(6, n.length), ' ').split(''); NB.cur = Math.min(NB.cur, NB.slots.length - 1); }
+function nameEdit(dir) {
+  if (!NB.slots) nbSync(); sfx('click'); NB.blink = 0;
+  if (dir === 'left') NB.cur = Math.max(-1, NB.cur - 1);
+  else if (dir === 'right') NB.cur = Math.min(11, NB.cur + 1);
+  else if (NB.cur < 0) { saveName(randName(lbName)); nbSync(); }
+  else { if (NB.cur >= NB.slots.length) NB.slots.push(' '); const i = ABC.indexOf(NB.slots[NB.cur]); NB.slots[NB.cur] = ABC[(i + (dir === 'up' ? 1 : ABC.length - 1)) % ABC.length];
+    const s = NB.slots.join('').replace(/\s+/g, ''); if (validName(s)) saveName(s); }
+  if (NB.cur >= NB.slots.length) NB.slots.push(' ');
+}
+function drawNameBar(t, dt) {
+  if (!lbName) saveName(randName()); if (!NB.slots) nbSync();
+  NB.blink += dt; const sl = NB.slots, cw = 11, w = 18 + sl.length * cw + 6, x0 = Math.round(N / 2 - w / 2), y0 = N - 21;
+  panel(x0, y0, w, 18); hx.fillStyle = HGOLD; hx.fillRect(x0 + 1, y0 + 1, w - 2, 2);
+  // dice (random chikn name)
+  { const dx = x0 + 4, dy = y0 + 4; hx.fillStyle = NB.cur < 0 ? HGOLD : CREAM; hx.fillRect(dx, dy, 11, 11); hx.fillStyle = INK; hx.fillRect(dx, dy, 11, 1); hx.fillRect(dx, dy + 10, 11, 1); hx.fillRect(dx, dy, 1, 11); hx.fillRect(dx + 10, dy, 1, 11);
+    for (const [px, py] of [[3, 3], [7, 7], [5, 5], [7, 3], [3, 7]]) hx.fillRect(dx + px - 1 + (px > 5 ? 1 : 0), dy + py - 1 + (py > 5 ? 1 : 0), 2, 2); }
+  const valid = validName(sl.join('').replace(/\s+/g, ''));
+  sl.forEach((ch, i) => { const x = x0 + 18 + i * cw, on = i === NB.cur;
+    if (on) { hx.fillStyle = HGOLD; hx.fillRect(x - 1, y0 + 3, cw - 1, 13); }
+    text(ch === ' ' ? '-' : ch, x + 4, y0 + 4, 8, ch === ' ' ? 'rgba(9,11,10,.35)' : valid ? INK : HRED, 'center', false);
+    if (on && Math.floor(NB.blink * 3) % 2 === 0) { hx.fillStyle = INK; hx.fillRect(x, y0 + 14, cw - 3, 1); } });
+  // up/down carets on the selected slot (no words)
+  { const x = NB.cur < 0 ? x0 + 9 : x0 + 18 + NB.cur * cw + 4, b = Math.round(Math.sin(t * 6)); hx.fillStyle = HGOLD;
+    for (let k = 0; k < 3; k++) { hx.fillRect(x - k, y0 - 3 - k + b, 1 + k * 2, 1); } }
+}
+// ---- the credits roll
+const CR = { g: null, rows: null, H: 0, t: 0 };
+const CW = (s, sz) => textImg(String(s), sz, '#fff', false).width;
+function pfp(f, x, y, s) { if (!f || !f.img || !f.img.complete || !f.img.naturalWidth) return; hx.fillStyle = INK; hx.fillRect(x - 1, y - 1, s + 2, s + 2); hx.drawImage(f.img, x, y, s, s); }
+function bigGold(s, x, y, maxW) { const sz = CW(s, 16) <= maxW ? 16 : 8, img = textImg(s, sz, HGOLD, false), ink = textImg(s, sz, INK, false), dx = Math.round(x - img.width / 2);
+  for (let k = 1; k <= (sz > 8 ? 3 : 1); k++) hx.drawImage(ink, dx + k, y + k); for (const [a, b] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) hx.drawImage(ink, dx + a, y + b); hx.drawImage(img, dx, y); return sz; }
+const fmtMs = (ms) => { const s = ms / 1000; return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') + '.' + Math.floor((ms % 1000) / 100); };
+function buildCredits() {
+  const rows = [], add = (h, draw, mark) => rows.push({ h, draw, mark }), W = N - 10, r = RUN && RUN.g === G ? RUN : null;
+  const hens = FLOCK.length ? flockPick(Math.min(FLOCK.length, 12)) : []; let hi = 0; const nextHen = () => (hens.length ? hens[hi++ % hens.length] : null);
+  // 1. PLUCKED
+  add(24, (y) => { bigGold('PLUCKED', N / 2, y, W); });
+  add(56, (y) => { if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], Math.round(N / 2 - 25), y + 2); });
+  add(12, (y) => text('TAKEN BY ' + G.deathCause, N / 2, y, 8, CREAM, 'center'));
+  add(22, (y) => { text('LASTED ' + fmtTime(G.st), N / 2, y, 16, '#ffffff', 'center'); });
+  add(14, (y) => { const s = 'PECKED ' + G.kills, w = CW(s, 8); hx.drawImage(ICONS.skull, Math.round(N / 2 - w / 2 - 10), y + 1); text(s, N / 2, y, 8, HRED, 'center'); });
+  add(12, (y) => text(G.newBest ? 'NEW PERSONAL BEST!' : 'BEST ' + fmtTime(best.time) + ' / ' + best.kills, N / 2, y, 8, G.newBest ? HGOLD : CREAM, 'center'));
+  add(14, (y) => { const a = G.tier.mg || 0, b = G.tier.shotgun || 0; if (a || b) text([a ? 'MG ' + roman(a) : '', b ? 'SHOTGUN ' + roman(b) : ''].filter(Boolean).join('  /  '), N / 2, y, 8, a >= 5 || b >= 5 ? HGOLD : HGREEN, 'center'); });
+  if (hens.length) { const sal = hens.slice(0, 3); add(12, (y) => text('THE FLOCK SALUTES YOU', N / 2, y, 8, HGOLD, 'center'));
+    add(30, (y) => sal.forEach((f, i) => { const x = Math.round(N / 2 + (i - (sal.length - 1) / 2) * 30 - 10), b = Math.round(Math.abs(Math.sin(CR.t * 5 + i * 1.3)) * -3); pfp(f, x, y + 2 + b, 20); })); hi = 3; }
+  add(26, () => {});
+  // 2. ACHIEVEMENTS (cast list)
+  const got = [...new Set(G.achList || [])];
+  add(24, (y) => { bigGold('ACHIEVEMENTS', N / 2, y, W); });
+  add(14, (y) => text(got.length ? got.length + (got.length === 1 ? ' THIS RUN' : ' THIS RUN') : 'NONE YET. SURVIVE 1:00!', N / 2, y, 8, CREAM, 'center'));
+  for (const id of got) { const [t1, t2] = achDef(id), n = G.achGot[id] > 1 ? ' X' + G.achGot[id] : '', f = nextHen();
+    add(22, (y) => bigGold(t1 + n, N / 2, y, W));
+    add(20, (y) => { if (f) { const s = '...... @' + f.h.toUpperCase(), w = CW(s, 8), x = Math.round(N / 2 - (w + 18) / 2); text(s, x, y + 3, 8, CREAM, 'left'); pfp(f, x + w + 4, y, 14); }
+      else text(t2, N / 2, y + 3, 8, CREAM, 'center'); });
+    add(6, () => {}); }
+  add(30, () => {});
+  // 3. TOP 20 FLOCK
+  add(24, (y) => bigGold('TOP 20 FLOCK', N / 2, y, W), 'board');
+  add(14, (y) => { const b = r && r.board; text(!b ? 'CALLING THE COOP...' : b.local ? 'THIS DEVICE (OFFLINE)' : 'WORLDWIDE  /  ' + (b.total || 0) + ' HENS', N / 2, y, 8, CREAM, 'center'); });
+  const bw = Math.min(N - 12, 220), bx = Math.round(N / 2 - bw / 2);
+  for (let i = 0; i < 20; i++) add(11, (y) => { const b = r && r.board, e = b && b.top && b.top[i];
+    const mine = e && e.mine, col = mine ? INK : i < 3 ? HGOLD : CREAM;
+    if (mine) { hx.fillStyle = HGOLD; hx.fillRect(bx - 2, y - 1, bw + 4, 11); }
+    text(String(i + 1), bx + 14, y, 8, col, 'right', !mine);
+    if (e) { text(e.name, bx + 22, y, 8, col, 'left', !mine); text(fmtMs(e.ms), bx + bw - 34, y, 8, col, 'right', !mine); text(String(e.kills), bx + bw, y, 8, mine ? INK : HRED, 'right', !mine); }
+    else text('- - - - - -', bx + 22, y, 8, 'rgba(248,245,233,.3)', 'left', false); });
+  add(14, (y) => { const b = r && r.board; if (!b || b.local) return; const me = b.me, onTop = b.top && b.top.some((e) => e.mine);
+    if (me && !onTop) text('YOU: #' + me.rank + '  ' + me.name + '  ' + fmtMs(me.ms), N / 2, y + 2, 8, HGOLD, 'center');
+    else if (r.posting || (!r.posted && r.wantPost)) text('POSTING ' + (lbName || ''), N / 2, y + 2, 8, CREAM, 'center'); });
+  add(30, () => {});
+  // 4. THE FLOCK credits
+  if (FLOCK.length) { add(24, (y) => bigGold('THE FLOCK', N / 2, y, W)); add(14, (y) => text('COMMUNITY HENS OF HENS.FARM', N / 2, y, 8, CREAM, 'center'));
+    for (let i = 0; i < FLOCK.length; i += 2) { const a = FLOCK[i], b = FLOCK[i + 1];
+      add(20, (y) => { for (const [f, cx] of [[a, N * 0.27], [b, N * 0.73]]) if (f) { pfp(f, Math.round(cx - 7), y, 14); text('@' + f.h.toUpperCase(), cx, y + 15, 8, CREAM, 'center'); } });
+      add(8, () => {}); } }
+  add(30, () => {});
+  add(24, (y) => bigGold('BILLIONS MUST BOK.', N / 2, y, W));
+  add(Math.round(N * 0.45), () => {});
+  CR.rows = rows; CR.H = rows.reduce((a, r) => a + r.h, 0); CR.g = G; CR.t = 0; CR.n = N;
+}
+function drawCredits(t, dt) {
+  if (CR.g !== G || CR.n !== N || (CR.flockN !== FLOCK.length)) { buildCredits(); CR.flockN = FLOCK.length; }
+  CR.t += dt; G.deadT = (G.deadT || 0) + dt;
+  hx.fillStyle = `rgba(9,11,10,${Math.min(0.88, 0.2 + G.deadT * 0.9)})`; hx.fillRect(0, 0, N, N);
+  const sp = N / 256 * 19, L = CR.H + N, pos = (CR.t * sp + N * 0.42) % L; let y = Math.round(N - pos);
+  const r = RUN && RUN.g === G ? RUN : null; let boardY = null;
+  for (const row of CR.rows) { if (y + row.h > -4 && y < N) row.draw(y); if (row.mark === 'board') boardY = y; y += row.h; }
+  if (r && boardY !== null && boardY < N * 0.9) lbPost(r); if (r && G.deadT > 14) lbPost(r);
+  // soft top/bottom fades so lines appear and disappear like a film roll
+  for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.6 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 24 - i, N, 1); }
+  hx.fillStyle = 'rgba(9,11,10,.6)'; hx.fillRect(0, N - 24, N, 24);
+  drawNameBar(t, dt);
+}
+function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); NB.cur = 0; NB.slots = null; newGame(); sfx('dawn'); }
+// ================================================================ v16 "BOK-A-POLKA": an ORIGINAL chiptune polka (not the Chicken Dance melody)
+// 2/4 oom-pah: triangle bass on the beat, square chord "pah" on the off-beat, a 12.5% pulse lead with tick-tick-tick-tick
+// bursts, noise clap on beat 2, and bok / bwak cluck hits written into the arrangement. 48 bars (A B C) ~ 44 s at 132 bpm, loops.
+// Scheduled ahead on the WebAudio clock (light: ~4 short nodes per 16th). Goes through the game master gain, so the shell mute /
+// handheld:mute / power-off apply. Ducks under gunfire + achievement fanfares. Tempo +3 bpm per minute survived (cap 156).
+// Death credits: a mellow, slowed (78 bpm) triangle version behind a low-pass. ?music=0 turns it off.
+const MUS = { on: !/[?&]music=0/.test(location.search), started: false, bus: null, lp: null, duck: 1, duckT: 0, nextT: 0, step: 0, bar: 0, pulse: null };
+const NOTE = (n) => { const m = /^([A-G])(#|b)?(\d)$/.exec(n); if (!m) return 0; const k = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12; return 440 * Math.pow(2, (k - 69) / 12); };
+const CHORD = { C: ['C3', 'E4', 'G4', 'C5'], F: ['F2', 'F4', 'A4', 'C5'], G: ['G2', 'D4', 'G4', 'B4'], G7: ['G2', 'F4', 'G4', 'B4'], Am: ['A2', 'E4', 'A4', 'C5'], D7: ['D3', 'F#4', 'A4', 'C5'], Dm: ['D3', 'F4', 'A4', 'D5'] };
+// lead lines: 8 sixteenths per 2/4 bar. note | '-' hold | '.' rest | 'X' bwak (two-part cluck) | 'x' bok (single cluck)
+const SONG = [
+  // A: the tick-tick-tick-tick hook (I I V V V V I I, twice)
+  ['C', 'C6 C6 C6 C6 G5 . E5 .'], ['C', 'D5 E5 . G5 - - . x'], ['G7', 'B5 B5 B5 B5 G5 . D5 .'], ['G7', 'C5 D5 . F5 - - . x'],
+  ['G7', 'D6 D6 D6 D6 C6 . B5 .'], ['G7', 'E5 . D5 . B4 . G4 .'], ['C', 'C5 E5 G5 C6 - . G5 .'], ['C', 'C6 . . . X . X .'],
+  ['C', 'C6 C6 C6 C6 G5 . E5 .'], ['C', 'D5 E5 . G5 - - . x'], ['G7', 'B5 B5 B5 B5 G5 . D5 .'], ['G7', 'C5 D5 . F5 - - . x'],
+  ['G7', 'F5 F5 F5 F5 A5 . G5 .'], ['G7', 'F5 . D5 . B4 . D5 .'], ['G', 'D5 D5 D5 D5 B4 . G4 .'], ['C', 'C5 . G4 . C5 . X .'],
+  // B: the strut (IV IV I I V V I I, twice)
+  ['F', 'A5 . C6 . A5 . F5 .'], ['F', 'G5 A5 G5 F5 E5 . . x'], ['C', 'G5 . E5 . C5 . E5 .'], ['C', 'G5 G5 G5 G5 - . . .'],
+  ['G7', 'F5 . D5 . B4 . D5 .'], ['G7', 'F5 E5 D5 C5 B4 . G4 .'], ['C', 'C5 . E5 . G5 . E5 .'], ['C', 'C5 . X . x x . .'],
+  ['F', 'A5 . C6 . A5 . F5 .'], ['F', 'Bb5 A5 G5 F5 E5 . . x'], ['C', 'G5 . E5 . C5 . G5 .'], ['D7', 'F#5 F#5 F#5 F#5 - . A5 .'],
+  ['G7', 'G5 . F5 . D5 . B4 .'], ['G7', 'D5 E5 F5 G5 A5 B5 . .'], ['C', 'C6 . G5 . E5 . G5 .'], ['C', 'C6 . . . X . . .'],
+  // C: bridge (arpeggio runs, then a bok-bok call and response that speeds up into the loop)
+  ['Am', 'A4 C5 E5 A5 E5 C5 A4 C5'], ['F', 'F4 A4 C5 F5 C5 A4 F4 A4'], ['G', 'G4 B4 D5 G5 D5 B4 G4 B4'], ['C', 'C5 E5 G5 C6 - x . x'],
+  ['Am', 'A4 C5 E5 A5 E5 C5 A4 C5'], ['Dm', 'D5 F5 A5 D6 A5 F5 D5 F5'], ['G7', 'G4 B4 D5 F5 G5 F5 D5 B4'], ['C', 'C5 . . . X . X .'],
+  ['C', 'E6 E6 E6 E6 . . . .'], ['C', 'x . x . x . X .'], ['G7', 'D6 D6 D6 D6 . . . .'], ['G7', 'x . x . x . X .'],
+  ['C', 'E6 E6 E6 E6 G6 . E6 .'], ['G7', 'D6 D6 D6 D6 B5 . G5 .'], ['G7', 'F5 G5 A5 B5 C6 D6 E6 F6'], ['C', 'G6 . . . X . X .'],
+].map(([c, l]) => [c, l.split(' ')]);
+const ACCEL = { 44: 1.03, 45: 1.06, 46: 1.09, 47: 1.12 }; // the bridge ending rushes into the loop, polka-style
+function musicStart() {
+  if (!MUS.on || MUS.started || !AC) return; MUS.started = true;
+  MUS.lp = AC.createBiquadFilter(); MUS.lp.type = 'lowpass'; MUS.lp.frequency.value = 9000; MUS.bus = AC.createGain(); MUS.bus.gain.value = 0;
+  MUS.bus.connect(MUS.lp); MUS.lp.connect(master); MUS.bus.gain.setTargetAtTime(0.5, AC.currentTime, 0.6);
+  // 12.5% pulse (NES duty 1) for the lead
+  const n = 32, re = new Float32Array(n), im = new Float32Array(n); for (let k = 1; k < n; k++) im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * 0.125) * 1.2; MUS.pulse = AC.createPeriodicWave(re, im);
+  MUS.nextT = AC.currentTime + 0.1; MUS.step = 0; MUS.bar = 0; setInterval(musicTick, 40);
+}
+{ const _ai = audioInit; audioInit = function () { _ai(); try { musicStart(); } catch (e) {} }; } // first user gesture (mobile autoplay rules)
+function musicDuck(a = 0.55, t = 0.18) { MUS.duck = Math.min(MUS.duck, a); MUS.duckT = Math.max(MUS.duckT, t); }
+{ const _s = sfx; sfx = function (n) { if (n === 'mg' || n === 'shotgun' || n === 'pistol' || n === 'hurt') musicDuck(n === 'mg' ? 0.7 : 0.55, n === 'mg' ? 0.12 : 0.25); _s(n); }; }
+{ const _a = sfxAch; sfxAch = function () { musicDuck(0.35, 0.7); _a(); }; }
+function musicMode() { if (STATE === 'game' && G && G.state === 'dead') return 'dead'; if (STATE === 'game' && G && G.state === 'play') return 'play'; return 'title'; }
+function mOsc(type, f, t, d, v, wave) { const o = AC.createOscillator(), g = AC.createGain(); if (wave) o.setPeriodicWave(wave); else o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.005); g.gain.setValueAtTime(v, t + d * 0.6); g.gain.exponentialRampToValueAtTime(0.0008, t + d); o.connect(g); g.connect(MUS.bus); o.start(t); o.stop(t + d + 0.02); }
+function mNoise(t, d, f, v, q = 1) { if (!noiseBuf) return; const s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q;
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d); s.connect(fl); fl.connect(g); g.connect(MUS.bus); s.start(t, Math.random() * 1.5); s.stop(t + d + 0.02); }
+function mCluck(t, two, soft) { // "bok" = one beak blip, "bwak" = bok + a higher squawk
+  const v = soft ? 0.05 : 0.11, sw = (f0, f1, at, d) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'square'; o.frequency.setValueAtTime(f0, t + at); o.frequency.exponentialRampToValueAtTime(f1, t + at + d);
+    g.gain.setValueAtTime(v, t + at); g.gain.exponentialRampToValueAtTime(0.0008, t + at + d); o.connect(g); g.connect(MUS.bus); o.start(t + at); o.stop(t + at + d + 0.02); };
+  sw(820, 430, 0, 0.055); mNoise(t, 0.03, 2400, v * 1.4, 3); if (two) { sw(1250, 620, 0.07, 0.09); mNoise(t + 0.07, 0.04, 3000, v * 1.2, 3); } }
+function musicTick() {
+  if (!AC || !MUS.bus) return; const now = AC.currentTime;
+  if (MUS.nextT < now - 0.25) MUS.nextT = now + 0.05; // tab was asleep: skip ahead instead of bursting
+  const mode = musicMode(), dead = mode === 'dead';
+  // duck + mode mix
+  if (MUS.duckT > 0) MUS.duckT -= 0.04; else MUS.duck = Math.min(1, MUS.duck + 0.04);
+  const base = muted ? 0 : dead ? 0.36 : mode === 'title' ? 0.42 : 0.5; MUS.bus.gain.setTargetAtTime(base * MUS.duck, now, 0.05);
+  MUS.lp.frequency.setTargetAtTime(dead ? 900 : 9000, now, 0.4);
+  if (muted) { MUS.nextT = now + 0.05; return; } // nothing to hear: don't spend nodes
+  while (MUS.nextT < now + 0.16) {
+    const [ch, line] = SONG[MUS.bar], s = MUS.step, t = MUS.nextT;
+    const bpm = dead ? 78 : mode === 'play' ? Math.min(156, 132 + 3 * Math.floor((G.st || 0) / 60)) : 126, sixteenth = 60 / bpm / 4 / (dead ? 1 : ACCEL[MUS.bar] || 1);
+    const C = CHORD[ch];
+    // oom (bass on each beat, root then fifth) + pah (off-beat chord stab)
+    if (s === 0 || s === 4) { const f = NOTE(C[0]) * (s === 4 && !dead ? 1.5 : 1); mOsc('triangle', f, t, sixteenth * 1.8, 0.32); }
+    if ((s === 2 || s === 6) && !dead) for (let i = 1; i < 4; i++) mOsc('square', NOTE(C[i]), t, sixteenth * 0.7, 0.028);
+    if ((s === 2 || s === 6) && dead) mOsc('triangle', NOTE(C[2]), t, sixteenth * 1.5, 0.07);
+    // drums: clap on beat 2, tick hats on the off sixteenths
+    if (!dead) { if (s === 4) mNoise(t, 0.09, 1500, 0.22, 0.9); if (s % 2 === 1) mNoise(t, 0.022, 7000, 0.05, 2); }
+    // lead
+    const tok = line[s];
+    if (tok === 'X' || tok === 'x') mCluck(t, tok === 'X', dead);
+    else if (tok !== '.' && tok !== '-') { let n = 1; while (line[s + n] === '-') n++; const f = NOTE(tok) * (dead ? 0.5 : 1);
+      if (dead) mOsc('triangle', f, t, sixteenth * n * 1.4, 0.16); else mOsc(null, f, t, sixteenth * (n === 1 ? 0.8 : n * 0.95), 0.085, MUS.pulse); }
+    MUS.nextT += sixteenth; MUS.step++; if (MUS.step >= 8) { MUS.step = 0; MUS.bar = (MUS.bar + 1) % SONG.length; }
+  }
+}
 
 // ================================================================ dynamic props (tall things that can stand in front of the player: they fade)
 const PROP_IMG = (() => {

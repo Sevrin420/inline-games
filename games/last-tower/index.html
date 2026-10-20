@@ -76,7 +76,7 @@
   @keyframes fkTick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   #tAim .lt-astick-ring { background: radial-gradient(circle, rgba(255,248,231,.55) 0 55%, rgba(242,230,196,.7) 100%); }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=15">
+<link rel="stylesheet" href="skin/hens-skin.css?v=16">
 </head>
 <body>
 <div id="stage">
@@ -88,13 +88,15 @@
   <div id="tStick"><div id="tBase"><div id="tKnob"></div></div></div>
   <div id="tAim"></div>
 </div>
-<script src="game.js"></script>
+<!-- v16: shared accounts client (no badge: no data-game). Gives the TOP 20 FLOCK leaderboard its play records; missing = local board -->
+<script src="../shared/auth.js"></script>
+<script src="game.js?v=16"></script>
 <!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
      D-pad = WASD (run). START = Enter pauses (v13: the SELECT pill is hidden; one big START). No jump, no eat. Best weapon auto-equips.
      ?handheld=0 opts out (touch: stick + the same compass pad). -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
         data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"","select":"","su":"","sd":"","sl":"","sr":""}'
         data-labels='{"pad":""}'></script>
-<script src="skin/hens-skin.js?v=15"></script>
+<script src="skin/hens-skin.js?v=16"></script>
 </body>
 </html>

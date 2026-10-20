@@ -89,9 +89,11 @@ Rules (enforced by the server, `server/src/leaderboard.js`):
 API: `GET /plays/leaderboard/:gameId[?play_id=]` (top 10, your own best + rank,
 prefill, and whether/where a play would land), `POST /plays/leaderboard/:gameId`
 `{play_id, name}`. It's generic per game id: give another game a `leaderboard`
-block in `server/games.json` (`metric` `duration` or `score`, `order`, `outcome`,
-`minMs`, `postWindowHours`) and load `shared/leaderboard.js`. Only Coop Sweep
-has one now.
+block in `server/games.json` (`metric` `duration`, `score` or `survival`, `order`, `outcome`,
+`minMs`, `postWindowHours`, and optionally `maxMs`, `maxScorePerSec`, `top`, `bestPerPlayer`,
+`nameMin`/`nameMax`, `postsPerPlayer`) and load `shared/leaderboard.js`. Coop Sweep has one;
+Last Tower (v16) has a global top 20 with its own in-game credits roll (`survival`: server-measured
+time capped by the run clock, ties by kills, best per player).
 
 **Removing a bad name (admin).** Admin endpoints need `ADMIN_TOKEN`, which
 lives only in `/etc/inline-games-api.env` on the VPS (root-readable;

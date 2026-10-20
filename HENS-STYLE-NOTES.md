@@ -174,3 +174,25 @@ How these terms appear in the game:
 ## v15 (Oct 19 2026)
 - Two guns only: MG and SHOTGUN (+ PECK when dry). Ammo: ROUNDS (MG) and KERNELS (shotgun), plus ammo crates. Tier I at the start; every minute survived unlocks the next tier (pickups, kill drops, and one of each dropped ~10 tiles away at the minute mark). Tier colours: I natural, II green #3fd46b, III blue #3aa0ff, IV purple #b25cff, V+ gold #ffc42f (+ bigger glow), roman numeral over every gun pickup.
 - THE FLOCK: pfps of X accounts that posted about hens.farm / @hensdotfarm (found via X search on Oct 19 2026), hand-checked to be chickens/hens (cartoon/NFT/photo of a hen). Real-person photos, logos and non-chickens were rejected. Files: games/last-tower/flock/*.webp (96 px) + manifest.json {handle, file, posted_about_url}. Remove a hen by deleting its manifest entry (and its file). `?flock=0` disables the feature.
+
+## v16 (Last Tower): ending credits, TOP 20 FLOCK, wordless shell, BOK-A-POLKA
+
+- **Death = ending credits** (`credits.js`): a film-roll that rises bottom to top and loops. Order: PLUCKED (plucked hen,
+  cause, LASTED m:ss, kills, best, gun tiers, 3 community hens saluting) -> ACHIEVEMENTS as a cast list (big gold title,
+  then `...... @handle` + that hen's pfp) -> TOP 20 FLOCK (worldwide, your row in gold) -> THE FLOCK credits -> BILLIONS MUST BOK.
+  Soft ink fades top and bottom. Shoot (stick, arrows, Space, screen tap) restarts at any moment (0.25 s guard after the fatal hit).
+- **Name bar** (bottom of the credits, no words): dice + letter slots. D-pad up/down = letter, left/right = slot, dice = a random
+  chikn name (BOKSTER, CLUCKNORRIS, YOLKO, ...). First death auto-assigns one. Saved in localStorage `lasttower.name`. 3-12 letters.
+- **Leaderboard**: the shared API (`server/`, game `last-tower`, metric `survival`): server-measured play time, lowered to the
+  game's own run clock when shorter (a backgrounded tab), ranked to 0.1 s, ties by kills; best entry per player; top 20;
+  kills <= 15/s + 30; 5 s .. 2 h; names 3-12 + blocklist; 20 posts / player / 10 min and 20 attempts / IP / 10 min.
+  A run is posted only when it beats your own best. No API -> a local top 20 (`lasttower.lb1`) labelled THIS DEVICE.
+  Remove a bad name: Actions -> Leaderboard admin -> game `last-tower`.
+- **No-hit streak meter** under the kill count: fills over each clean minute, one gold pip per minute banked, red + empty on a hit.
+- **Wordless shell**: no hens.farm wordmark text, no BILLIONS MUST BOK / MEMBERSONLY / game name / model / PWR / BATT / OFF-ON /
+  bezel label. Kept: colours, the peeking hen, the base hen icon, the golden-egg speaker, all controls.
+- **Music** (`music.js`): "BOK-A-POLKA", an original chiptune polka (not the Chicken Dance melody): 2/4 oom-pah (triangle bass,
+  square off-beat chords), 12.5% pulse lead with tick-tick-tick-tick bursts, noise clap + hats, bok/bwak cluck hits.
+  48 bars (~44 s at 132 bpm), loops; +3 bpm per minute survived (cap 156); the bridge ending rushes into the loop.
+  Death credits: 78 bpm, triangle lead an octave down, low-pass. Starts on the first gesture, through the game's master gain
+  (shell mute / handheld:mute / power-off apply), ducks under gunfire and achievement fanfares. `?music=0` turns it off.

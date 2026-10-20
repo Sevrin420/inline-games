@@ -63,3 +63,7 @@ html.lt-skin-hens .hh-theme-matcha .hh-model { opacity: .75; text-shadow: none; 
 /* the real base hen peeking over the top of the shell */
 .lt-sk-peek { position: absolute; z-index: 9; right: 30px; top: -46px; height: 62px; width: auto; pointer-events: none; filter: drop-shadow(2px 2px 0 rgba(9, 11, 10, .85)); clip-path: inset(0 0 23% 0); }
 .hh-land .lt-sk-peek { display: none; } /* landscape: the device fills the top edge */
+/* v16: wordless shell. No hens.farm / BILLIONS MUST BOK / MEMBERSONLY / game name / model / OFF-ON text. Colours, hen images and controls stay. */
+html.lt-skin-hens .hh-theme-matcha .hh-gamename, html.lt-skin-hens .hh-theme-matcha .hh-model, html.lt-skin-hens .hh-pwr-lbl,
+html.lt-skin-hens .hh-bootmark b, html.lt-skin-hens .hh-bootmark i, html.lt-skin-hens .hh-theme-matcha .hh-lbl, html.lt-skin-hens .hh-theme-matcha .hh-slbl { visibility: hidden !important; }
+html.lt-skin-hens .hh-bezel-label, html.lt-skin-hens .hh-leds > span:not([class]) { visibility: hidden !important; }

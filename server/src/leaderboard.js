@@ -34,10 +34,26 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
     q[`rank_${dir}`] = db.prepare(`SELECT COUNT(*) + 1 AS r FROM leaderboard_entries WHERE game_id = ? AND removed_at IS NULL AND (value ${cmp} ? OR (value = ? AND id < ?))`);
     // rank a not-yet-posted value would get (ties go after existing entries)
     q[`would_${dir}`] = db.prepare(`SELECT COUNT(*) + 1 AS r FROM leaderboard_entries WHERE game_id = ? AND removed_at IS NULL AND value ${cmp}= ?`);
+    // bestPerPlayer boards (Last Tower): one row per player, their best entry
+    const D = dir.toUpperCase(), AGG = dir === 'asc' ? 'MIN' : 'MAX';
+    q[`ptop_${dir}`] = db.prepare(`SELECT id, name, value, player_key FROM (SELECT id, name, value, player_key, ROW_NUMBER() OVER (PARTITION BY player_key ORDER BY value ${D}, id ASC) AS rn FROM leaderboard_entries WHERE game_id = ? AND removed_at IS NULL) WHERE rn = 1 ORDER BY value ${D}, id ASC LIMIT ?`);
+    // players (other than this one) whose best beats or ties the value
+    q[`prank_${dir}`] = db.prepare(`SELECT COUNT(*) + 1 AS r FROM (SELECT ${AGG}(value) AS v FROM leaderboard_entries WHERE game_id = ? AND removed_at IS NULL AND player_key <> ? GROUP BY player_key) WHERE v ${cmp}= ?`);
   }
+  q.ptotal = db.prepare('SELECT COUNT(DISTINCT player_key) AS n FROM leaderboard_entries WHERE game_id = ? AND removed_at IS NULL');
 
   const boardOf = gameId => { const g = games.get(gameId); return g && g.leaderboard ? g : null; };
-  const out = e => ({ id: e.id, name: escapeHtml(e.name), value: e.value });
+  const outOf = game => e => {
+    const o = { id: e.id, name: escapeHtml(e.name), value: e.value };
+    if (game.leaderboard.metric === 'survival') { o.ms = Math.floor(e.value / 100_000) * 100; o.kills = e.value % 100_000; }
+    return o;
+  };
+  // rank of a value; for bestPerPlayer boards, among the other players' bests
+  const rankOf = (game, playerKey, value, id) => {
+    const dir = game.leaderboard.order;
+    if (game.leaderboard.bestPerPlayer) return q[`prank_${dir}`].get(game.id, playerKey || '', value).r;
+    return id ? q[`rank_${dir}`].get(game.id, value, value, id).r : q[`would_${dir}`].get(game.id, value).r;
+  };
 
   // The value a play would be ranked by, or an error.
   function eligibility(game, play, player) {
@@ -48,7 +64,17 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
     if (lb.outcome && play.outcome !== lb.outcome) return { status: 409, error: 'not_eligible', message: 'Only a win can go on the board.' };
     if (Date.parse(play.ended_at) < now() - lb.postWindowHours * 3_600_000) return { status: 409, error: 'too_late', message: 'This run is too old to post.' };
     let value;
-    if (lb.metric === 'duration') {
+    if (lb.metric === 'survival') {
+      const serverMs = Date.parse(play.ended_at) - Date.parse(play.started_at);
+      let meta = null; try { meta = play.meta ? JSON.parse(play.meta) : null; } catch { meta = null; }
+      const clientMs = meta && Number.isSafeInteger(meta.ms) && meta.ms >= 0 ? meta.ms : serverMs;
+      const ms = Math.min(serverMs, clientMs), kills = play.score;
+      if (!Number.isSafeInteger(ms) || ms < lb.minMs) return { status: 409, error: 'implausible', message: 'That run was too short to count.' };
+      if (lb.maxMs && ms > lb.maxMs) return { status: 409, error: 'implausible', message: 'That run was implausibly long.' };
+      if (!Number.isSafeInteger(kills) || kills < 0 || kills > 99_999) return { status: 409, error: 'no_score', message: 'This run has no kill count.' };
+      if (lb.maxScorePerSec && kills > (ms / 1000) * lb.maxScorePerSec + 30) return { status: 409, error: 'implausible', message: 'That many kills is not plausible.' };
+      value = Math.floor(ms / 100) * 100_000 + kills;
+    } else if (lb.metric === 'duration') {
       value = Date.parse(play.ended_at) - Date.parse(play.started_at);
       if (!Number.isSafeInteger(value) || value < lb.minMs) return { status: 409, error: 'implausible', message: 'That run was too fast to count.' };
     } else {
@@ -60,16 +86,16 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
   }
 
   function board(game, player, extra = {}) {
-    const dir = game.leaderboard.order;
-    const top = q[`top_${dir}`].all(game.id, TOP).map((e, i) => ({ rank: i + 1, ...out(e), mine: Boolean(player && e.player_key === player.key) }));
+    const lb = game.leaderboard, dir = lb.order, out = outOf(game), per = lb.bestPerPlayer;
+    const top = q[`${per ? 'ptop' : 'top'}_${dir}`].all(game.id, lb.top || TOP).map((e, i) => ({ rank: i + 1, ...out(e), mine: Boolean(player && e.player_key === player.key) }));
     let me = null;
     if (player) {
       const b = q[`best_${dir}`].get(game.id, player.key);
-      if (b) me = { rank: q[`rank_${dir}`].get(game.id, b.value, b.value, b.id).r, ...out(b) };
+      if (b) me = { rank: rankOf(game, player.key, b.value, b.id), ...out(b) };
     }
     return {
-      game_id: game.id, metric: game.leaderboard.metric === 'duration' ? 'duration_ms' : 'score', order: dir,
-      nameMax: NAME_MAX, total: q.total.get(game.id).n, top, me, ...extra,
+      game_id: game.id, metric: lb.metric === 'duration' ? 'duration_ms' : lb.metric === 'survival' ? 'survival' : 'score', order: dir,
+      nameMax: Math.min(NAME_MAX, lb.nameMax || NAME_MAX), ...(lb.nameMin > 1 ? { nameMin: lb.nameMin } : {}), total: (per ? q.ptotal : q.total).get(game.id).n, top, me, ...extra,
     };
   }
 
@@ -83,14 +109,14 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
     let prefill = null;
     if (req.session) {
       const u = db.prepare('SELECT username FROM accounts WHERE id = ?').get(req.session.accountId);
-      if (u) { const c = cleanName(u.username.slice(0, NAME_MAX)); prefill = c.ok ? c.name : null; }
+      if (u) { const lbc = game.leaderboard, c = cleanName(u.username.slice(0, Math.min(NAME_MAX, lbc.nameMax || NAME_MAX)), { min: lbc.nameMin || 1, max: lbc.nameMax || NAME_MAX }); prefill = c.ok ? c.name : null; }
     }
     let candidate;
     if (req.query.play_id !== undefined) {
       const id = Number(req.query.play_id);
       const e = eligibility(game, Number.isInteger(id) ? q.play.get(id) : null, player);
       candidate = e.error ? { play_id: id, eligible: false, error: e.error, message: e.message }
-        : { play_id: id, eligible: true, value: e.value, rank: q[`would_${game.leaderboard.order}`].get(game.id, e.value).r };
+        : { play_id: id, eligible: true, value: e.value, rank: rankOf(game, player && player.key, e.value, null) };
     }
     return board(game, player, { prefill, ...(candidate ? { candidate } : {}) });
   });
@@ -104,9 +130,9 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
     const id = Number(req.body?.play_id);
     const e = eligibility(game, Number.isInteger(id) ? q.play.get(id) : null, player);
     if (e.error) return fail(reply, e.status, e.error, e.message);
-    const n = cleanName(req.body?.name);
+    const n = cleanName(req.body?.name, { min: game.leaderboard.nameMin || 1, max: game.leaderboard.nameMax || NAME_MAX });
     if (!n.ok) return fail(reply, 400, n.error, n.message);
-    if (limited(reply, `lb:player:${player.key}`, 6, 10 * MINUTE)) return;
+    if (limited(reply, `lb:player:${player.key}`, game.leaderboard.postsPerPlayer || 6, 10 * MINUTE)) return;
     let entryId;
     try {
       entryId = Number(q.insert.run(game.id, id, player.key, player.accountId, n.name, e.value, iso()).lastInsertRowid);
@@ -114,9 +140,8 @@ export function registerLeaderboard(app, { db, games, cfg, now, iso, fail, limit
       if (String(err.message).includes('UNIQUE')) return fail(reply, 409, 'already_posted', 'This run is already on the board.');
       throw err;
     }
-    const dir = game.leaderboard.order;
     reply.code(201);
-    return board(game, player, { entry: { rank: q[`rank_${dir}`].get(game.id, e.value, e.value, entryId).r, id: entryId, name: escapeHtml(n.name), value: e.value } });
+    return board(game, player, { entry: { rank: rankOf(game, player.key, e.value, entryId), ...outOf(game)({ id: entryId, name: n.name, value: e.value }) } });
   });
 
   // ---- admin

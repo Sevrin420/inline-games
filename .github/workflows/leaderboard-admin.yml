@@ -16,7 +16,7 @@ on:
       game:
         description: 'Game id'
         type: choice
-        options: [coop-sweep]
+        options: [coop-sweep, last-tower]
         default: coop-sweep
       entry_id:
         description: 'Entry id to remove (from "list"); ignored for list'
