@@ -1,4 +1,4 @@
-/* LAST TOWER v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=13';
+HENS_SHEET.src = 'hens-sprites.png?v=14';
 const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water', 'mg', 'belt', 'ammobox'];
 const ITEM_ART = {
   food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
@@ -600,8 +600,6 @@ function newGame() {
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
   scatterLoot(TUNE.loot0, true);
   for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
-  say('THE FARM HAS TURNED. RUN AND GUN.', 4);
-  say('ONLY HITS HURT. NO HEALING. TRY NOT TO DIE.', 4);
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; const last = G.msg[G.msg.length - 1]; if (last && last.s === s) { last.t = Math.max(last.t, t); return; } G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
@@ -850,7 +848,7 @@ function attack() {
     for (const z of zombiePool) if (z.alive && Math.hypot(z.x - player.x, z.y - player.y) < 20 * TS) z.state = 'chase';
     return;
   }
-  if (G.stam < w.stam * 0.5) { say('TOO TIRED - CATCH YOUR BREATH', 1.2); G.cdT = 0.3; return; }
+  if (G.stam < w.stam * 0.5) { say('TOO TIRED', 1.2); G.cdT = 0.3; return; }
   G.stam = Math.max(0, G.stam - w.stam); G.cdT = w.cd; player.atkT = 0.2; player.peck = G.weapon === 'fists'; sfx(player.peck ? 'peck' : 'swing');
   G.swing = { t: 0.16, a: Math.atan2(fy, fx), reach: w.reach, w: G.weapon };
   for (const z of zombiePool) {
@@ -887,12 +885,15 @@ function updatePlayer(dt) { if (G.state === 'play') autoEquip();
   // v10: SHOOT pad held = aim that way (twin-stick: facing follows the aim, not the walk) and fire on cooldown (guns auto, melee repeats)
   // v11: two buttons at once (N+E, E+S, S+W, W+N; or a thumb between them; or two arrow keys) = that diagonal.
   //      A 110 ms (wall-clock) chord window (a tap shorter than that fires on release) on the first press lets the second finger land before the first shot goes out.
-  { const ax = held.SR - held.SL, ay = held.SD - held.SU, n = held.SU + held.SD + held.SL + held.SR;
+  // v14: the round analog SHOOT stick (aimStick) overrides the keys: its knob angle is the exact 360-degree aim, past a small deadzone it auto-fires.
+  { const sm = aimStick.on ? Math.hypot(aimStick.x, aimStick.y) : 0, an = sm > AIM_DEAD, n = held.SU + held.SD + held.SL + held.SR;
+    let ax = held.SR - held.SL, ay = held.SD - held.SU; if (an) { ax = aimStick.x; ay = aimStick.y; }
     player.aim = Math.max(0, (player.aim || 0) - dt);
-    if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.2; player.diag = !!(ax && ay);
+    if ((ax || ay) && G.state === 'play') { const al = Math.hypot(ax, ay); player.fx = ax / al; player.fy = ay / al; player.aim = 0.2; player.diag = an || !!(ax && ay);
       player.shootT = (player.shootT || 0) + dt;
-      player.dir = ax && (!ay || Math.abs(ax) >= Math.abs(ay)) ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1); // diagonals use the side profile so the gun points the right way
-      if (G.cdT <= 0 && (performance.now() - shootT0 >= 110 || (ax && ay))) { attack(); shootFired = true; } }
+      if (an) player.dir = Math.abs(ax) >= Math.abs(ay) * 0.75 ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1);
+      else player.dir = ax && (!ay || Math.abs(ax) >= Math.abs(ay)) ? (ax < 0 ? 2 : 3) : (ay > 0 ? 0 : 1); // diagonals use the side profile so the gun points the right way
+      if (G.cdT <= 0 && (an || performance.now() - shootT0 >= 110 || (ax && ay))) { attack(); if (!an) shootFired = true; } }
     else if (!n) { player.shootT = 0; if (!shootFired && G.state === 'play') { shootFired = true; G.cdT = 0; attack(); } } } // a quick tap still fires once, on release
   const spd = 70 * (player.air ? 1.2 : 1);
   const kb = player.kb;
@@ -915,11 +916,12 @@ let shootT0 = 0, shootFired = true; // shootFired: a shot has gone out since the
 // v11: wall-clock time of the first shoot press (chord window for 2-button diagonals)
 const isShoot = (b) => b === 'SU' || b === 'SD' || b === 'SL' || b === 'SR';
 const stick = { x: 0, y: 0, on: false };
+const aimStick = { x: 0, y: 0, on: false }, AIM_DEAD = 0.22; // v14 round analog SHOOT stick (shell + touch)
 const queue = [];
-const KEYMAP = { // v10 twin-stick: WASD move, ARROWS (or IJKL) aim + shoot, ENTER/ESC pause, SPACE starts. No eat, no flap.
+const KEYMAP = { // v14: WASD move, ARROWS (or IJKL) 8-way aim + shoot, SPACE (or any shoot key) starts / restarts. No pause.
   w: 'up', s: 'down', a: 'left', d: 'right',
   ArrowUp: 'SU', ArrowDown: 'SD', ArrowLeft: 'SL', ArrowRight: 'SR', i: 'SU', k: 'SD', j: 'SL', l: 'SR',
-  ' ': 'GO', Enter: 'START', Escape: 'START', p: 'START',
+  ' ': 'GO',
 };
 let lastInput = touchDev ? 'touch' : 'keys';
 function keyName(e) { if (e.code === 'Space') return ' '; const k = e.key; return k && k.length === 1 ? k.toLowerCase() : k; }
@@ -937,30 +939,34 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
 {
   const base = $('tBase'), knob = $('tKnob'), area = $('tStick'); let id = null, ox = 0, oy = 0;
   const setKnob = (dx, dy) => { knob.style.transform = `translate(${dx}px,${dy}px)`; };
-  area.addEventListener('pointerdown', (e) => { audioInit(); lastInput = 'touch'; id = e.pointerId; area.setPointerCapture(id); const r = area.getBoundingClientRect(); ox = e.clientX; oy = e.clientY; base.style.left = (e.clientX - r.left) + 'px'; base.style.top = (e.clientY - r.top) + 'px'; stick.on = true; stick.x = stick.y = 0; setKnob(0, 0); });
+  area.addEventListener('pointerdown', (e) => { audioInit(); queue.push('GO'); lastInput = 'touch'; id = e.pointerId; area.setPointerCapture(id); const r = area.getBoundingClientRect(); ox = e.clientX; oy = e.clientY; base.style.left = (e.clientX - r.left) + 'px'; base.style.top = (e.clientY - r.top) + 'px'; stick.on = true; stick.x = stick.y = 0; setKnob(0, 0); });
   area.addEventListener('pointermove', (e) => { if (e.pointerId !== id) return; let dx = e.clientX - ox, dy = e.clientY - oy; const l = Math.hypot(dx, dy), mx = 48; if (l > mx) { dx *= mx / l; dy *= mx / l; } setKnob(dx, dy); stick.x = dx / mx; stick.y = dy / mx; const mag = Math.hypot(stick.x, stick.y);
     if (mag > 0.5) { const dir = Math.abs(stick.x) > Math.abs(stick.y) ? (stick.x < 0 ? 'left' : 'right') : (stick.y < 0 ? 'up' : 'down'); if (dir !== stick.lastDir) { stick.lastDir = dir; queue.push(dir); } } else stick.lastDir = null; });
   const end = (e) => { if (e.pointerId !== id) return; id = null; stick.on = false; stick.x = stick.y = 0; stick.lastDir = null; setKnob(0, 0); };
   area.addEventListener('pointerup', end); area.addEventListener('pointercancel', end);
-  for (const [elId, act] of [['tBag', 'START']]) {
-    const el = $(elId);
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); lastInput = 'touch'; el.classList.add('on'); queue.push(act); });
-    const up = () => el.classList.remove('on'); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
-  }
-  // v10: compass SHOOT pad. Angle from the pad centre picks N/E/S/W (diagonals = two); slide to re-aim.
-  const pad = $('tShoot'), ptr = {};
-  const btn = { SU: $('tSU'), SD: $('tSD'), SL: $('tSL'), SR: $('tSR') };
-  const sync = () => { const on = {}; for (const id in ptr) for (const d of ptr[id]) on[d] = 1; if (!SHOOTS.some((d) => held[d]) && SHOOTS.some((d) => on[d])) { shootT0 = performance.now(); shootFired = false; }
-    for (const d of SHOOTS) { if (on[d] && !held[d]) queue.push(d); held[d] = on[d] ? 1 : 0; btn[d].classList.toggle('on', !!on[d]); } };
-  const dirsAt = (e) => { const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    if (Math.hypot(dx, dy) < r.width * 0.17) return null; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, g = 20, o = [];
-    if (a >= 315 - g || a < 45 + g) o.push('SR'); if (a >= 45 - g && a < 135 + g) o.push('SD'); if (a >= 135 - g && a < 225 + g) o.push('SL'); if (a >= 225 - g && a < 315 + g) o.push('SU'); return o.slice(0, 2); };
-  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); lastInput = 'touch'; const d = dirsAt(e);
-    try { pad.setPointerCapture(e.pointerId); } catch (_) {} ptr[e.pointerId] = d || []; sync(); }); // dead centre: nothing until you slide out
-  pad.addEventListener('pointermove', (e) => { if (!(e.pointerId in ptr)) return; const d = dirsAt(e); if (d) { ptr[e.pointerId] = d; sync(); } });
-  const pend = (e) => { if (!(e.pointerId in ptr)) return; delete ptr[e.pointerId]; sync(); };
-  pad.addEventListener('pointerup', pend); pad.addEventListener('pointercancel', pend);
+  // v14: tap anywhere on the game screen starts / restarts (title + death screens)
+  $('stage').addEventListener('pointerdown', () => { audioInit(); queue.push('GO'); });
 }
+// v14: round analog SHOOT stick. Ring + knob; the knob follows the thumb (clamped to the ring) and springs back on release.
+// Mounted in the shell's pad slot (the compass buttons are hidden by CSS) and in the touch overlay (#tAim). Multitouch-safe: own pointer id.
+const aimEls = [];
+function mountAimStick(host) {
+  if (!host || host.querySelector('.lt-astick')) return;
+  const el = document.createElement('div'); el.className = 'lt-astick'; el.innerHTML = '<div class="lt-astick-ring"><i class="lt-astick-dz"></i></div><i class="lt-astick-knob"></i>';
+  host.appendChild(el); aimEls.push(el); const knob = el.querySelector('.lt-astick-knob'); let id = null;
+  const at = (e) => { const r = el.getBoundingClientRect(), R = r.width * 0.31; let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2); const l = Math.hypot(dx, dy);
+    if (l > R) { dx *= R / l; dy *= R / l; } knob.style.transform = `translate(${dx}px,${dy}px)`; aimStick.x = dx / R; aimStick.y = dy / R; el.classList.toggle('lt-astick-fire', Math.hypot(aimStick.x, aimStick.y) > AIM_DEAD); };
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); audioInit(); if (lastInput !== 'shell') lastInput = shellOn() ? 'shell' : 'touch';
+    if (id !== null) return; id = e.pointerId; try { el.setPointerCapture(id); } catch (_) {} aimStick.on = true; el.classList.add('lt-astick-on'); at(e); queue.push('GO'); });
+  el.addEventListener('pointermove', (e) => { if (e.pointerId !== id) return; e.preventDefault(); e.stopPropagation(); at(e); });
+  const end = (e) => { if (e.pointerId !== id) return; e.stopPropagation(); id = null; aimStick.on = false; aimStick.x = aimStick.y = 0; knob.style.transform = ''; el.classList.remove('lt-astick-on', 'lt-astick-fire'); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end);
+  for (const t of ['touchstart', 'touchmove', 'contextmenu']) el.addEventListener(t, (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+}
+mountAimStick($('tAim'));
+{ let n = 0; const tick = setInterval(() => { const sp = document.querySelector('.hh-spad'); if (sp) mountAimStick(sp); if ((sp && sp.querySelector('.lt-astick')) || ++n > 200) clearInterval(tick); }, 50); }
+// idle hint without words: the stick ring pulses gold on the title + death screens
+setInterval(() => { const idle = STATE === 'title' || (G && G.state === 'dead' && G.deadT > 1.2); for (const el of aimEls) el.classList.toggle('lt-astick-idle', !!idle); }, 150);
 function updateTouchLabels() {}
 // controls labels: every on-screen hint names the real control for the current mode
 function mode() { if (shellOn()) return 'shell'; if (touchDev && lastInput !== 'keys') return 'touch'; return 'keys'; }
@@ -990,7 +996,7 @@ function toggleMute() { const H = window.Handheld && window.Handheld.current; if
 addEventListener('handheld:mute', (e) => setMuted(e.detail && e.detail.muted));
 setTimeout(() => { const H = window.Handheld && window.Handheld.current; if (H && H.muted) setMuted(true); }, 0);
 let powered = true;
-addEventListener('handheld:power', (e) => { powered = !(e.detail && e.detail.on === false); if (!powered && G && G.state === 'play') openMenu('bag'); });
+addEventListener('handheld:power', (e) => { powered = !(e.detail && e.detail.on === false); }); // v14: no pause (power-off just blanks the shell)
 function tone(f0, f1, dur, type = 'square', vol = 0.15, delay = 0) {
   if (!AC || muted) return; const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
@@ -1030,34 +1036,16 @@ function sfx(n) {
   }
 }
 
-// ================================================================ menus (v10: pause only. No food, no eating)
-const MENUS = {
-  bag: () => [
-    { t: 'RESUME', go: () => closeMenu() },
-    { t: 'WEAPON: ' + WEAPONS[G.weapon].name + ' (AUTO-BEST)', dis: true, go: () => {} },
-    { t: 'GUNS: ' + (G.owned.filter((w) => WEAPONS[w].kind === 'gun').map((w) => WEAPONS[w].name).join(', ') || 'NONE YET'), dis: true, go: () => {} },
-    { t: 'ONLY HITS HURT. NO HEALING.', dis: true, go: () => {} },
-  ],
-};
-function openMenu(m) { G.state = m; G.menuI = 0; sfx('menu'); }
-function closeMenu() { G.state = 'play'; }
-function handleButtons() { // v10: D-pad = run, SHOOT pad = aim + fire (held, see updatePlayer), START = pause. No eat, no flap.
+// ================================================================ v14: no menus, no pause
+function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + fire (held, see updatePlayer). Any shoot input / Space / screen tap starts + restarts.
   while (queue.length) {
     const b = queue.shift();
-    const go = isShoot(b) || b === 'START' || b === 'GO';
+    const go = isShoot(b) || b === 'GO';
     if (STATE === 'title') { if (go) { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
     if (G.state === 'dead') { if (go && G.deadT > 1.2) { newGame(); } continue; }
-    if (G.state === 'bag') {
-      const items = MENUS[G.state]();
-      if (b === 'up') { G.menuI = (G.menuI + items.length - 1) % items.length; sfx('menu'); }
-      else if (b === 'down') { G.menuI = (G.menuI + 1) % items.length; sfx('menu'); }
-      else if (isShoot(b) || b === 'GO') { const it = items[G.menuI]; if (it.dis) sfx('click'); else it.go(); }
-      else if (b === 'START') closeMenu();
-      continue;
-    }
-    if (b === 'START') openMenu('bag');
   }
 }
+// v14: buttons handled in menus.js (no pause)
 let _alive = 0;
 // v10: no drain at all. Life only drops when an attack lands (peck, stomp, rotten egg); nothing heals it (no food, no eating).
 function updateSurvival(dt) {
@@ -1170,23 +1158,9 @@ function drawHUD0(dt, t) {
   let my = 40; const achOn = G.achQ && G.achQ.length; for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
   if (G.state === 'play') drawAch(dt); // v13 achievement pop-up (top band)
   G.msg = G.msg.filter((m) => m.t > 0);
-  // context hint
-  const h = hintText(); if (h && G.state === 'play') text(h, N / 2, N - 33, 8, HGOLD, 'center');
-  if (G.state === 'bag') drawMenu();
   if (G.state === 'dead') drawDead(t);
 }
 function pixLine(x0, y0, x1, y1, col) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy, n = 0; hx.fillStyle = col; while (n++ < 600) { hx.fillRect(x0, y0, 1, 1); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
-function drawMenu() {
-  const items = MENUS[G.state](), w = Math.min(N - 16, 200), h = 26 + items.length * 11, x = Math.round((N - w) / 2), y = Math.round((N - h) / 2) - 6;
-  hx.fillStyle = 'rgba(9,11,10,.4)'; hx.fillRect(0, 0, N, N);
-  panel(x, y, w, h, 0.97);
-  skinShow('pause', x + w - 46, y - 38, 42, 42); // v11: the hens.farm detective hen peeks over the pause card
-  inkText('PAUSED', N / 2, y + 3, HRED, 'center');
-  items.forEach((it, i) => { const sel = i === G.menuI, yy = y + 15 + i * 11; if (sel) { hx.fillStyle = HGOLD; hx.fillRect(x + 3, yy - 1, w - 6, 10); hx.fillStyle = INK; hx.fillRect(x + 3, yy + 8, w - 6, 1); inkText('>', x + 6, yy); } inkText(it.t, x + 14, yy, it.dis ? '#a99c76' : INK); });
-  const inv = 'EGGS ' + G.inv.ammo + '  KERNELS ' + G.inv.shells + '  ROUNDS ' + G.inv.belt;
-  inkText(inv, N / 2, y + h - 10, INK, 'center');
-  text((L('shoot') === 'ARROWS' ? 'ARROW' : 'SHOOT') + ' OK  ' + L('START') + ' BACK  ' + (L('move') === 'WASD' ? 'W/S' : L('move')) + ' CHOOSE', N / 2, y + h + 4, 8, CREAM, 'center');
-}
 function drawDead(t) {
   G.deadT += 1 / 60;
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.55, G.deadT * 0.5)})`; hx.fillRect(0, 0, N, N);
@@ -1198,7 +1172,6 @@ function drawDead(t) {
   inkText('LASTED ' + fmtTime(G.st) + '  PECKED ' + G.kills, N / 2 + 26, y + 38, HRED, 'center');
   inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#036b2b' : INK, 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
-  if (G.deadT > 1.2 && (t % 1) < 0.65) text(startTxt() + ' TO HATCH AGAIN', N / 2, y + 92, 8, CREAM, 'center');
   // v13: achievements earned this run
   const got = [...new Set(G.achList || [])], rows = got.slice(0, 6), ay = y + 106, ah = 14 + Math.max(1, rows.length) * 9 + (got.length > 6 ? 9 : 0);
   panel(px0, ay, pw, ah); hx.fillStyle = HGOLD; hx.fillRect(px0 + 1, ay + 1, pw - 2, 10);
@@ -1210,21 +1183,16 @@ function drawDead(t) {
 function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
   const y = Math.round(N * 0.08), cw = Math.min(N - 16, 210), cx0 = Math.round(N / 2 - cw / 2);
-  panel(cx0, y - 4, cw, 86);
+  panel(cx0, y - 4, cw, 76);
   { const bobY = Math.round(Math.sin(t * 3) * 1); if (!skinShow('title', cx0 + cw - 60, y + 2 + bobY, 56, 60)) { if (artOk('hen-title')) hx.drawImage(ART['hen-title'], cx0 + cw - 52, y + 10 + bobY); } }
-  skinShow('egg', cx0 + 6, y + 62, 12, 15);
+  skinShow('egg', cx0 + 6, y + 53, 12, 15);
   const tx = cx0 + Math.round((cw - 56) / 2);
   text('LAST', tx, y, 16, HRED, 'center');
   text('TOWER', tx, y + 17, 16, '#ffffff', 'center');
   inkText('CHIKN EDITION', tx, y + 38, '#036b2b', 'center');
-  inkText('RUN. GUN. ONLY HITS HURT.', tx, y + 50, INK, 'center'); inkText('TRY NOT TO DIE.', tx, y + 59, INK, 'center');
-  inkText('BILLIONS MUST BOK.', tx, y + 70, INK, 'center');
-  const m = mode(), cy = Math.max(y + 96, Math.round(N * 0.5));
-  panel(Math.round(N / 2 - 92), cy - 5, 184, 62);
-  const rows = [[L('move'), 'RUN'], [L('shoot'), 'AIM + SHOOT (HOLD)'], [L('shoot') === 'ARROWS' ? '2 ARROWS' : '2 BUTTONS', 'DIAGONAL SHOT'], [L('START'), 'PAUSE / RESUME'], ['AUTO', 'BEST WEAPON'], ['LIFE', 'ONLY HITS HURT']];
-  rows.forEach(([k, v], i) => { inkText(k, N / 2 - 28, cy + i * 9, HRED, 'right'); inkText(v, N / 2 - 22, cy + i * 9); });
-  if ((t % 1) < 0.65) text(startTxt() + ' TO START', N / 2, N - 32, 8, HGOLD, 'center');
-  { const ids = Object.keys(ACH_UNLOCKED).sort((a, b) => ACH_UNLOCKED[b] - ACH_UNLOCKED[a]); text('TROPHIES ' + ids.length + '/' + ACH_TOTAL + (ids.length ? '  ' + achDef(ids[0])[0] : ''), N / 2, cy + 63, 8, HGOLD, 'center'); }
+  inkText('BILLIONS MUST BOK.', tx, y + 58, INK, 'center'); // v14: no instructions
+  const cy = Math.max(y + 96, Math.round(N * 0.5)); // v14: controls panel + start prompt removed
+  { const ids = Object.keys(ACH_UNLOCKED).sort((a, b) => ACH_UNLOCKED[b] - ACH_UNLOCKED[a]); text('TROPHIES ' + ids.length + '/' + ACH_TOTAL + (ids.length ? '  ' + achDef(ids[0])[0] : ''), N / 2, cy + 40, 8, HGOLD, 'center'); }
   if (best.time) text('BEST: LASTED ' + fmtTime(best.time) + '  /  ' + best.kills + ' PECKED', N / 2, N - 20, 8, CREAM, 'center');
 }
 // ================================================================ v13 achievements: big gold hens.farm pop-ups, queued, saved in localStorage

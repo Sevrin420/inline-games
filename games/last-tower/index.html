@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Last Tower</title>
-<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the four-way compass SHOOT pad (hold a direction to keep firing, press two at once for a diagonal; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Big glowing pickups, gold achievement pop-ups for every minute survived and kill milestones. Just run, shoot and try not to die. Billions must bok.">
+<meta name="description" content="Last Tower: Chikn Edition. A fast run-and-gun: the farm has turned and the undead flock comes in swarms. Run with the D-pad, aim and shoot with the round analog SHOOT stick (push it any direction to keep firing, 360 degrees; your best gun auto-equips). No jumping, no eating, no healing: life only drops when a hit lands, and every hit counts. Zombie hens lunge-peck, roostrs stomp, egg-slingers lob rotten eggs. Big glowing pickups, gold achievement pop-ups for every minute survived and kill milestones. Just run, shoot and try not to die. Billions must bok.">
 <link rel="icon" href="data:,">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Last Tower: Chikn Edition">
@@ -41,16 +41,23 @@
   #skinLayer .sk { position: absolute; display: none; object-fit: contain; image-rendering: auto; -webkit-user-drag: none; }
   #skinLayer .sk-face { background: url(skin/faces.png) 0 0 / 400% 100% no-repeat; }
   #skinLayer img[data-k="title"], #skinLayer img[data-k="dead"], #skinLayer img[data-k="pause"] { filter: drop-shadow(2px 3px 0 rgba(9, 11, 10, .85)); }
-  /* v13 (Last Tower shell only): no SELECT pill; one big START / PAUSE pill spanning both slots */
-  .hh-root .hh-select { display: none !important; }
-  .hh-port .hh-start { grid-column: sel-start / start-end; justify-self: center; margin: -6px 0 0; }
-  .hh-root .hh-start { position: relative; }
-  .hh-root .hh-start .hh-pill { width: 92px; height: 24px; border-radius: 14px; padding: 3px; }
-  .hh-root .hh-start .hh-pillcap { inset: 3px; border-radius: 11px; }
-  .hh-root .hh-start .hh-lbl { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; font-size: 8.5px; font-weight: 900; letter-spacing: .1em; white-space: nowrap; color: #090b0a; pointer-events: none; text-shadow: none; }
-  .hh-land .hh-start { margin-top: -2px; }
+  /* v14 (Last Tower shell only): no START, no SELECT (there is no pause). The compass buttons are replaced by a round analog SHOOT stick. */
+  .hh-root .hh-select, .hh-root .hh-start { display: none !important; }
+  .hh-spad > :not(.lt-astick) { display: none !important; }
+  /* the round analog SHOOT stick (shell pad slot + ?handheld=0 overlay) */
+  .lt-astick { position: absolute; inset: 0; touch-action: none; pointer-events: auto; border-radius: 50%; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+  .lt-astick-ring { position: absolute; inset: 3%; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #fff8e7 0 52%, #f2e6c4 70%, #e3d3a6 100%); border: 5px solid #090b0a; box-shadow: 4px 5px 0 #090b0a; box-sizing: border-box; transition: border-color .15s, box-shadow .15s; }
+  .lt-astick-dz { position: absolute; left: 50%; top: 50%; width: 22%; height: 22%; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed rgba(9,11,10,.35); box-sizing: border-box; }
+  .lt-astick-knob { position: absolute; left: 50%; top: 50%; width: 36%; height: 36%; margin: -18% 0 0 -18%; border-radius: 50%; background: radial-gradient(circle at 36% 30%, #ff8a96 0 14%, #ff3347 30%, #d81f33 100%); border: 4px solid #090b0a; box-shadow: 2px 4px 0 #090b0a; box-sizing: border-box; transition: transform .16s cubic-bezier(.3, 1.7, .5, 1), background .1s; pointer-events: none; }
+  .lt-astick-on .lt-astick-knob { transition: background .1s; }
+  .lt-astick-fire .lt-astick-knob { background: radial-gradient(circle at 36% 30%, #fff1b8 0 14%, #ffc42f 32%, #e9a400 100%); }
+  .lt-astick-fire .lt-astick-ring { border-color: #090b0a; box-shadow: 4px 5px 0 #090b0a, 0 0 0 4px #ffc42f; }
+  .lt-astick-idle .lt-astick-ring { animation: ltIdle 1.1s ease-in-out infinite; }
+  @keyframes ltIdle { 0%, 100% { box-shadow: 4px 5px 0 #090b0a, 0 0 0 0 rgba(255,196,47,0); } 50% { box-shadow: 4px 5px 0 #090b0a, 0 0 0 7px rgba(255,196,47,.9); } }
+  #tAim { position: absolute; width: 168px; height: 168px; right: calc(16px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); pointer-events: auto; touch-action: none; }
+  #tAim .lt-astick-ring { background: radial-gradient(circle, rgba(255,248,231,.55) 0 55%, rgba(242,230,196,.7) 100%); }
 </style>
-<link rel="stylesheet" href="skin/hens-skin.css?v=13">
+<link rel="stylesheet" href="skin/hens-skin.css?v=14">
 </head>
 <body>
 <div id="stage">
@@ -60,16 +67,15 @@
 </div>
 <div id="touch">
   <div id="tStick"><div id="tBase"><div id="tKnob"></div></div></div>
-  <div id="tShoot"><button id="tSU" class="tb">N</button><button id="tSR" class="tb">E</button><button id="tSD" class="tb">S</button><button id="tSL" class="tb">W</button></div>
-  <div id="tBar"><button id="tBag" class="tb" style="border-radius:18px;padding:14px 26px;font-size:20px">PAUSE</button></div>
+  <div id="tAim"></div>
 </div>
 <script src="game.js"></script>
 <!-- Handheld shell, Last Tower only (v10): data-pad="compass" swaps A/B for a 4-way SHOOT pad (N/E/S/W = i/l/k/j, hold to aim + fire).
      D-pad = WASD (run). START = Enter pauses (v13: the SELECT pill is hidden; one big START). No jump, no eat. Best weapon auto-equips.
      ?handheld=0 opts out (touch: stick + the same compass pad). -->
 <script src="../shared/handheld/handheld.js" data-screen="#stage" data-aspect="1" data-name="LAST TOWER" data-theme="matcha" data-pad="compass"
-        data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"Enter","select":"Escape","su":"i","sd":"k","sl":"j","sr":"l"}'
-        data-labels='{"start":"START \u00b7 PAUSE","pad":"SHOOT"}'></script>
-<script src="skin/hens-skin.js?v=13"></script>
+        data-keys='{"up":"w","down":"s","left":"a","right":"d","start":"","select":"","su":"","sd":"","sl":"","sr":""}'
+        data-labels='{"pad":""}'></script>
+<script src="skin/hens-skin.js?v=14"></script>
 </body>
 </html>
