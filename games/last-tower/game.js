@@ -1,4 +1,4 @@
-/* LAST TOWER v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,7 +269,7 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=16';
+HENS_SHEET.src = 'hens-sprites.png?v=17';
 const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
@@ -946,7 +946,16 @@ const KEYMAP = { // v14: WASD move, ARROWS (or IJKL) 8-way aim + shoot, SPACE (o
 let lastInput = touchDev ? 'touch' : 'keys';
 function keyName(e) { if (e.code === 'Space') return ' '; const k = e.key; return k && k.length === 1 ? k.toLowerCase() : k; }
 addEventListener('keydown', (e) => {
-  const k = keyName(e); if (k === 'm') { toggleMute(); return; }
+  const k = keyName(e);
+  if (nameEntryOn()) { // v17: a real keyboard types the name; the shell D-pad (synthetic WASD) and arrows move the wheel; Enter / Space / shoot confirm
+    e.preventDefault(); audioInit(); if (e.repeat && k !== 'Backspace') return;
+    if (e.handheld && KEYMAP[k] && KEYMAP[k] in held && !isShoot(KEYMAP[k])) { if (!held[KEYMAP[k]]) queue.push(KEYMAP[k]); held[KEYMAP[k]] = 1; return; }
+    if (e.handheld) return;
+    if (/^[a-z]$/.test(k)) neType(k.toUpperCase()); else if (k === 'Backspace' || k === 'Delete') neType('<');
+    else if (k === 'Enter' || k === ' ') { if (G.deadT > 0.25) nameConfirm(); }
+    else if (k === 'ArrowUp') nameNav('up'); else if (k === 'ArrowDown') nameNav('down'); else if (k === 'ArrowLeft') nameNav('left'); else if (k === 'ArrowRight') nameNav('right');
+    return; }
+  if (k === 'm') { toggleMute(); return; }
   const a = KEYMAP[k]; if (!a) return;
   e.preventDefault(); audioInit();
   if (e.handheld) lastInput = 'shell'; else if (e.isTrusted) lastInput = 'keys';
@@ -965,7 +974,7 @@ addEventListener('blur', () => { for (const k in held) held[k] = 0; });
   const end = (e) => { if (e.pointerId !== id) return; id = null; stick.on = false; stick.x = stick.y = 0; stick.lastDir = null; setKnob(0, 0); };
   area.addEventListener('pointerup', end); area.addEventListener('pointercancel', end);
   // v14: tap anywhere on the game screen starts / restarts (title + death screens)
-  $('stage').addEventListener('pointerdown', () => { audioInit(); queue.push('GO'); });
+  $('stage').addEventListener('pointerdown', (e) => { audioInit(); if (stageTap(e)) return; queue.push('GO'); }); // v17: taps on the name keys / your leaderboard row
 }
 // v14: round analog SHOOT stick. Ring + knob; the knob follows the thumb (clamped to the ring) and springs back on release.
 // Mounted in the shell's pad slot (the compass buttons are hidden by CSS) and in the touch overlay (#tAim). Multitouch-safe: own pointer id.
@@ -1063,8 +1072,9 @@ function handleButtons() { // D-pad / WASD = run, SHOOT stick / arrows = aim + f
     const go = isShoot(b) || b === 'GO';
     if (STATE === 'title') { if (go || b === 'TAP') { STATE = 'game'; newGame(); sfx('dawn'); } continue; }
     if (G.state === 'dead') {
+      const dir = b === 'up' || b === 'down' || b === 'left' || b === 'right';
+      if (NE.on) { if (go && G.deadT > 0.25) nameConfirm(); else if (dir) nameNav(b); continue; } // v17 name screen: shoot only confirms (greyed until valid)
       if (go && G.deadT > 0.25) { creditsRestart(); queue.length = 0; return; } // 0.25 s guard: a shot fired in the same instant as the fatal hit doesn't skip the credits
-      if (b === 'up' || b === 'down' || b === 'left' || b === 'right') nameEdit(b); // name bar (arcade style)
       continue; }
   }
 }
@@ -1299,7 +1309,7 @@ function drawCleanMeter(t) {
 // Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
 const FLOCK = [], _flockRecent = [];
 const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
-if (FLOCK_LAYER) fetch('flock/manifest.json?v=16').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=17').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
 const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
   m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
   m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
@@ -1368,18 +1378,15 @@ function flockCredits() { if (!FLOCK_LAYER || !FLOCK.length || _cred) return; _c
   const s = 'THE FLOCK: ' + FLOCK.map((f) => '@' + _esc(f.h)).join('  \u00b7  ') + '  \u00b7  '; _cred.innerHTML = `<span>${s}${s}</span>`; FLOCK_LAYER.appendChild(_cred); }
 setInterval(() => { if (_cred) _cred.style.display = STATE === 'title' ? 'block' : 'none'; if (STATE !== 'game' || !G || G.state !== 'dead') flockSalute(false); }, 150);
 addEventListener('resize', flockFont);
-// ================================================================ v16 death = ending credits + THE GLOBAL TOP 20 FLOCK + arcade name
+// ================================================================ v16 death = ending credits + THE GLOBAL TOP 20 FLOCK + arcade name entry (v17: blank, must be filled)
 // Death screen is a movie-credits roll (rises bottom -> top, loops): PLUCKED + stats, the run's achievements as a cast list
 // (big gold title + "...... @hen" with her pfp), the TOP 20 FLOCK leaderboard, then THE FLOCK credits.
 // Shoot (stick / arrows / Space / screen tap) restarts at any moment. D-pad / WASD edits the name bar (dice = random chikn name).
 // Leaderboard: the shared membersonly.cc API (server/src/leaderboard.js, game "last-tower": survival time measured by the
 // server, capped by the run clock, ties by kills, best per player, top 20). No API -> a local top 20 on this device.
-const LB_GAME = 'last-tower', NAME_KEY = 'lasttower.name', LOCAL_LB_KEY = 'lasttower.lb1';
-const CHIKN_NAMES = ['BOKSTER', 'CLUCKNORRIS', 'HENDRIX', 'EGGBERT', 'YOLKO', 'BWAKZILLA', 'NUGGET', 'HENNY', 'ROOSTA', 'OMELETTA', 'BOKCHOY', 'EGGSY', 'BEAKER',
-  'SCRAMBLES', 'CHIKNLORD', 'DRUMSTIX', 'BOKBOK', 'HENGINEER', 'WINGDING', 'CLUCKSTAR', 'PLUCKY', 'COOPZILLA', 'EGGSPRESSO', 'FEATHERLY', 'PECKASSO', 'HENIGMA', 'YOLKSTER', 'BAWKSTAR'];
-const randName = (not) => { let n; do n = CHIKN_NAMES[Math.floor(Math.random() * CHIKN_NAMES.length)]; while (n === not && CHIKN_NAMES.length > 1); return n; };
+const LB_GAME = 'last-tower', NAME_KEY = 'lasttower.name2', LOCAL_LB_KEY = 'lasttower.lb1';
 const validName = (s) => typeof s === 'string' && /^[A-Z]{3,12}$/.test(s);
-let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (validName(s)) lbName = s; } catch (e) {}
+let lbName = null; try { const s = localStorage.getItem(NAME_KEY); if (validName(s)) lbName = s; localStorage.removeItem('lasttower.name'); } catch (e) {} // v17: v16's auto-assigned names (old key) are dropped, so everyone picks their own
 const saveName = (s) => { lbName = s; try { localStorage.setItem(NAME_KEY, s); } catch (e) {} };
 const MA = () => (window.MembersAuth && window.MembersAuth.available ? window.MembersAuth : null);
 // ---- one record per run: play id (server), death result, board
@@ -1392,9 +1399,9 @@ function lbRunStart() { // called by newGame
 function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) {} return Array.isArray(l) ? l : []; }
 function lbRunEnd() { // called by die()
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
-  const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName || randName(), ms: r.ms, kills: r.kills, t: Date.now() };
+  const A = MA(), fallback = () => { if (r.local) return; r.local = true; const l = localBoard(), me = { name: lbName || '???', ms: r.ms, kills: r.kills, t: Date.now() };
     if (r.ms >= 5000) l.push(me); l.sort((a, b) => b.ms - a.ms || b.kills - a.kills); const top = l.slice(0, 20); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(top)); } catch (e) {}
-    r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; };
+    r.localMe = me; r.board = { local: true, total: l.length, top: top.map((e, i) => ({ rank: i + 1, name: e.name, ms: e.ms, kills: e.kills, mine: e === me })) }; r.posted = true; };
   if (!A || !r.play) { fallback(); return; }
   A.endPlay(r.play, { outcome: 'died', score: r.kills, meta: { ms: r.ms, mg: G.tier.mg || 0, sg: G.tier.shotgun || 0 } })
     .then((p) => (p ? A.leaderboard(LB_GAME) : null))
@@ -1407,37 +1414,71 @@ function lbPost(r, onRestart) { // post this run under the current name (on rest
   if (!r || r.posted || r.posting || !r.board || r.local || !lbName) return; const A = MA(); if (!A) return; r.posting = true;
   const name = lbName; A.postLeaderboard(LB_GAME, r.play, name).then((res) => { r.posting = false;
     if (res.status === 201 && res.json) { r.posted = true; r.board = res.json; r.entry = res.json.entry; return; }
-    const err = res.json && res.json.error; if (err === 'name_not_allowed' || err === 'bad_name') { saveName(randName(name)); r.retry = (r.retry || 0) + 1; if (r.retry < 3) setTimeout(() => lbPost(r), 50); return; }
+    const err = res.json && res.json.error; if (err === 'name_not_allowed' || err === 'bad_name') { lbName = null; try { localStorage.removeItem(NAME_KEY); } catch (e) {} if (G === r.g && G.state === 'dead') nameOpen('death'); return; } // refused: ask again
     r.posted = true; r.err = err || 'offline'; }).catch(() => { r.posting = false; r.posted = true; });
 }
-// ---- name bar (arcade style: dice + letters). D-pad up/down = letter, left/right = move; dice slot = random name
-const NB = { cur: 0, slots: null, blink: 0 };
-const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
-function nbSync() { const n = lbName || ''; NB.slots = n.padEnd(Math.max(6, n.length), ' ').split(''); NB.cur = Math.min(NB.cur, NB.slots.length - 1); }
-function nameEdit(dir) {
-  if (!NB.slots) nbSync(); sfx('click'); NB.blink = 0;
-  if (dir === 'left') NB.cur = Math.max(-1, NB.cur - 1);
-  else if (dir === 'right') NB.cur = Math.min(11, NB.cur + 1);
-  else if (NB.cur < 0) { saveName(randName(lbName)); nbSync(); }
-  else { if (NB.cur >= NB.slots.length) NB.slots.push(' '); const i = ABC.indexOf(NB.slots[NB.cur]); NB.slots[NB.cur] = ABC[(i + (dir === 'up' ? 1 : ABC.length - 1)) % ABC.length];
-    const s = NB.slots.join('').replace(/\s+/g, ''); if (validName(s)) saveName(s); }
-  if (NB.cur >= NB.slots.length) NB.slots.push(' ');
+// ---- v17 name entry: no starting name. The first death (or any death with no saved name) opens a blank arcade name screen
+// BEFORE the credits roll: 6 blank slots + a tappable A-Z grid + backspace + a check. D-pad up/down = letter wheel, left/right = slot,
+// shoot = confirm (only on this screen; greyed until valid: 3+ letters, passes the blocklist). Credits + restart wait for it.
+// Change it later: tap your gold row on the TOP 20 (or the YOU line). Typing letters / Backspace / Enter work on a keyboard.
+const NE = { on: false, slots: null, cur: 0, blink: 0, shake: 0, keys: null, check: null, back: null, from: null };
+const NE_SLOTS = 6, ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+// mirror of the server's blocklist (server/src/names.js) so the check icon only lights for names the board will take
+const NB_ANY = ['fuck', 'fuk', 'fck', 'shit', 'cunt', 'nigg', 'faggot', 'fag', 'kike', 'retard', 'whore', 'slut', 'bitch', 'pussy', 'penis', 'vagina', 'porn', 'nazi', 'hitler', 'kkk', 'tranny', 'dyke', 'wank', 'twat', 'bastard',
+  'asshole', 'jizz', 'dildo', 'blowjob', 'handjob', 'molest', 'cocksuck', 'motherf', 'beaner', 'wetback', 'raghead', 'towelhead', 'semen', 'boner', 'clit', 'heil'];
+const NB_WORD = ['rape', 'rapist', 'cum', 'ass', 'arse', 'tit', 'tits', 'dick', 'cock', 'spic', 'chink', 'coon', 'gook', 'homo', 'hoe', 'pedo', 'paki', 'jap', 'negro', 'sex', 'anal', 'nig', 'nigs', 'lesbo', 'kys'];
+const nameBlocked = (s) => { const l = s.toLowerCase(), c = l.replace(/(.)\1+/g, '$1'); return NB_ANY.some((w) => l.includes(w) || c.includes(w)) || NB_WORD.includes(l) || NB_WORD.includes(c); };
+const neName = () => (NE.slots || []).join('').replace(/\s+/g, '');
+const neValid = () => { const s = neName(); return validName(s) && !nameBlocked(s); };
+function nameOpen(from) { NE.on = true; NE.from = from || 'death'; NE.slots = (lbName && from === 'change' ? lbName.slice(0, NE_SLOTS) : '').padEnd(NE_SLOTS, ' ').split(''); NE.cur = from === 'change' ? Math.min(NE_SLOTS - 1, neName().length) : 0; NE.blink = 0; }
+function nameConfirm() {
+  if (!neValid()) { NE.shake = 0.3; sfx('zpeck'); return; }
+  const s = neName(); saveName(s); NE.on = false; sfx('pick'); const r = RUN && RUN.g === G ? RUN : null;
+  if (r) { if (r.local && r.localMe) { r.localMe.name = s; r.board.top.forEach((e) => { if (e.mine) e.name = s; }); try { localStorage.setItem(LOCAL_LB_KEY, JSON.stringify(localBoard().map((e) => (e.t === r.localMe.t ? Object.assign(e, { name: s }) : e)))); } catch (e) {} }
+    else if (!r.posted) lbPost(r, true); }
+  if (NE.from === 'death') CR.t = 0; // the roll starts now
 }
-function drawNameBar(t, dt) {
-  if (!lbName) saveName(randName()); if (!NB.slots) nbSync();
-  NB.blink += dt; const sl = NB.slots, cw = 11, w = 18 + sl.length * cw + 6, x0 = Math.round(N / 2 - w / 2), y0 = N - 21;
-  panel(x0, y0, w, 18); hx.fillStyle = HGOLD; hx.fillRect(x0 + 1, y0 + 1, w - 2, 2);
-  // dice (random chikn name)
-  { const dx = x0 + 4, dy = y0 + 4; hx.fillStyle = NB.cur < 0 ? HGOLD : CREAM; hx.fillRect(dx, dy, 11, 11); hx.fillStyle = INK; hx.fillRect(dx, dy, 11, 1); hx.fillRect(dx, dy + 10, 11, 1); hx.fillRect(dx, dy, 1, 11); hx.fillRect(dx + 10, dy, 1, 11);
-    for (const [px, py] of [[3, 3], [7, 7], [5, 5], [7, 3], [3, 7]]) hx.fillRect(dx + px - 1 + (px > 5 ? 1 : 0), dy + py - 1 + (py > 5 ? 1 : 0), 2, 2); }
-  const valid = validName(sl.join('').replace(/\s+/g, ''));
-  sl.forEach((ch, i) => { const x = x0 + 18 + i * cw, on = i === NB.cur;
-    if (on) { hx.fillStyle = HGOLD; hx.fillRect(x - 1, y0 + 3, cw - 1, 13); }
-    text(ch === ' ' ? '-' : ch, x + 4, y0 + 4, 8, ch === ' ' ? 'rgba(9,11,10,.35)' : valid ? INK : HRED, 'center', false);
-    if (on && Math.floor(NB.blink * 3) % 2 === 0) { hx.fillStyle = INK; hx.fillRect(x, y0 + 14, cw - 3, 1); } });
-  // up/down carets on the selected slot (no words)
-  { const x = NB.cur < 0 ? x0 + 9 : x0 + 18 + NB.cur * cw + 4, b = Math.round(Math.sin(t * 6)); hx.fillStyle = HGOLD;
-    for (let k = 0; k < 3; k++) { hx.fillRect(x - k, y0 - 3 - k + b, 1 + k * 2, 1); } }
+function neType(ch) { NE.blink = 0; if (ch === '<') { if (NE.slots[NE.cur] === ' ' && NE.cur > 0) NE.cur--; NE.slots[NE.cur] = ' '; sfx('click'); return; }
+  NE.slots[NE.cur] = ch; NE.cur = Math.min(NE_SLOTS - 1, NE.cur + 1); sfx('click'); }
+function nameNav(dir) { NE.blink = 0; sfx('click');
+  if (dir === 'left') NE.cur = Math.max(0, NE.cur - 1); else if (dir === 'right') NE.cur = Math.min(NE_SLOTS - 1, NE.cur + 1);
+  else { const W = ' ' + ABC, i = W.indexOf(NE.slots[NE.cur]); NE.slots[NE.cur] = W[(i + (dir === 'up' ? 1 : W.length - 1)) % W.length]; } }
+const nameEntryOn = () => NE.on && STATE === 'game' && G && G.state === 'dead';
+// canvas-space hit test for taps (keys grid, check, backspace; the gold leaderboard row on the credits)
+function stageTap(e) {
+  if (!(STATE === 'game' && G && G.state === 'dead')) return false; const c = document.getElementById('c'), b = c.getBoundingClientRect(); if (!b.width) return false;
+  const x = (e.clientX - b.left) / b.width * N, y = (e.clientY - b.top) / b.height * N, inR = (q) => q && x >= q[0] && x < q[0] + q[2] && y >= q[1] && y < q[1] + q[3];
+  if (NE.on) { audioInit(); if (inR(NE.check)) nameConfirm(); else if (inR(NE.back)) neType('<'); else if (NE.slotR && inR(NE.slotR)) { NE.cur = Math.max(0, Math.min(NE_SLOTS - 1, Math.floor((x - NE.slotR[0]) / NE.slotR[4]))); NE.blink = 0; }
+    else { const k = NE.keys && NE.keys.find((q) => inR(q)); if (k) neType(k[4]); } return true; } // never restarts from the name screen
+  if (CR.mineR && inR(CR.mineR) && G.deadT > 0.25) { nameOpen('change'); return true; }
+  return false;
+}
+function drawNameEntry(t, dt) {
+  NE.blink += dt; NE.shake = Math.max(0, NE.shake - dt); hx.fillStyle = 'rgba(9,11,10,.86)'; hx.fillRect(0, 0, N, N);
+  const sh = NE.shake > 0 ? Math.round(Math.sin(NE.shake * 60) * 3) : 0, cx = N / 2;
+  // context, no instructions: plucked hen + your time, then the blank slots
+  if (artOk('hen-plucked')) hx.drawImage(ART['hen-plucked'], Math.round(cx - 25), Math.round(N * 0.03));
+  text(fmtTime(G.st) + '   ' + G.kills, cx, Math.round(N * 0.03) + 58, 8, HGOLD, 'center');
+  const sw = Math.min(26, Math.floor((N - 60) / NE_SLOTS)), sx0 = Math.round(cx - (sw * NE_SLOTS) / 2) + sh, sy = Math.round(N * 0.33);
+  NE.slotR = [sx0, sy - 4, sw * NE_SLOTS, 30, sw];
+  NE.slots.forEach((ch, i) => { const x = sx0 + i * sw, on = i === NE.cur;
+    hx.fillStyle = on ? 'rgba(255,196,47,.22)' : 'rgba(248,245,233,.07)'; hx.fillRect(x + 1, sy - 3, sw - 2, 26);
+    if (on) { const W = ' ' + ABC, k = W.indexOf(ch); text(W[(k + 1) % W.length].trim() || '-', x + sw / 2, sy - 13, 8, 'rgba(255,196,47,.45)', 'center', false); text(W[(k + W.length - 1) % W.length].trim() || '-', x + sw / 2, sy + 25, 8, 'rgba(255,196,47,.45)', 'center', false); } // the letter wheel
+    if (ch !== ' ') text(ch, x + sw / 2, sy, 16, HGOLD, 'center');
+    hx.fillStyle = on ? (Math.floor(NE.blink * 3) % 2 ? 'rgba(255,196,47,.25)' : HGOLD) : 'rgba(248,245,233,.45)'; hx.fillRect(x + 3, sy + 20, sw - 6, 2); }); // blinking cursor
+  // check (greyed until valid) + backspace
+  const ok = neValid(), bs = 22, kx = Math.min(N - bs - 4, sx0 + sw * NE_SLOTS + 6), ky = sy - 2;
+  NE.check = [kx, ky, bs, bs];
+  hx.fillStyle = ok ? HGREEN : 'rgba(248,245,233,.12)'; hx.fillRect(kx, ky, bs, bs); hx.fillStyle = INK; hx.fillRect(kx, ky, bs, 1); hx.fillRect(kx, ky + bs - 1, bs, 1); hx.fillRect(kx, ky, 1, bs); hx.fillRect(kx + bs - 1, ky, 1, bs);
+  { hx.fillStyle = ok ? (Math.floor(t * 4) % 2 ? '#ffffff' : CREAM) : 'rgba(248,245,233,.3)'; const c = [[5, 11], [6, 12], [7, 13], [8, 14], [9, 13], [10, 12], [11, 11], [12, 10], [13, 9], [14, 8], [15, 7], [16, 6]]; for (const [px, py] of c) hx.fillRect(kx + px, ky + py - 1, 2, 3); }
+  const bx = Math.max(4, sx0 - bs - 6); NE.back = [bx, ky, bs, bs]; hx.fillStyle = 'rgba(248,245,233,.12)'; hx.fillRect(bx, ky, bs, bs);
+  { hx.fillStyle = CREAM; for (let i = 0; i < 6; i++) { hx.fillRect(bx + 5 + i, ky + 11 - i, 1, 1 + i * 2); } hx.fillRect(bx + 11, ky + 8, 7, 7); hx.fillStyle = INK; hx.fillRect(bx + 13, ky + 10, 1, 3); hx.fillRect(bx + 15, ky + 10, 1, 3); }
+  // tappable A-Z grid (9 x 3)
+  const cols = 9, gw = Math.min(N - 8, 236), cw = Math.floor(gw / cols), ch = Math.min(26, Math.floor(N * 0.1)), gx = Math.round(cx - (cw * cols) / 2), gy = Math.round(N * 0.56); NE.keys = [];
+  for (let i = 0; i < 27; i++) { const L = i < 26 ? ABC[i] : '<', x = gx + (i % cols) * cw, y = gy + Math.floor(i / cols) * (ch + 3);
+    NE.keys.push([x, y, cw - 2, ch, L]); hx.fillStyle = CREAM; hx.fillRect(x, y, cw - 2, ch); hx.fillStyle = INK; hx.fillRect(x, y + ch - 2, cw - 2, 2);
+    if (L === '<') { hx.fillStyle = INK; const m = x + (cw - 2) / 2, my = y + ch / 2 - 1; for (let k = 0; k < 5; k++) hx.fillRect(Math.round(m - 5 + k), Math.round(my - k), 1, 1 + k * 2); hx.fillRect(Math.round(m), Math.round(my - 2), 6, 5); }
+    else text(L, x + (cw - 2) / 2, y + Math.round(ch / 2) - 5, 8, INK, 'center', false); }
 }
 // ---- the credits roll
 const CR = { g: null, rows: null, H: 0, t: 0 };
@@ -1476,11 +1517,12 @@ function buildCredits() {
   const bw = Math.min(N - 12, 220), bx = Math.round(N / 2 - bw / 2);
   for (let i = 0; i < 20; i++) add(11, (y) => { const b = r && r.board, e = b && b.top && b.top[i];
     const mine = e && e.mine, col = mine ? INK : i < 3 ? HGOLD : CREAM;
-    if (mine) { hx.fillStyle = HGOLD; hx.fillRect(bx - 2, y - 1, bw + 4, 11); }
+    if (mine) { hx.fillStyle = HGOLD; hx.fillRect(bx - 2, y - 1, bw + 4, 11); CR.mineR = [bx - 2, y - 3, bw + 4, 15]; } // tap = change name
     text(String(i + 1), bx + 14, y, 8, col, 'right', !mine);
     if (e) { text(e.name, bx + 22, y, 8, col, 'left', !mine); text(fmtMs(e.ms), bx + bw - 34, y, 8, col, 'right', !mine); text(String(e.kills), bx + bw, y, 8, mine ? INK : HRED, 'right', !mine); }
     else text('- - - - - -', bx + 22, y, 8, 'rgba(248,245,233,.3)', 'left', false); });
   add(14, (y) => { const b = r && r.board; if (!b || b.local) return; const me = b.me, onTop = b.top && b.top.some((e) => e.mine);
+    if (me && !onTop) CR.mineR = [0, y - 2, N, 14];
     if (me && !onTop) text('YOU: #' + me.rank + '  ' + me.name + '  ' + fmtMs(me.ms), N / 2, y + 2, 8, HGOLD, 'center');
     else if (r.posting || (!r.posted && r.wantPost)) text('POSTING ' + (lbName || ''), N / 2, y + 2, 8, CREAM, 'center'); });
   add(30, () => {});
@@ -1496,18 +1538,18 @@ function buildCredits() {
 }
 function drawCredits(t, dt) {
   if (CR.g !== G || CR.n !== N || (CR.flockN !== FLOCK.length)) { buildCredits(); CR.flockN = FLOCK.length; }
-  CR.t += dt; G.deadT = (G.deadT || 0) + dt;
+  G.deadT = (G.deadT || 0) + dt; if (CR.askG !== G) { CR.askG = G; if (!lbName) nameOpen('death'); }
+  if (NE.on) { drawNameEntry(t, dt); return; } // the roll waits for a name
+  CR.t += dt; CR.mineR = null;
   hx.fillStyle = `rgba(9,11,10,${Math.min(0.88, 0.2 + G.deadT * 0.9)})`; hx.fillRect(0, 0, N, N);
   const sp = N / 256 * 19, L = CR.H + N, pos = (CR.t * sp + N * 0.42) % L; let y = Math.round(N - pos);
   const r = RUN && RUN.g === G ? RUN : null; let boardY = null;
   for (const row of CR.rows) { if (y + row.h > -4 && y < N) row.draw(y); if (row.mark === 'board') boardY = y; y += row.h; }
   if (r && boardY !== null && boardY < N * 0.9) lbPost(r); if (r && G.deadT > 14) lbPost(r);
   // soft top/bottom fades so lines appear and disappear like a film roll
-  for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.6 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 24 - i, N, 1); }
-  hx.fillStyle = 'rgba(9,11,10,.6)'; hx.fillRect(0, N - 24, N, 24);
-  drawNameBar(t, dt);
+  for (let i = 0; i < 14; i++) { hx.fillStyle = `rgba(9,11,10,${0.6 * (1 - i / 14)})`; hx.fillRect(0, i, N, 1); hx.fillRect(0, N - 1 - i, N, 1); }
 }
-function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); NB.cur = 0; NB.slots = null; newGame(); sfx('dawn'); }
+function creditsRestart() { const r = RUN; if (r && r.g === G) lbPost(r, true); newGame(); sfx('dawn'); }
 // ================================================================ v16 "BOK-A-POLKA": an ORIGINAL chiptune polka (not the Chicken Dance melody)
 // 2/4 oom-pah: triangle bass on the beat, square chord "pah" on the off-beat, a 12.5% pulse lead with tick-tick-tick-tick
 // bursts, noise clap on beat 2, and bok / bwak cluck hits written into the arrangement. 48 bars (A B C) ~ 44 s at 132 bpm, loops.

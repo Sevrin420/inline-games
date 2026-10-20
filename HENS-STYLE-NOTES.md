@@ -196,3 +196,16 @@ How these terms appear in the game:
   48 bars (~44 s at 132 bpm), loops; +3 bpm per minute survived (cap 156); the bridge ending rushes into the loop.
   Death credits: 78 bpm, triangle lead an octave down, low-pass. Starts on the first gesture, through the game's master gain
   (shell mute / handheld:mute / power-off apply), ducks under gunfire and achievement fanfares. `?music=0` turns it off.
+
+## v17 (Last Tower): the name starts blank and must be filled
+
+- No starting name, no dice. The first death (or any death with no saved name) opens a wordless name screen BEFORE the credits:
+  the plucked hen + your time/kills, 6 blank slots with a blinking cursor and a letter wheel (the letters above/below), a
+  backspace and a check, and a tappable A-Z grid. D-pad up/down = letter, left/right = slot; a real keyboard types; shoot /
+  Space / Enter confirm. The check stays grey (and shoot only buzzes) until the name has 3+ letters and passes the same
+  blocklist as the server. Restart and the credits wait; shoot never restarts from this screen.
+- Confirm saves it (`lasttower.name2`) and posts that run's score under it. Later deaths go straight to the credits.
+- Change it later: tap your gold TOP 20 row (or the "YOU: #n" line) on the credits.
+- v16's auto-assigned names (`lasttower.name`) are deleted on load, so every v16 player is re-prompted. None had reached the
+  live board (it was empty when v17 shipped).
+- If the server still refuses a name, it is cleared and the name screen comes back.
