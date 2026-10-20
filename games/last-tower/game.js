@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -1393,9 +1393,9 @@ function award(id, repeatable) {
   // queue: 3+ waiting cards merge into one "+N ACHIEVEMENTS" card so a burst never stalls the screen
   const q = (G.achQ = G.achQ || []), last = q[q.length - 1];
   if (NOHIT_ACH.has(id)) { const e = { id, t: 0, isNew, nohit: true, hitN: G.hitN || 0 }; if (q.length && q[0].t > 0) { q[0].cut = true; q.splice(1, 0, e); } else q.unshift(e); }
-  else if (q.length >= ACH_MERGE_AT && last && last.multi && last.t === 0 && !last.nohit) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
-  else if (q.length >= ACH_MERGE_AT && last && !last.nohit && last.t === 0) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
-  else q.push({ id, t: 0, isNew, at: G.st });
+  else if (q.length >= 3 && last && last.multi && last.t === 0 && !last.nohit) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
+  else if (q.length >= 3 && last && !last.nohit) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
+  else q.push({ id, t: 0, isNew });
   if (id !== 'bok') { const R = G.rs; if (R) { R.awT.push(G.st); while (R.awT.length && G.st - R.awT[0] > 10) R.awT.shift(); if (R.awT.length >= 3) award('bok'); } }
   metaCheck(); return true;
 }
@@ -1445,31 +1445,26 @@ function achCard(id) {
   x.drawImage(sub, Math.floor(w / 2 - sub.width / 2) + 1, by + big.height + 3);
   _achImg.set(id, c); return c;
 }
-// v22 slower pop-ups: hold 4.2 s (was 2.6), ease in 0.36 s / out 0.4 s (was 0.22 / 0.25), and a 1.6 s quiet gap before the next card.
-// A backlog (3+ queued) plays at 2.8 s with a 0.9 s gap; 2+ waiting cards merge into one '+N ACHIEVEMENTS' card, and a plain card that
-// has waited over 15 s is folded away (still earned + saved), so the queue never falls far behind the game.
+// v23: timings back to v21 exactly (hold 2.6 s, backlog 1.6 s, in 0.22 s / out 0.25 s, no gap, 3+ queued merge); v22's raised position stays.
 const ACH_TOP = 33; // the HUD's top row (life + timer panels and their shadows) ends at y = 32
-const ACH_T = 4.2, ACH_T_FAST = 2.8, ACH_IN = 0.36, ACH_OUT = 0.4, ACH_GAP = 1.6, ACH_GAP_FAST = 0.9, ACH_STALE = 15, ACH_MERGE_AT = 2;
+const ACH_T = 2.6;
 // v15 gun-tier pop-ups share the big gold card (not saved as trophies)
 function upgradePop(k, t) { (G.achQ = G.achQ || []).push({ id: 'up:' + k + ':' + t, t: 0, isNew: false }); }
 function tierDropPop(t) { (G.achQ = G.achQ || []).push({ id: 'drop:' + t, t: 0, isNew: false }); }
 function drawAch(dt) {
   if (!G || !G.achQ || !G.achQ.length) return;
   while (G.achQ.length && G.achQ[0].nohit && G.achQ[0].t === 0 && (G.hitN || 0) > G.achQ[0].hitN) achRevoke(G.achQ.shift()); // v19: hit before it showed = no award
-  if (!G.achQ.length) { G.achGap = 0; return; }
-  if (G.achGap > 0 && !G.achQ[0].nohit) { G.achGap -= dt; return; } // the quiet gap between cards (a no-hit award never waits)
-  while (G.achQ.length > 1 && G.achQ[0].t === 0 && !G.achQ[0].nohit && !G.achQ[0].multi && G.achQ[0].at != null && G.st - G.achQ[0].at > ACH_STALE) G.achQ.shift(); // stale: fold away
-  const a = G.achQ[0], AT = G.achQ.length > 2 ? ACH_T_FAST : ACH_T; // a backlog plays faster
+  if (!G.achQ.length) return; const a = G.achQ[0], AT = G.achQ.length > 2 ? 1.6 : ACH_T; // a backlog plays faster
   if (a.cut) { a.cut = false; if (a.t > 0) a.t = Math.max(a.t, AT - 0.2); } // a no-hit award is waiting: wrap this card up now
   if (a.t === 0) { sfxAch(); flockPop(a.id); } a.t += dt;
-  const c = achCard(a.id), e = Math.min(1, a.t / ACH_IN), eo = Math.min(1, Math.max(0, (AT - a.t) / ACH_OUT)), s = a.t < ACH_IN ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - ACH_OUT ? Math.max(0.05, 1 - Math.pow(1 - eo, 2)) : 1;
+  const c = achCard(a.id), e = Math.min(1, a.t / 0.22), s = a.t < 0.22 ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - 0.25 ? Math.max(0.05, (AT - a.t) / 0.25) : 1;
   const fit = Math.min(1, (N - 6) / c.width); // never wider than the screen
   const w = Math.round(c.width * s * fit), h = Math.round(c.height * s * fit), fh0 = Math.round(c.height * fit), cx = Math.round(N / 2), cy = Math.max(Math.round(N * 0.17), ACH_TOP + (fh0 >> 1)); // v22: higher (was 0.29 N), but never under the top HUD row; the hen is always at screen centre
   hx.drawImage(c, cx - (w >> 1), cy - (h >> 1), w, h);
-  const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > ACH_IN && a.t < AT - ACH_OUT;
+  const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > 0.25 && a.t < AT - 0.25;
   if (a.isNew && steady) text('NEW!', cx + (fw >> 1) - 12, cy + (fh >> 1) + 2, 8, HRED, 'center'); // v22: tags under the card (clear of the label tab + the HUD)
   if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 22, cy + (fh >> 1) + 2, 8, HGOLD, 'center');
-  if (a.t >= AT) { G.achQ.shift(); G.achGap = G.achQ.length > 2 ? ACH_GAP_FAST : ACH_GAP; }
+  if (a.t >= AT) G.achQ.shift();
 }
 // v16 no-hit streak meter (under the kill count): fills over each minute without a hit, one gold pip per minute banked
 // (UNTOUCHED / FEATHERS INTACT / TEFLON HEN), flashes red and empties when a hit lands. Wordless.
@@ -1546,7 +1541,7 @@ function flockPop(id) {
   flockFont(); if (_flockPopEl) _flockPopEl.remove();
   const el = document.createElement('div'); el.className = 'fk-pop fk-' + side;
   el.innerHTML = `<img src="${_esc(f.src)}" alt=""><div class="fk-txt"><b>@${_esc(f.h)}</b><span>${_esc(body)}</span></div>`;
-  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 3400); // v22: 3.4 s (was 2 s), matches the slower gold card
+  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 2000);
   { const tx = el.querySelector('.fk-txt'), sp = el.querySelector('.fk-txt span'); for (let z = 3.2; z >= 1.5; z -= 0.1) { sp.style.fontSize = z.toFixed(1) + 'em'; if (tx.scrollHeight <= tx.clientHeight + 1 && tx.scrollWidth <= tx.clientWidth + 1) break; } } // v19: biggest quote that fits the slim band
 }
 // death screen: 2-3 cheering hens ("the flock salutes you"), placed in canvas coords
