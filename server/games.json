@@ -43,8 +43,9 @@
       "postWindowHours": 2,
       "top": 20,
       "bestPerPlayer": true,
-      "nameMin": 3,
+      "nameMin": 1,
       "nameMax": 12,
+      "blankName": "ANON HEN",
       "postsPerPlayer": 20
     }
   }

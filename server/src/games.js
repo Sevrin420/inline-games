@@ -39,6 +39,7 @@ export function loadGames(file) {
 //   top              board length (default 10, max 50)
 //   bestPerPlayer    the board shows each player's best entry only
 //   nameMin/nameMax  name length bounds (within 1..16)
+//   blankName        a blank (empty / whitespace) posted name is stored as this instead of refused (1..16 chars)
 //   postsPerPlayer   posts per player per 10 minutes (default 6)
 function leaderboardConfig(g) {
   const lb = g.leaderboard;
@@ -60,7 +61,9 @@ function leaderboardConfig(g) {
   const maxMs = int('maxMs', null, 1, 1e9), maxScorePerSec = int('maxScorePerSec', null, 1, 1e6), top = int('top', 10, 1, 50);
   const nameMin = int('nameMin', 1, 1, 16), nameMax = int('nameMax', 16, 1, 16), postsPerPlayer = int('postsPerPlayer', 6, 1, 100);
   if (nameMin > nameMax) bad('nameMin > nameMax');
-  const extra = { maxMs, maxScorePerSec, top, bestPerPlayer: lb.bestPerPlayer === true || undefined, nameMin, nameMax, postsPerPlayer };
+  const blankName = lb.blankName === undefined ? undefined : lb.blankName;
+  if (blankName !== undefined && (typeof blankName !== 'string' || !/^[A-Za-z0-9 _.\-]{1,16}$/.test(blankName) || blankName.trim() !== blankName || blankName.length < nameMin || blankName.length > nameMax)) bad('blankName must be a 1..16 character name within nameMin..nameMax');
+  const extra = { maxMs, maxScorePerSec, top, bestPerPlayer: lb.bestPerPlayer === true || undefined, nameMin, nameMax, postsPerPlayer, blankName };
   for (const k of Object.keys(extra)) if (lb[k] === undefined) delete extra[k]; // only what the registry sets (defaults live in leaderboard.js)
   return { metric, order, outcome, minMs, postWindowHours, ...extra };
 }
