@@ -1,4 +1,4 @@
-/* LAST TOWER v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* LAST TOWER v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -269,23 +269,21 @@ HENS_SHEET.onload = () => {
   SPR.real = true;
 };
 SPR.thrower = SPR.zombies[0];
-HENS_SHEET.src = 'hens-sprites.png?v=14';
-const ITEMS = ['food', 'mre', 'med', 'ammo', 'shells', 'pipe', 'machete', 'pistol', 'shotgun', 'water', 'mg', 'belt', 'ammobox'];
+HENS_SHEET.src = 'hens-sprites.png?v=15';
+const ITEMS = ['shells', 'shotgun', 'mg', 'belt', 'ammobox']; // v15: two guns + their ammo only
 const ITEM_ART = {
-  food: [['.....YY...', '....YyYY..', '....YYyY..', '...YyYYY..', '...YYyYY..', '..gYyYYg..', '..ggYYgg..', '.gg.gg.gg.', '.g..gg..g.'], { Y: 'hazard', y: 'rust', g: 'leaf' }],          // corn cob
-  mre: [['..t....t..', '...tttt...', '..ssssss..', '.ssssssss.', '.sBBBBBBs.', '.sBssssBs.', '.sBBBBBBs.', '.ssssssss.', '..ssssss..'], { s: 'tower', t: 'wood', B: 'brick' }],            // $FEED sack
-  med: [['...GGGG...', '..GgGGGG..', '.GgGGGGGG.', '.GGGGGGGG.', 'GGGGGGGGGG', 'GGGGGGGGGG', 'GGGGGGGGGG', '.GGGGGGGG.', '..GGGGGG..'], { G: 'hazard', g: 'glint' }],              // golden HEGG
-  ammo: [['.ee...ee...ee.', 'eeee.eeee.eeee', 'eeee.eeee.eeee', 'cccccccccccccc', 'cCcCcCcCcCcCcc'], { e: 'feather', c: 'tower', C: 'wood' }],                                         // eggs
   shells: [['....yy....', '...yYYy...', '..yYYYYy..', '.yYYyYYYy.', 'yYYYYYyYYy', 'yyyyyyyyyy'], { Y: 'hazard', y: 'rust' }],                                                          // corn kernels
-  pipe: [['......m.m.m', '......mmmmm', '........w..', '.......w...', '......w....', '.....w.....', '....w......', '...w.......', '..w........', '.w.........'], { m: 'metal', w: 'wood' }], // rake
-  machete: [['.....m.m.m', '.....m.m.m', '.....mmmmm', '.......w..', '......w...', '.....w....', '....w.....', '...w......', '..w.......', '.w........'], { m: 'metal', w: 'wood' }],    // pitchfork
-  pistol: [['...ee......', '..eeeegggg.', '.gggggggggg', '.gggggg....', '.gb........', '.bb........'], { e: 'feather', g: 'car2', b: 'wood' }],                                         // egg blaster
   shotgun: [['...YYYY.....', '..YyYyY.....', 'gggggggggwww', 'gggggggwwwww', '.......wwwww', '........ww..'], { g: 'car1', w: 'wood', Y: 'hazard', y: 'rust' }],                       // corn shotgun
   mg: [['.........m....', 'mmmmmmmmmmmmmm', '....rrrrrrrwww', '....rrrrrrwwww', '.....yy.r...ww', '.....yy.......'], { m: 'metal', r: 'roof', w: 'wood', y: 'hazard' }],                    // v9 machine gun
   belt: [['.y.y.y.y.y.', 'yYyYyYyYyYy', 'yYyYyYyYyYy', 'mmmmmmmmmmm', 'm.........m'], { y: 'hazard', Y: 'rust', m: 'wood' }],                                                     // v9 belt of rounds
   ammobox: [['.gggggggggg.', 'gGGGGGGGGGGg', 'gGyyyGGrrrGg', 'gGyyyGGrrrGg', 'gGGGGGGGGGGg', 'gggggggggggg'], { g: 'car1', G: 'leaf', y: 'hazard', r: 'car2' }],                  // v9 ammo crate
-  water: [['....pp......', '...pppp..pp.', '..pp..pppppp', '.pp....pp...', 'pp..........'], { p: 'worm' }],                                                                              // juicy worm
 };
+// v15: gun pickups tinted per tier (I natural, II green, III blue, IV purple, V+ gold)
+const _tierImg = new Map();
+function itemTierImg(kind_, tier) { const t = Math.min(5, tier || 1), key = kind_ + t; let c = _tierImg.get(key); if (c) return c; let x; [c, x] = mk(16, 16);
+  x.drawImage(ITEM_IMG, ITEMS.indexOf(kind_) * 16, 0, 16, 16, 0, 0, 16, 16); const col = TIER_COL[t];
+  if (col) { x.globalCompositeOperation = 'source-atop'; x.globalAlpha = t >= 5 ? 0.62 : 0.5; x.fillStyle = col; x.fillRect(0, 0, 16, 16); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; }
+  _tierImg.set(key, c); return c; }
 const ITEM_IMG = (() => {
   const [c, x] = mk(16 * ITEMS.length, 16);
   ITEMS.forEach((k, i) => { const [g, m] = ITEM_ART[k]; const p = paint(['', ...g.map((r) => '.' + r)], m, { flat: 'gyCtBe' }); x.drawImage(p, i * 16 + Math.floor((16 - p.width) / 2), 16 - p.height - 1); });
@@ -569,22 +567,33 @@ const TUNE = {
   bruteAfter: 45, bruteEvery: 18, bruteMax: (st) => 1 + Math.floor(st / 60),
   // v6 thrower: rare, keeps its distance and lobs rotten eggs (arc + ground telegraph); can hit you on a crate
   tAfter: 70, tEvery: 30, tMax: (st) => (st < 180 ? 1 : 2), tHp: 5, tKeep: [64, 120], tRange: 150, tWind: 0.7, tCool: 5.5, tDmg: 30, tFlight: (d) => 0.75 + d / 300, tHitR: [10, 9],
-  loot0: 34, lootFloor: 28, lootEvery: 12, lootAdd: 5, dropZ: 0.42, dropB: 1, gunEvery: 30, // v9: much easier guns + ammo
+  loot0: 30, lootFloor: 26, lootEvery: 12, lootAdd: 5, dropZ: 0.42, dropB: 1, gunEvery: 30, // v9: much easier guns + ammo
+  // v15: ammo comes faster every minute (m = whole minutes survived)
+  zHpAt: (st) => 1 + 0.32 * (st / 60) + 0.04 * Math.pow(st / 60, 2), itemCap: 80,
+  lootEveryAt: (m) => Math.max(3, 12 * Math.pow(0.8, m)), lootAddAt: (m) => 5 + Math.min(10, m), lootFloorAt: (m) => 26 + Math.min(24, 4 * m), dropZAt: (m) => Math.min(0.8, 0.42 + 0.06 * m),
 };
 const fmtTime = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 const WEAPONS = {
   fists:   { name: 'PECK',    kind: 'melee', dmg: 1.4, reach: 16, arc: 1.2, cd: 0.3, stam: 6, icon: -1 },
-  pipe:    { name: 'RAKE',    kind: 'melee', dmg: 2, reach: 20, arc: 1.8, cd: 0.48, stam: 11, icon: 5 },
-  machete: { name: 'PITCHFORK', kind: 'melee', dmg: 3.5, reach: 22, arc: 2.0, cd: 0.42, stam: 12, icon: 6 },
-  pistol:  { name: 'EGG BLASTER', kind: 'gun', dmg: 3, range: 200, cd: 0.32, ammo: 'ammo', pellets: 1, spread: 0, icon: 7 },
-  shotgun: { name: 'CORN SHOTGUN', kind: 'gun', dmg: 4, range: 120, cd: 0.7, ammo: 'shells', pellets: 8, spread: 0.7, kb: 2.4, icon: 8 },
-  mg:      { name: 'MACHINE GUN', kind: 'gun', dmg: 1.6, range: 170, cd: 0.08, ammo: 'belt', pellets: 1, spread: 0, jitter: 0.07, kb: 0.6, icon: 10 },
+  shotgun: { name: 'SHOTGUN I', kind: 'gun', dmg: 4, range: 120, cd: 0.7, ammo: 'shells', pellets: 8, spread: 0.7, kb: 2.4, icon: 8, pierce: 0, tier: 1 },
+  mg:      { name: 'MG I', kind: 'gun', dmg: 1.6, range: 170, cd: 0.08, ammo: 'belt', pellets: 1, spread: 0, jitter: 0.07, kb: 0.6, icon: 10, pierce: 0, tier: 1 },
 };
-const ORDER = ['fists', 'pipe', 'machete', 'pistol', 'shotgun', 'mg'];
-const AMMO_NAME = { ammo: 'EGGS', shells: 'KERNELS', belt: 'ROUNDS' };
-// v7 auto-equip: rank by effective DPS x reach. melee = dmg/cd * (reach/16) * sqrt(arc/1.2); gun = dmg*pellets*hitShare/cd * (1 + range/100)
-const W_SCORE = {}; for (const k of ORDER) { const w = WEAPONS[k]; W_SCORE[k] = w.kind === 'gun' ? w.dmg * w.pellets * (w.pellets > 1 ? 0.35 : 1) / w.cd * (1 + w.range / 100) : w.dmg / w.cd * (w.reach / 16) * Math.sqrt(w.arc / 1.2); }
-function bestWeapon() { let b = 'fists'; for (const k of G.owned) { const w = WEAPONS[k]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) continue; if (W_SCORE[k] > W_SCORE[b]) b = k; } return b; }
+// v15: only two guns (+ PECK when dry). Each minute survived unlocks the next tier as pickups + drops.
+const ORDER = ['fists', 'shotgun', 'mg'];
+const AMMO_NAME = { shells: 'KERNELS', belt: 'ROUNDS' };
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+const roman = (t) => ROMAN[t] || String(t);
+const GUN_LABEL = { mg: 'MG', shotgun: 'SHOTGUN' };
+function gunStats(k, t) { const u = t - 1; // tier t >= 1
+  if (k === 'mg') return { name: 'MG ' + roman(t), tier: t, dmg: +(1.6 * (1 + 0.2 * u)).toFixed(2), cd: +Math.max(0.05, 0.08 * Math.pow(0.94, u)).toFixed(3), jitter: +(0.07 * Math.pow(0.78, u)).toFixed(3), pierce: Math.floor((u + 1) / 2), range: 170 + 10 * u, kb: 0.6 + 0.1 * u };
+  return { name: 'SHOTGUN ' + roman(t), tier: t, pellets: Math.min(16, 8 + u), dmg: +(4 * (1 + 0.15 * u)).toFixed(2), kb: +(2.4 + 0.4 * u).toFixed(2), range: Math.min(200, 120 + 12 * u), spread: +(0.7 + 0.03 * u).toFixed(2), cd: +Math.max(0.5, 0.7 * Math.pow(0.97, u)).toFixed(3), pierce: Math.floor(u / 3) }; }
+const TIER_COL = ['', null, '#3fd46b', '#3aa0ff', '#b25cff', '#ffc42f']; // I = natural, II green, III blue, IV purple, V+ gold
+const tierCol = (t) => TIER_COL[Math.min(5, t)] || null;
+const availTier = () => 1 + Math.floor(((G && G.st) || 0) / 60);
+function setTier(k, t) { G.tier[k] = t; Object.assign(WEAPONS[k], gunStats(k, Math.max(1, t))); if (t > 0 && !G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } }
+// v7 auto-equip: rank by effective DPS x reach (recomputed live: tiers change the numbers)
+function wScore(k) { const w = WEAPONS[k]; return w.kind === 'gun' ? w.dmg * w.pellets * (w.pellets > 1 ? 0.35 : 1) * (1 + 0.5 * (w.pierce || 0)) / w.cd * (1 + w.range / 100) : w.dmg / w.cd * (w.reach / 16) * Math.sqrt(w.arc / 1.2); }
+function bestWeapon() { let b = 'fists'; for (const k of G.owned) { const w = WEAPONS[k]; if (w.kind === 'gun' && G.inv[w.ammo] <= 0) continue; if (wScore(k) > wScore(b)) b = k; } return b; }
 function autoEquip() { const b = bestWeapon(); if (b !== G.weapon) { G.weapon = b; G.equip = { name: WEAPONS[b].name, t: 1.6 }; sfx('menu'); } }
 const DAY_LEN = 180, NIGHT_LEN = 120, CYCLE = DAY_LEN + NIGHT_LEN;
 let G = null;
@@ -593,13 +602,14 @@ const itemPool = [], zombiePool = [];
 function newGame() {
   G = {
     state: 'play', t: 20, day: 1, st: 0, kills: 0, msg: [], hp: 100, stam: 100, lootT: TUNE.lootEvery,
-    inv: { ammo: 0, shells: 0, belt: 0 }, owned: ['fists'], weapon: 'fists',
+    inv: { shells: 0, belt: 0 }, owned: ['fists'], weapon: 'fists', tier: { mg: 0, shotgun: 0 }, tierSeen: 1,
     menuI: 0, shake: 0, flash: 0, deathCause: '', tracers: [], hits: [], cdT: 0, lightning: 0, swing: null, spawnT: 2, bruteT: 0, throwT: 0, proj: [], splats: [], eggHits: 0, foodLost: 0, parts: [], waves: [], muzzle: null, waveT: TUNE.waveAfter, shots: 0, swarmMax: 0,
   };
   Object.assign(player, { x: SPAWN.x, y: SPAWN.y, level: 0, air: false, climb: false, jz: 0, vz: 0, fx: 0, fy: 1, dir: 0, kb: [0, 0], atkT: 0 });
   zombiePool.length = 0; itemPool.length = 0; flowT = 0;
   scatterLoot(TUNE.loot0, true);
   for (let i = 0; i < TUNE.startZ; i++) spawnZombie(false);
+  setTier('mg', 0); setTier('shotgun', 0); G.owned = ['fists']; // v15: tiers reset each run
 }
 function say(s, t = 2.5) { if (!G || !G.msg) return; const last = G.msg[G.msg.length - 1]; if (last && last.s === s) { last.t = Math.max(last.t, t); return; } G.msg.push({ s, t }); if (G.msg.length > 3) G.msg.shift(); }
 const isNight = () => !!G && (G.t % CYCLE) >= DAY_LEN;
@@ -661,33 +671,40 @@ function lootRoll() {
   const r = Math.random();
   // v9: ~half of all loot is guns + ammo
   // v10: no food. Its loot slots became ammo
-  if (r < 0.20) return 'ammo'; if (r < 0.44) return 'shells'; if (r < 0.66) return 'belt'; if (r < 0.84) return 'ammobox';
-  const w = ['pistol', 'shotgun', 'mg', 'machete'][Math.floor(Math.random() * 4)]; return G.owned.includes(w) ? (WEAPONS[w].ammo === 'shells' ? 'shells' : WEAPONS[w].ammo === 'belt' ? 'belt' : 'ammobox') : w;
+  // v15: two ammo types + the two guns at the tier unlocked so far
+  if (r < 0.38) return 'shells'; if (r < 0.74) return 'belt'; if (r < 0.88) return 'ammobox';
+  const w = Math.random() < 0.5 ? 'shotgun' : 'mg'; return (G.tier[w] || 0) >= availTier() ? (w === 'shotgun' ? 'shells' : 'belt') : w;
 }
+const gunTierOf = (k) => (k === 'mg' || k === 'shotgun' ? availTier() : 0);
+function upgradeWanted() { const t = availTier(); return ['shotgun', 'mg'].find((k) => (G.tier[k] || 0) < t); }
 function killDrop(z) { // v9: kills feed the guns; every gunEvery kills a gun you don't have yet drops
-  if (G.kills % TUNE.gunEvery === 0) { const g = ['shotgun', 'mg', 'pistol', 'machete'].find((k) => !G.owned.includes(k)); if (g) return g; }
-  if (z.brute) return G.owned.includes('mg') ? 'ammobox' : 'mg';
-  const r = Math.random(); return r < 0.42 ? 'shells' : r < 0.8 ? 'belt' : r < 0.92 ? 'ammo' : 'ammobox'; // v10: food drops became ammo
+  if (G.kills % TUNE.gunEvery === 0 || z.brute) { const g = upgradeWanted(); if (g) return g; if (z.brute) return 'ammobox'; }
+  const r = Math.random(); return r < 0.45 ? 'shells' : r < 0.88 ? 'belt' : 'ammobox'; // v15: two ammo types
 }
 function randomTile(pred, tries = 200) { for (let t = 0; t < tries; t++) { const x = 2 + Math.floor(Math.random() * (MW - 4)), y = 2 + Math.floor(Math.random() * (MH - 4)); const i = id(x, y); if (pred(i, x, y)) return [x, y]; } return null; }
-function dropItem(kind_, x, y, level) { itemPool.push({ alive: true, kind: kind_, x, y, level, ph: Math.random() * 6 }); }
+function aliveItems() { let n = 0; for (const it of itemPool) if (it.alive) n++; return n; }
+function dropItem(kind_, x, y, level, tier) { if (itemPool.length > 120) { let j = 0; for (const it of itemPool) if (it.alive) itemPool[j++] = it; itemPool.length = j; } // v15: compact picked-up items
+  itemPool.push({ alive: true, kind: kind_, x, y, level, ph: Math.random() * 6, tier: tier || gunTierOf(kind_) }); }
 function scatterLoot(n, first) {
   for (let k = 0; k < n; k++) {
     const p = randomTile((i, x, y) => lvl[i] === 0 && kind[i] !== K.CRATE && kind[i] !== K.PLAZA && Math.hypot(x - player.x / TS, y - player.y / TS) > (first ? 9 : 6));
     if (p) { const i = id(p[0], p[1]); dropItem(lootRoll(), p[0] * TS + 8, p[1] * TS + 10, lvl[i]); }
   }
-  if (first) for (const [k, d] of [['shotgun', 5], ['shells', 6], ['belt', 6], ['ammo', 9], ['ammobox', 9], ['ammo', 10], ['pistol', 12], ['shells', 13], ['pipe', 14], ['belt', 18], ['machete', 24], ['ammobox', 26], ['mg', 30]]) { // v9: a shotgun ~5 tiles from the spawn
+  if (first) for (const [k, d] of [['shotgun', 5], ['shells', 6], ['belt', 6], ['shells', 9], ['ammobox', 9], ['belt', 10], ['shells', 13], ['belt', 14], ['belt', 18], ['ammobox', 24], ['shells', 26], ['mg', 30]]) { // v9: a shotgun ~5 tiles from the spawn
     const p = randomTile((i, x, y) => lvl[i] === 0 && Math.abs(Math.hypot(x - 40, y - 36) - d) < 2, 600);
     if (p) dropItem(k, p[0] * TS + 8, p[1] * TS + 10, 0);
   }
 }
 function pickup(it) {
   const k = it.kind; it.alive = false; sfx('pick');
-  if (WEAPONS[k]) { if (!G.owned.includes(k)) { G.owned.push(k); G.owned.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); } say('FOUND ' + WEAPONS[k].name + (k === 'pistol' ? ' +12 EGGS' : k === 'shotgun' ? ' +10 KERNELS' : k === 'mg' ? ' +90 ROUNDS' : '')); if (k === 'pistol') G.inv.ammo += 12; if (k === 'shotgun') G.inv.shells += 10; if (k === 'mg') G.inv.belt += 90; autoEquip(); return; }
-  if (k === 'ammo') { const n = 8 + Math.floor(Math.random() * 5); G.inv.ammo += n; say('+' + n + ' EGGS'); }
-  else if (k === 'shells') { const n = 6 + Math.floor(Math.random() * 4); G.inv.shells += n; say('+' + n + ' CORN KERNELS'); }
+  if (k === 'mg' || k === 'shotgun') { // v15: a higher tier replaces yours and tops up its ammo; same/lower tier = ammo
+    const t = it.tier || 1, top = k === 'mg' ? 60 + 30 * t : 8 + 4 * t, am = k === 'mg' ? 'belt' : 'shells';
+    if (t > (G.tier[k] || 0)) { const first = !G.tier[k]; setTier(k, t); G.inv[am] += top; say('+' + top + ' ' + AMMO_NAME[am]); if (!first || t > 1) upgradePop(k, t); G.weapon = ''; autoEquip(); }
+    else { G.inv[am] += Math.round(top / 2); say('+' + Math.round(top / 2) + ' ' + AMMO_NAME[am]); autoEquip(); }
+    return; }
+  if (k === 'shells') { const n = 6 + Math.floor(Math.random() * 4); G.inv.shells += n; say('+' + n + ' CORN KERNELS'); }
   else if (k === 'belt') { const n = 30 + Math.floor(Math.random() * 16); G.inv.belt += n; say('+' + n + ' ROUNDS'); }
-  else if (k === 'ammobox') { G.inv.shells += 8; G.inv.belt += 40; G.inv.ammo += 8; say('AMMO CRATE! +8 KERNELS +40 ROUNDS +8 EGGS'); }
+  else if (k === 'ammobox') { G.inv.shells += 8; G.inv.belt += 40; say('AMMO CRATE! +8 KERNELS +40 ROUNDS'); }
 }
 
 // ================================================================ zombies: flow-field pathing on the ground level
@@ -706,7 +723,7 @@ function spawnZombie(brute, near, thrower) {
   const night = isNight(), ptx = player.x / TS, pty = player.y / TS;
   const p = randomTile((i, x, y) => { if (lvl[i] !== 0 || kind[i] === K.CAR) return false; const d = Math.hypot(x - ptx, y - pty); return near ? d > 6 && d < 16 : d > 11 && d < 24; }, 60);
   if (!p) return null;
-  const hp0 = brute ? 12 : thrower ? TUNE.tHp : 4;
+  const hp0 = Math.round((brute ? 12 : thrower ? TUNE.tHp : 4) * TUNE.zHpAt((G && G.st) || 0) * 10) / 10; // v15: the flock toughens every minute (outpaces the guns eventually)
   const z = { alive: true, brute, thrower: !!thrower && !brute, tcool: 1.5, wind: 0, strikeT: 0, jz: 0, hop: null, x: p[0] * TS + 8, y: p[1] * TS + 12, level: 0, air: false, hp: hp0, max: hp0,
     speed: (brute ? 28 + Math.min(10, (G.st || 0) / 30) : TUNE.zSpeed(G.st || 0) + Math.random() * 10) * (night ? 1.25 : 1), anim: Math.random() * 4, dir: 0, fx: 0, fy: 1, atk: 0, cool: 0, hurt: 0, kb: [0, 0],
     state: 'wander', wx: 0, wy: 0, wt: 0, groan: 2 + Math.random() * 8, dead: 0, sprI: zombiePool.length % 3 };
@@ -748,7 +765,7 @@ function gibs(z, kx, ky) { // v9: feathers + goo burst on a kill
 function hurtZombie(z, dmg, kx, ky, kbk = 1) {
   z.hp -= dmg; z.hurt = 0.18; z.flash = 0.07; z.kb = [kx * (z.brute ? 40 : 110) * kbk, ky * (z.brute ? 40 : 110) * kbk]; z.state = 'chase'; if (!z.brute || (kbk >= 2 && !z.hop)) z.atk = 0; // a hit interrupts a hen's wind-up; roostrs only stagger from a shotgun blast
   G.hits.push({ x: z.x, y: z.y - 12, t: 0.25 });
-  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; z.jz = 0; G.kills++; achKill(z); sfx('splat'); gibs(z, kx, ky); if (G.kills % TUNE.gunEvery === 0 || Math.random() < (z.brute ? TUNE.dropB : z.thrower ? 0.7 : TUNE.dropZ)) dropItem(killDrop(z), z.x, z.y, 0); }
+  if (z.hp <= 0) { z.alive = false; z.dead = 0.6; z.jz = 0; G.kills++; achKill(z); sfx('splat'); gibs(z, kx, ky); if ((G.kills % TUNE.gunEvery === 0 || z.brute || aliveItems() < TUNE.itemCap) && (G.kills % TUNE.gunEvery === 0 || Math.random() < (z.brute ? TUNE.dropB : z.thrower ? 0.7 : TUNE.dropZAt(Math.floor(G.st / 60))))) dropItem(killDrop(z), z.x, z.y, 0); }
   else sfx('thud');
 }
 function updateZombies(dt) {
@@ -841,9 +858,10 @@ function attack() {
       const a = Math.atan2(ay, ax) + (w.pellets > 1 ? (p / (w.pellets - 1) - 0.5) * w.spread + (Math.random() - 0.5) * 0.08 : (Math.random() - 0.5) * 2 * (w.jitter || 0)), dx = Math.cos(a), dy = Math.sin(a);
       let hitD = w.range, hitZ = null;
       for (let s = 8; s < hitD; s += 4) { const k = kind[tileAt(player.x + dx * s, player.y - 8 + dy * s)]; if (k === K.BROOF || k === K.BWALL || k === K.BARRIER) { hitD = s; break; } }
-      for (const z of zombiePool) { if (!z.alive) continue; const rx = z.x - player.x, ry = (z.y - 8) - (player.y - 8), t = rx * dx + ry * dy; if (t < 0 || t > hitD) continue; if (Math.abs(rx * dy - ry * dx) < (z.brute ? 9 : 7)) { hitD = t; hitZ = z; } }
-      G.tracers.push({ k: G.weapon, x0: player.x + dx * 8, y0: player.y - 10 - player.jz + dy * 8, x1: player.x + dx * hitD, y1: player.y - 10 - player.jz + dy * hitD, t: 0.12 });
-      if (hitZ) hurtZombie(hitZ, w.dmg, dx, dy, w.kb || 1);
+      const hz = []; for (const z of zombiePool) { if (!z.alive) continue; const rx = z.x - player.x, ry = (z.y - 8) - (player.y - 8), t = rx * dx + ry * dy; if (t < 0 || t > hitD) continue; if (Math.abs(rx * dy - ry * dx) < (z.brute ? 9 : 7)) hz.push([t, z]); }
+      hz.sort((a, b) => a[0] - b[0]); const hits = hz.slice(0, 1 + (w.pierce || 0)); if (hits.length) hitD = hits[hits.length - 1][0]; // v15: pierce = extra zombies per bullet
+      G.tracers.push({ k: G.weapon, tier: w.tier, x0: player.x + dx * 8, y0: player.y - 10 - player.jz + dy * 8, x1: player.x + dx * hitD, y1: player.y - 10 - player.jz + dy * hitD, t: 0.12 });
+      for (const [, hzz] of hits) hurtZombie(hzz, w.dmg, dx, dy, w.kb || 1);
     }
     for (const z of zombiePool) if (z.alive && Math.hypot(z.x - player.x, z.y - player.y) < 20 * TS) z.state = 'chase';
     return;
@@ -1053,7 +1071,11 @@ function updateSurvival(dt) {
   if (G.cdT <= 0) G.stam = Math.min(100, G.stam + 16 * dt);
   updateAch(); // v13
   G.lootT -= dt;
-  if (G.lootT <= 0) { G.lootT = TUNE.lootEvery; const n = itemPool.filter((i) => i.alive).length; if (n < TUNE.lootFloor) scatterLoot(TUNE.lootAdd); }
+  const m = Math.floor(G.st / 60); // v15: ammo spawns speed up every minute
+  if (G.lootT <= 0) { G.lootT = TUNE.lootEveryAt(m); const n = itemPool.filter((i) => i.alive).length; if (n < TUNE.lootFloorAt(m)) scatterLoot(TUNE.lootAddAt(m)); }
+  // v15: each minute mark unlocks the next gun tier: announce it and drop one of each upgraded gun 6-14 tiles away
+  const at = availTier(); if (at > (G.tierSeen || 1)) { G.tierSeen = at; tierDropPop(at);
+    for (const k of ['mg', 'shotgun']) { const p = randomTile((i, x, y) => lvl[i] === 0 && kind[i] !== K.CRATE && kind[i] !== K.PLAZA && Math.abs(Math.hypot(x - player.x / TS, y - player.y / TS) - 10) < 4, 400); if (p) dropItem(k, p[0] * TS + 8, p[1] * TS + 10, 0, at); } }
 }
 let lastPhaseNight = false;
 function updateClock(dt) {
@@ -1145,8 +1167,8 @@ function drawHUD0(dt, t) {
   // weapon + ammo (bottom-left)
   const w = WEAPONS[G.weapon], ww = Math.max(74, 22 + w.name.length * 6);
   panel(2, N - 22, ww, 20);
-  if (w.icon >= 0) drawItemIcon(w.icon, 5, N - 19); else { hx.fillStyle = INK; hx.fillRect(7, N - 14, 7, 5); hx.fillStyle = HGOLD; hx.fillRect(8, N - 13, 5, 3); hx.fillRect(13, N - 12, 2, 1); } // beak
-  inkText(w.name, 19, N - 20);
+  if (w.icon >= 0) hx.drawImage(itemTierImg(G.weapon, w.tier), 0, 0, 16, 16, 3, N - 22, 16, 16); else { hx.fillStyle = INK; hx.fillRect(7, N - 14, 7, 5); hx.fillStyle = HGOLD; hx.fillRect(8, N - 13, 5, 3); hx.fillRect(13, N - 12, 2, 1); } // beak
+  inkText(w.name, 19, N - 20, w.tier >= 2 ? (w.tier >= 5 ? '#b07800' : '#036b2b') : INK); // v15: name + tier (e.g. MG III)
   if (w.kind === 'gun') inkText(AMMO_NAME[w.ammo] + ' ' + G.inv[w.ammo], 19, N - 11, G.inv[w.ammo] ? INK : HRED);
   else { const sx = 19; hx.fillStyle = INK; hx.fillRect(sx, N - 7, 40, 3); hx.fillStyle = G.cdT > 0 ? '#b9c0c6' : HGREEN; hx.fillRect(sx + 1, N - 6, Math.round(38 * (1 - G.cdT / w.cd)), 1); }
   if (G.equip && G.equip.t > 0) { G.equip.t -= dt; const s = 'EQUIPPED: ' + G.equip.name, pw = s.length * 6 + 12, px = Math.round(N / 2 - pw / 2), py = Math.round(N / 2 + 22 + Math.max(0, G.equip.t - 1.4) * 30); // v7 auto-equip popup, under the hen
@@ -1173,12 +1195,13 @@ function drawDead(t) {
   inkText((G.newBest ? 'NEW BEST ' : 'BEST ') + fmtTime(best.time) + ' / ' + best.kills, N / 2 + 26, y + 50, G.newBest ? '#036b2b' : INK, 'center');
   inkText('BILLIONS MUST BOK.', N / 2 + 26, y + 62, INK, 'center');
   // v13: achievements earned this run
-  const got = [...new Set(G.achList || [])], rows = got.slice(0, 6), ay = y + 106, ah = 14 + Math.max(1, rows.length) * 9 + (got.length > 6 ? 9 : 0);
+  const fk = FLOCK.length > 0, MAXR = fk ? 5 : 6, got = [...new Set(G.achList || [])], rows = got.slice(0, MAXR), ay = y + (fk ? 122 : 106), ah = 14 + Math.max(1, rows.length) * 9 + (got.length > MAXR ? 9 : 0);
+  if (fk) { text('THE FLOCK SALUTES YOU', N / 2, y + 89, 8, HGOLD, 'center'); flockSalute(G.deadT > 0.5, N / 2, y + 100, 18); } // v15 community hens
   panel(px0, ay, pw, ah); hx.fillStyle = HGOLD; hx.fillRect(px0 + 1, ay + 1, pw - 2, 10);
   inkText('ACHIEVEMENTS THIS RUN: ' + got.length, N / 2, ay + 2, INK, 'center');
   if (!rows.length) inkText('NONE YET. SURVIVE 1:00!', N / 2, ay + 14, INK, 'center');
   rows.forEach((id, i) => { const n = G.achGot[id] > 1 ? ' X' + G.achGot[id] : ''; inkText('* ' + achDef(id)[0] + n, px0 + 6, ay + 14 + i * 9, i % 2 ? INK : '#036b2b'); });
-  if (got.length > 6) inkText('+' + (got.length - 6) + ' MORE', N / 2, ay + 14 + 6 * 9, HRED, 'center');
+  if (got.length > MAXR) inkText('+' + (got.length - MAXR) + ' MORE', N / 2, ay + 14 + MAXR * 9, HRED, 'center');
 }
 function drawTitle(t) {
   hx.fillStyle = 'rgba(9,11,10,.18)'; hx.fillRect(0, 0, N, N);
@@ -1209,13 +1232,17 @@ const ACH_DEF = { // id -> [title, subtitle]; minute + kill tiers are generated
   clean1: ['UNTOUCHED', '1 MINUTE WITHOUT A HIT'],
   clean2: ['FEATHERS INTACT', '2 MINUTES WITHOUT A HIT'],
   clean3: ['TEFLON HEN', '3 MINUTES WITHOUT A HIT'],
+  up1: ['UPGRADED', 'FIRST TIER II GUN'],
+  gold: ['GOLDEN GUN', 'A TIER V GUN'],
+  maxt: ['MAX TIER', 'BOTH GUNS AT TIER V'],
 };
 const KILL_TIERS = [[25, 'PECKING ORDER'], [50, 'FOWL PLAY'], [100, 'CENTURY CHIKN'], [250, 'HEN-DEMIC'], [500, 'COOP DE GRACE'], [1000, 'KILLERGAINZ']];
 for (const [n, nm] of KILL_TIERS) ACH_DEF['k' + n] = [nm, n + ' UNDEAD CHIKN PLUCKED'];
 for (let m = 1; m <= 10; m++) ACH_DEF['m' + m] = [MIN_NAMES[m] || 'UNPLUCKABLE', m + (m === 1 ? ' MINUTE' : ' MINUTES') + ' SURVIVED (' + m + ':00)'];
 const ACH_TOTAL = Object.keys(ACH_DEF).length;
 let ACH_UNLOCKED = {}; try { ACH_UNLOCKED = JSON.parse(localStorage.getItem(ACH_KEY)) || {}; } catch (e) {}
-function achDef(id) { if (ACH_DEF[id]) return ACH_DEF[id]; const m = /^m(\d+)$/.exec(id); if (m) return ['UNPLUCKABLE', m[1] + ' MINUTES SURVIVED (' + m[1] + ':00)']; return [id, '']; }
+function achDef(id) { if (ACH_DEF[id]) return ACH_DEF[id];
+  { const u = /^up:(\w+):(\d+)$/.exec(id); if (u) return [GUN_LABEL[u[1]] + ' ' + roman(+u[2]), 'UPGRADED + AMMO TOPPED UP']; const d = /^drop:(\d+)$/.exec(id); if (d) return ['MG ' + roman(+d[1]) + ' DROPPING', '+ SHOTGUN ' + roman(+d[1])]; } const m = /^m(\d+)$/.exec(id); if (m) return ['UNPLUCKABLE', m[1] + ' MINUTES SURVIVED (' + m[1] + ':00)']; return [id, '']; }
 function award(id, repeatable) {
   if (!G || G.state === 'dead') return false;
   G.achGot = G.achGot || {}; if (G.achGot[id] && !repeatable) return false;
@@ -1232,6 +1259,7 @@ function updateAch() {
   for (const [n] of KILL_TIERS) if (G.kills >= n) award('k' + n);
   if (G.owned.some((w) => WEAPONS[w].kind === 'gun')) award('gun1');
   if (G.owned.includes('mg')) award('mg');
+  { const a = G.tier.mg || 0, b = G.tier.shotgun || 0; if (Math.max(a, b) >= 2) award('up1'); if (Math.max(a, b) >= 5) award('gold'); if (Math.min(a, b) >= 5) award('maxt'); }
   if (G.hp > 0 && G.hp <= 10) award('close');
   const clean = G.st - (G.lastHit || 0), tier = Math.min(3, Math.floor(clean / 60)); // tiered, and repeatable once a streak is broken and rebuilt
   if (tier > (G.cleanTier || 0)) { G.cleanTier = tier; award('clean' + tier, true); }
@@ -1243,7 +1271,7 @@ function sfxAch() { tone(523, 523, 0.08, 'square', 0.07); tone(659, 659, 0.08, '
 const _achImg = new Map();
 function achCard(id) {
   let c = _achImg.get(id); if (c) return c; const [t1, t2] = achDef(id);
-  const big = textImg(t1, 16, HGOLD, false), inkB = textImg(t1, 16, INK, false), sub = textImg(t2, 8, CREAM, true), lab = textImg('ACHIEVEMENT', 8, INK, false);
+  const big = textImg(t1, 16, HGOLD, false), inkB = textImg(t1, 16, INK, false), sub = textImg(t2, 8, CREAM, true), lab = textImg(id.startsWith('up:') ? 'UPGRADE' : id.startsWith('drop:') ? 'NEW TIER' : 'ACHIEVEMENT', 8, INK, false);
   const w = Math.max(big.width + 10, sub.width + 8, 90), h = big.height + 30; let x; [c, x] = mk(w + 6, h + 6);
   // label tab
   x.fillStyle = INK; x.fillRect(Math.floor(w / 2 - lab.width / 2) - 4, 0, lab.width + 10, 12); x.fillStyle = HGOLD; x.fillRect(Math.floor(w / 2 - lab.width / 2) - 3, 1, lab.width + 6, 10); x.drawImage(lab, Math.floor(w / 2 - lab.width / 2), 1);
@@ -1255,9 +1283,12 @@ function achCard(id) {
   _achImg.set(id, c); return c;
 }
 const ACH_T = 2.6;
+// v15 gun-tier pop-ups share the big gold card (not saved as trophies)
+function upgradePop(k, t) { (G.achQ = G.achQ || []).push({ id: 'up:' + k + ':' + t, t: 0, isNew: false }); }
+function tierDropPop(t) { (G.achQ = G.achQ || []).push({ id: 'drop:' + t, t: 0, isNew: false }); }
 function drawAch(dt) {
   if (!G || !G.achQ || !G.achQ.length) return; const a = G.achQ[0], AT = G.achQ.length > 2 ? 1.6 : ACH_T; // a backlog plays faster
-  if (a.t === 0) sfxAch(); a.t += dt;
+  if (a.t === 0) { sfxAch(); flockPop(a.id); } a.t += dt;
   const c = achCard(a.id), e = Math.min(1, a.t / 0.22), s = a.t < 0.22 ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - 0.25 ? Math.max(0.05, (AT - a.t) / 0.25) : 1;
   const fit = Math.min(1, (N - 6) / c.width); // never wider than the screen
   const w = Math.round(c.width * s * fit), h = Math.round(c.height * s * fit), cx = Math.round(N / 2), cy = Math.round(N * 0.29); // top-centre band (the hen is always at screen centre)
@@ -1267,6 +1298,79 @@ function drawAch(dt) {
   if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 18, cy - (fh >> 1) - 2, 8, HGOLD, 'center');
   if (a.t >= AT) G.achQ.shift();
 }
+// ================================================================ v15 THE FLOCK: community hens (X pfps of people posting about hens.farm) cheer your achievements
+// Data: flock/manifest.json {flock:[{handle,file,posted_about_url}]}. Remove a hen = delete its entry. ?flock=0 turns it off.
+const FLOCK = [], _flockRecent = [];
+const FLOCK_LAYER = (() => { const st = document.getElementById('stage'); if (!st || /[?&]flock=0/.test(location.search)) return null; const L = document.createElement('div'); L.id = 'flockLayer'; st.appendChild(L); return L; })();
+if (FLOCK_LAYER) fetch('flock/manifest.json?v=15').then((r) => r.json()).then((m) => { for (const f of (m.flock || [])) { if (!f.handle || !f.file) continue; const img = new Image(); img.src = 'flock/' + f.file; FLOCK.push({ h: f.handle, src: img.src, img }); } flockCredits(); }).catch(() => {});
+const FLOCK_LINES = { // {h} = @handle. "{h}: '...'" shows as a quote, anything else as a caption
+  m1: ["{h}: 'one whole minute? i'd have laid an egg by now'", "{h} clocked it. 60 seconds of pure bok.", "{h}: 'still bokkin'. respect.'"],
+  m2: ["{h}: 'hard-boiled. no notes.'", "{h} is already telling the whole coop", "{h}: 'two minutes and not a scratch on the vibe'"],
+  m3: ["{h}: 'free range, full send'", "{h}: 'legend status. framing this.'", "{h} called their mom about you"],
+  m4: ["{h} crowns you coop champion", "{h}: 'four minutes?! who raised you?'", "{h}: 'the farm has a new main character'"],
+  m5: ["{h}: 'BILLIONS. MUST. BOK.'", "{h} just shed a single proud feather", "{h}: 'five minutes. i'm not crying, you're crying'"],
+  mX: ["{h}: 'unpluckable. scientists baffled.'", "{h} has run out of clucks to give", "{h}: 'at this point the zombies are scared of YOU'"],
+  k25: ["{h}: 'pecking order: established'", "{h}: '25? cute. keep going'", "{h} is keeping score. so far: you"],
+  k50: ["{h}: 'fowl play detected'", "{h} counted all 50. twice.", "{h}: 'half a century of undead hens'"],
+  k100: ["{h}: 'bok bok, that's a century'", "{h}: 'a hundred? the farm will remember this'", "{h} is ordering a trophy egg"],
+  k250: ["{h}: 'it's officially a hen-demic'", "{h} is reporting you to the coop council (with pride)", "{h}: '250 and climbing. who IS she'"],
+  k500: ["{h}: 'coop de grace. chef's kiss.'", "{h}: '500?! save some for the rest of us'", "{h} needs a bigger abacus"],
+  k1000: ["{h}: 'KILLERGAINZ. say less.'", "{h} has never seen a number go this up", "{h}: 'one thousand. put her on the egg.'"],
+  clean1: ["{h} has never seen a hen this clean", "{h}: 'not one feather out of place'", "{h}: 'untouched. unbothered. unpecked.'"],
+  clean2: ["{h}: 'feathers intact. moisturized. thriving.'", "{h}: 'how are you THIS untouched?'", "{h} checked twice: zero scratches"],
+  clean3: ["{h}: 'teflon hen. nothing sticks.'", "{h} is checking you for cheat codes", "{h}: 'three minutes clean? suspicious. iconic.'"],
+  close: ["{h}: 'i had to look away'", "{h}: 'heart rate: 190 bpm'", "{h} is clutching their eggs", "{h}: 'that was TOO close. do it again'"],
+  gun1: ["{h}: 'locked, loaded, bokked'", "{h}: 'oh she's armed now'", "{h} hears a safety click off"],
+  mg: ["{h}: 'BRRRT-AWK! say it with me'", "{h} hears the belt feed and smiles", "{h}: 'the coop just got louder'"],
+  spree: ["{h}: 'frenzy! someone stop her (don't)'", "{h} couldn't even count that fast", "{h}: 'ten in three? feathers everywhere'"],
+  shot5: ["{h}: 'corn-splosion. five in one. art.'", "{h}: 'that's popcorn now'", "{h} felt that one from the next farm"],
+  roostr: ["{h}: 'the roostr has been ROOSTED'", "{h}: 'big bird down'", "{h}: 'sleep tight, cock-a-doodle-don't'"],
+  thrower: ["{h}: 'no more rotten eggs (for now)'", "{h}: 'return to sender'", "{h} catches the last egg. omelette."],
+  up1: ["{h}: 'tier II? we're so back'", "{h} approves this glow-up"],
+  gold: ["{h}: 'GOLDEN GUN. the hens.farm dream'", "{h} is blinded by the drip"],
+  maxt: ["{h}: 'max tier. the farm fears you.'", "{h}: 'fully loaded. fully bokked.'"],
+  up: ["{h}: 'upgrade secured. bok.'", "{h} approves this loadout", "{h}: 'shinier. louder. better.'"],
+  drop: ["{h}: 'new guns just dropped'", "{h} spotted shiny crates", "{h}: 'the minute bell rang. tier up.'"],
+  any: ["{h}: 'bok!'", "{h} is cheering from the coop"],
+};
+function flockLinesFor(id) { if (id.startsWith('up:')) return FLOCK_LINES.up; if (id.startsWith('drop:')) return FLOCK_LINES.drop; if (/^m\d+$/.test(id)) return FLOCK_LINES[id] || FLOCK_LINES.mX; return FLOCK_LINES[id] || FLOCK_LINES.any; }
+const _lineLast = {};
+function flockPick(n = 1) { // never the same hen as the last few
+  const pool = FLOCK.filter((f) => !_flockRecent.includes(f.h)), src = pool.length >= n ? pool : FLOCK.slice(), out = [];
+  while (out.length < n && src.length) out.push(src.splice(Math.floor(Math.random() * src.length), 1)[0]);
+  for (const f of out) { _flockRecent.push(f.h); if (_flockRecent.length > Math.min(5, Math.max(0, FLOCK.length - 2))) _flockRecent.shift(); }
+  return out; }
+const _esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function flockFont() { if (!FLOCK_LAYER) return; const w = FLOCK_LAYER.offsetWidth || 256; /* layout px: the shell scales the screen with a CSS transform */ FLOCK_LAYER.style.fontSize = (w / 256 * 7.4).toFixed(2) + 'px'; }
+let _flockPopEl = null, _flockSide = 0;
+function flockPop(id) {
+  if (!FLOCK_LAYER || !FLOCK.length) return; const [f] = flockPick(1); if (!f) return;
+  const lines = flockLinesFor(id); let k = Math.floor(Math.random() * lines.length); if (lines.length > 1 && k === _lineLast[id]) k = (k + 1) % lines.length; _lineLast[id] = k;
+  const raw = lines[k], quote = raw.startsWith('{h}: '), body = quote ? '\u201c' + raw.slice(5).replace(/^'|'$/g, '') + '\u201d' : raw.replace('{h} ', '');
+  // slide in from the edge the hen is NOT aiming at (she always sits at screen centre, the card stays in the side gutter)
+  const side = player.fx > 0.25 ? 'left' : player.fx < -0.25 ? 'right' : (_flockSide++ % 2 ? 'left' : 'right');
+  flockFont(); if (_flockPopEl) _flockPopEl.remove();
+  const el = document.createElement('div'); el.className = 'fk-pop fk-' + side;
+  el.innerHTML = `<img src="${_esc(f.src)}" alt=""><div class="fk-txt"><b>@${_esc(f.h)}</b><span>${_esc(body)}</span></div>`;
+  FLOCK_LAYER.appendChild(el); _flockPopEl = el; setTimeout(() => { if (el.parentNode) el.remove(); if (_flockPopEl === el) _flockPopEl = null; }, 1650);
+}
+// death screen: 2-3 cheering hens ("the flock salutes you"), placed in canvas coords
+let _salute = null;
+function flockSalute(on, x, y, size) {
+  if (!FLOCK_LAYER) return;
+  if (!on) { if (_salute) { _salute.el.remove(); _salute = null; } return; }
+  if (_salute && _salute.g === G) return; if (!FLOCK.length) return; if (_salute) _salute.el.remove();
+  const n = Math.min(3, FLOCK.length), hens = flockPick(n), el = document.createElement('div'); el.className = 'fk-salute';
+  el.style.left = (x / N * 100) + '%'; el.style.top = (y / N * 100) + '%'; el.style.height = (size / N * 100) + '%'; flockFont();
+  el.innerHTML = hens.map((f, i) => `<i style="animation-delay:${i * 0.12}s"><img src="${_esc(f.src)}" alt=""><b>@${_esc(f.h)}</b></i>`).join('');
+  FLOCK_LAYER.appendChild(el); _salute = { el, g: G };
+}
+// credits ticker on the title screen
+let _cred = null;
+function flockCredits() { if (!FLOCK_LAYER || !FLOCK.length || _cred) return; _cred = document.createElement('div'); _cred.className = 'fk-cred';
+  const s = 'THE FLOCK: ' + FLOCK.map((f) => '@' + _esc(f.h)).join('  \u00b7  ') + '  \u00b7  '; _cred.innerHTML = `<span>${s}${s}</span>`; FLOCK_LAYER.appendChild(_cred); }
+setInterval(() => { if (_cred) _cred.style.display = STATE === 'title' ? 'block' : 'none'; if (STATE !== 'game' || !G || G.state !== 'dead') flockSalute(false); }, 150);
+addEventListener('resize', flockFont);
 
 // ================================================================ dynamic props (tall things that can stand in front of the player: they fade)
 const PROP_IMG = (() => {
@@ -1371,11 +1475,12 @@ function renderWorld(dt, t) {
   // items
   // v13: pickups 3x (48 px) with a gold pulsing halo + bob + sparkle. Drawn as a ground layer BEFORE every actor, so they can never hide the hen.
   for (const it of itemPool) if (it.alive) { const [sx, sy] = w2s(it.x, it.y); if (sx < -30 || sx > N + 30 || sy < -10 || sy > N + 52) continue;
-    const bobY = Math.round(Math.sin(t * 3 + it.ph) * 3), pulse = 0.5 + 0.5 * Math.sin(t * 5 + it.ph), rx = 20 + Math.round(pulse * 3), ry = 7 + Math.round(pulse);
-    hx.globalAlpha = 0.28 + pulse * 0.3; hx.fillStyle = HGOLD; hx.beginPath(); hx.ellipse(sx, sy - 1, rx, ry, 0, 0, 6.283); hx.fill();
+    const bobY = Math.round(Math.sin(t * 3 + it.ph) * 3), pulse = 0.5 + 0.5 * Math.sin(t * 5 + it.ph), gun = it.kind === 'mg' || it.kind === 'shotgun', tc = gun ? (tierCol(it.tier) || HGOLD) : HGOLD, big = gun && it.tier >= 5, rx = 20 + Math.round(pulse * (big ? 6 : 3)), ry = 7 + Math.round(pulse * (big ? 2 : 1));
+    hx.globalAlpha = 0.28 + pulse * (big ? 0.5 : 0.3); hx.fillStyle = tc; hx.beginPath(); hx.ellipse(sx, sy - 1, rx, ry, 0, 0, 6.283); hx.fill();
     hx.globalAlpha = 0.9; hx.strokeStyle = INK; hx.lineWidth = 1; hx.beginPath(); hx.ellipse(sx, sy - 1, rx, ry, 0, 0, 6.283); hx.stroke(); hx.globalAlpha = 1;
     hx.drawImage(SHADOW.i, sx - 5, sy - 3, 10, 5);
-    hx.drawImage(ITEM_IMG, ITEMS.indexOf(it.kind) * 16, 0, 16, 16, sx - 24, sy - 45 + bobY, 48, 48);
+    if (gun) { hx.drawImage(itemTierImg(it.kind, it.tier), 0, 0, 16, 16, sx - 24, sy - 45 + bobY, 48, 48); const r = roman(it.tier || 1); text(r, sx + 18, sy - 44 + bobY, 8, tc === HGOLD && it.tier < 5 ? CREAM : tc, 'center'); }
+    else hx.drawImage(ITEM_IMG, ITEMS.indexOf(it.kind) * 16, 0, 16, 16, sx - 24, sy - 45 + bobY, 48, 48);
     if (((t * 2 + it.ph) % 2) < 0.25) { const k = Math.floor(it.ph * 7) % 3; hx.fillStyle = '#ffffff'; const px = sx + [-14, 10, 4][k], py = sy - 36 + bobY + [0, 6, -4][k]; hx.fillRect(px - 2, py, 5, 1); hx.fillRect(px, py - 2, 1, 5); } }
   // zombies (live and falling corpses)
   let onScreen = 0; const slashes = [];
@@ -1417,7 +1522,7 @@ function renderWorld(dt, t) {
     hx.drawImage(sil ? ps.sil : ps.img, ...spriteFrame(ps, player.dir, pcol), sx - PW / 2 + pdx, py + pdy, PW, PH);
     if (!sil && pecking && player.atkT < 0.16 && player.atkT > 0.08) { const [fx, fy] = [[0, 1], [0, -1], [-1, 0], [1, 0]][player.dir], tx0 = sx + pdx + fx * (PW / 2 + 1), ty0 = py + pdy + Math.round(PH * 0.42) + fy * Math.round(PH * 0.42) + (fx ? -2 : 0); // tok! spark at the beak tip
       hx.fillStyle = OUT; hx.fillRect(tx0 - 2, ty0 - 1, 5, 3); hx.fillRect(tx0 - 1, ty0 - 2, 3, 5); hx.fillStyle = '#ffffff'; hx.fillRect(tx0 - 1, ty0, 3, 1); hx.fillRect(tx0, ty0 - 1, 1, 3); }
-    if (!sil && player.atkT > 0 && !player.peck) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, -8, py + PH - 16 + oy, 16, 16); hx.restore(); } else hx.drawImage(ITEM_IMG, w.icon * 16, 0, 16, 16, sx - 8 + ox, py + PH - 16 + oy, 16, 16); } }
+    if (!sil && player.atkT > 0 && !player.peck) { const w = WEAPONS[G.weapon]; if (w.icon >= 0) { const [fx, fy] = dirVec(); const ox = Math.round(fx * 9), oy = Math.round(fy * 7); if (fx < -0.3) { hx.save(); hx.translate(sx + ox, 0); hx.scale(-1, 1); hx.drawImage(itemTierImg(G.weapon, w.tier), 0, 0, 16, 16, -8, py + PH - 16 + oy, 16, 16); hx.restore(); } else hx.drawImage(itemTierImg(G.weapon, w.tier), 0, 0, 16, 16, sx - 8 + ox, py + PH - 16 + oy, 16, 16); } }
   };
   const showPlayer = STATE === 'game' && (G.state !== 'dead' || G.deadT < 0.5);
   if (showPlayer) list.push({ y: player.y, player: true, draw: () => drawPlayer(false) });
@@ -1480,7 +1585,6 @@ function renderWorld(dt, t) {
     for (let k = 0; k <= 8; k++) { const a = sw.a - 1.0 + Math.min(prog, 1) * 2.0 * (k / 8); const rr = sw.reach; hx.fillStyle = k > 6 ? '#fff4c0' : '#c8c0b0'; hx.fillRect(Math.round(px0 + Math.cos(a) * rr), Math.round(py0 + Math.sin(a) * rr * 0.85), 2, 2); } }
   if (G && G.tracers) { for (const tr of G.tracers) { const a = w2s(tr.x0, tr.y0), b = w2s(tr.x1, tr.y1);
     if (tr.k === 'shotgun') { const n = Math.max(2, Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / 11)); for (let q = 1; q <= n; q++) { const qx = Math.round(a[0] + (b[0] - a[0]) * q / n), qy = Math.round(a[1] + (b[1] - a[1]) * q / n); hx.fillStyle = OUT; hx.fillRect(qx - 1, qy - 1, 4, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(qx, qy, 2, 2); } } // corn kernels
-    else if (tr.k === 'pistol') { pixLine(a[0], a[1], b[0], b[1], 'rgba(255,255,255,.55)'); hx.fillStyle = OUT; hx.fillRect(b[0] - 2, b[1] - 3, 5, 6); hx.fillStyle = '#ffffff'; hx.fillRect(b[0] - 1, b[1] - 2, 3, 4); hx.fillStyle = '#ffc42f'; hx.fillRect(b[0], b[1] - 1, 1, 2); } // egg
     else pixLine(a[0], a[1], b[0], b[1], '#ffe9a0'); tr.t -= dt; } G.tracers = G.tracers.filter((q) => q.t > 0); }
   if (G && G.hits) { for (const h of G.hits) { const p = w2s(h.x, h.y); if (h.peck) { const r = Math.round((0.14 - h.t) * 40) + 2; hx.fillStyle = '#ffc42f'; for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]]) hx.fillRect(p[0] + Math.round(ax * r), p[1] + Math.round(ay * r), 2, 2); hx.fillStyle = '#ffffff'; hx.fillRect(p[0] - 1, p[1] - 1, 3, 3); h.t -= dt; continue; } for (let k = 0; k < 6; k++) { hx.fillStyle = k % 2 ? '#ffffff' : RAMP.blood[0]; hx.fillRect(p[0] + Math.round((Math.random() - 0.5) * 9), p[1] + Math.round((Math.random() - 0.5) * 9), 2, 1); } hx.fillStyle = '#ffc42f'; hx.fillRect(p[0], p[1], 1, 1); h.t -= dt; } G.hits = G.hits.filter((q) => q.t > 0); }
   applyLight(t);
