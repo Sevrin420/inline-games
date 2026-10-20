@@ -27,5 +27,25 @@
     "scoreTrusted": false,
     "scoreOrder": "asc",
     "bestOutcome": "win"
+  },
+  {
+    "id": "last-tower",
+    "title": "Last Tower",
+    "access": "open",
+    "scoreTrusted": false,
+    "leaderboard": {
+      "metric": "survival",
+      "order": "desc",
+      "outcome": "died",
+      "minMs": 5000,
+      "maxMs": 7200000,
+      "maxScorePerSec": 15,
+      "postWindowHours": 2,
+      "top": 20,
+      "bestPerPlayer": true,
+      "nameMin": 3,
+      "nameMax": 12,
+      "postsPerPlayer": 20
+    }
   }
 ]

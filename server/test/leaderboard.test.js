@@ -232,3 +232,53 @@ test('anon claim moves leaderboard entries only for the real owner', async () =>
   const owner = db.prepare("SELECT id FROM accounts WHERE username = 'realowner'").get().id;
   assert.deepEqual({ ...row }, { player_key: `account:${owner}`, account_id: owner });
 });
+
+// ---- Last Tower: survival metric (server time, lowered to the client's run clock), kills tiebreak, best per player, top 20
+const LT = { metric: 'survival', order: 'desc', outcome: 'died', minMs: 5000, maxMs: 7_200_000, maxScorePerSec: 15, postWindowHours: 2, top: 20, bestPerPlayer: true, nameMin: 3, nameMax: 12, postsPerPlayer: 20 };
+const LTG = [{ id: 'last-tower', title: 'Last Tower', access: 'open', leaderboard: LT }];
+async function ltSetup() {
+  const ctx = await makeApp({ games: LTG, env: { ADMIN_TOKEN: ADMIN } });
+  ctx.run = async (c, serverMs, kills, clientMs = serverMs, outcome = 'died') => {
+    const s = await c.post('/plays/start', { game_id: 'last-tower' }); assert.equal(s.status, 201);
+    ctx.clock.t += serverMs;
+    assert.equal((await c.post(`/plays/${s.json.play_id}/end`, { outcome, score: kills, meta: { ms: clientMs } })).status, 200);
+    return s.json.play_id;
+  };
+  ctx.post = async (c, id, name) => { ctx.clock.t += 1000; return c.post('/plays/leaderboard/last-tower', { play_id: id, name }); };
+  return ctx;
+}
+
+test('last-tower: survival time is the shorter of server and client clocks, ties broken by kills, one row per player', async () => {
+  const { app, run, post } = await ltSetup();
+  const a = client(app), b = client(app), c = client(app);
+  // a backgrounded tab: the server saw 200 s, the game clock only 90.4 s -> 90.4 s counts
+  const r1 = await post(a, await run(a, 200_000, 120, 90_400), 'BOKSTER');
+  assert.equal(r1.status, 201); assert.equal(r1.json.entry.ms, 90_400); assert.equal(r1.json.entry.kills, 120);
+  // a client claiming more than the server measured gets the server's time
+  const r2 = await post(b, await run(b, 60_000, 50, 999_999), 'CLUCKY');
+  assert.equal(r2.json.entry.ms, 60_000);
+  // same time as b, more kills -> ranks above b
+  const r3 = await post(c, await run(c, 60_050, 80), 'HENRY');
+  assert.equal(r3.json.entry.ms, 60_000); assert.equal(r3.json.entry.rank, 2);
+  // a's worse run does not add a second row for a
+  assert.equal((await post(a, await run(a, 30_000, 10), 'BOKSTER')).status, 201);
+  const board = (await a.get('/plays/leaderboard/last-tower')).json;
+  assert.deepEqual(board.top.map((e) => [e.rank, e.name, e.ms, e.kills, e.mine]), [[1, 'BOKSTER', 90_400, 120, true], [2, 'HENRY', 60_000, 80, false], [3, 'CLUCKY', 60_000, 50, false]]);
+  assert.equal(board.total, 3); assert.equal(board.me.rank, 1); assert.equal(board.me.ms, 90_400);
+  assert.equal(board.metric, 'survival'); assert.equal(board.nameMax, 12); assert.equal(board.nameMin, 3);
+});
+
+test('last-tower: sanity bounds and name rules', async () => {
+  const { app, run, post } = await ltSetup();
+  const a = client(app);
+  assert.equal((await post(a, await run(a, 4_000, 3), 'SHORTY')).json.error, 'implausible');
+  assert.equal((await post(a, await run(a, 7_300_000, 3), 'FOREVER')).json.error, 'implausible');
+  assert.equal((await post(a, await run(a, 10_000, 500), 'AIMBOT')).json.error, 'implausible', '500 kills in 10 s');
+  assert.equal((await post(a, await run(a, 30_000, 20, 30_000, 'win'), 'WINNER')).json.error, 'not_eligible');
+  const ok = await run(a, 30_000, 20);
+  assert.equal((await post(a, ok, 'AB')).json.error, 'bad_name');
+  assert.equal((await post(a, ok, 'ABCDEFGHIJKLM')).json.error, 'bad_name');
+  assert.equal((await post(a, ok, 'FUCKER')).json.error, 'name_not_allowed');
+  assert.equal((await post(a, ok, 'BOK')).status, 201);
+  // the default coop-sweep style board is unchanged (nameMin absent, top 10)
+});

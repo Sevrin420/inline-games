@@ -24,11 +24,12 @@ const LEET = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', 8: 'b', 9: 'g' };
 const leet = s => s.toLowerCase().replace(/[0-9]/g, d => LEET[d] || d);
 const collapse = s => s.replace(/(.)\1+/g, '$1');
 
-export function cleanName(raw) {
+export function cleanName(raw, { min = 1, max = NAME_MAX } = {}) {
   if (typeof raw !== 'string') return { ok: false, error: 'bad_name', message: 'Pick a name.' };
   const name = raw.trim().replace(/\s+/g, ' ');
   if (!name) return { ok: false, error: 'bad_name', message: 'Pick a name.' };
-  if (name.length > NAME_MAX) return { ok: false, error: 'bad_name', message: `Names are at most ${NAME_MAX} characters.` };
+  if (name.length > Math.min(max, NAME_MAX)) return { ok: false, error: 'bad_name', message: `Names are at most ${Math.min(max, NAME_MAX)} characters.` };
+  if (name.length < min) return { ok: false, error: 'bad_name', message: `Names are at least ${min} characters.` };
   if (!NAME_RE.test(name)) return { ok: false, error: 'bad_name', message: 'Use letters, numbers, spaces, _ - or . only.' };
   if (isBlocked(name)) return { ok: false, error: 'name_not_allowed', message: 'That name isn\u2019t allowed. Try another.' };
   return { ok: true, name };
