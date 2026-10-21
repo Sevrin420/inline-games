@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v24 (quote band 70% size, flush bottom-right beside the gun panel, fades to 35% over the hen) v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v25 (gold cards: 1.5 s hold, one start per 8 s, the backlog merges into one card) v24 (quote band 70% size, flush bottom-right beside the gun panel, fades to 35% over the hen) v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -1275,7 +1275,7 @@ function drawHUD0(dt, t) {
   hx.drawImage(ICONS.skull, 5, 33); inkText('' + G.kills, 14, 32);
   drawCleanMeter(t); // v16 no-hit streak
   // messages
-  let my = 40; const achOn = G.achQ && G.achQ.length; for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
+  let my = 40; const achOn = G.achQ && G.achQ.length && G.achQ[0].t > 0; // v25: only while a card is actually up for (const m of G.msg) { if (!achOn) text(m.s, N / 2, my, 8, CREAM, 'center'); my += 9; m.t -= dt; }
   if (G.state === 'play') drawAch(dt); // v13 achievement pop-up (top band)
   flockGhost(); // v24: see-through quote band over the hen
   G.msg = G.msg.filter((m) => m.t > 0);
@@ -1391,11 +1391,9 @@ function award(id, repeatable) {
   G.achGot = G.achGot || {}; if (G.achGot[id] && !repeatable) return false;
   G.achGot[id] = (G.achGot[id] || 0) + 1; (G.achList = G.achList || []).push(id);
   const isNew = unlockSave(id);
-  // queue: 3+ waiting cards merge into one "+N ACHIEVEMENTS" card so a burst never stalls the screen
-  const q = (G.achQ = G.achQ || []), last = q[q.length - 1];
-  if (NOHIT_ACH.has(id)) { const e = { id, t: 0, isNew, nohit: true, hitN: G.hitN || 0 }; if (q.length && q[0].t > 0) { q[0].cut = true; q.splice(1, 0, e); } else q.unshift(e); }
-  else if (q.length >= 3 && last && last.multi && last.t === 0 && !last.nohit) { last.names.push(achDef(id)[0]); delete MULTI[last.id]; last.id = 'multi:' + (++_multiN); MULTI[last.id] = ['+' + last.names.length + ' ACHIEVEMENTS', last.names.slice(0, 2).join(' / ') + (last.names.length > 2 ? ' ...' : '')]; last.isNew = last.isNew || isNew; }
-  else if (q.length >= 3 && last && !last.nohit) { const prev = q.pop(), names = [achDef(prev.id)[0], achDef(id)[0]], mid = 'multi:' + (++_multiN); MULTI[mid] = ['+2 ACHIEVEMENTS', names.join(' / ')]; q.push({ id: mid, t: 0, isNew: isNew || prev.isNew, multi: true, names }); }
+  // v25 queue: cards start at most every 8 s; whatever waits is merged into one card when the slot opens (see drawAch)
+  const q = (G.achQ = G.achQ || []);
+  if (NOHIT_ACH.has(id)) { const e = { id, t: 0, isNew, nohit: true, hitN: G.hitN || 0 }; if (q.length && q[0].t > 0) q.splice(1, 0, e); else q.unshift(e); } // no-hit awards lead the next card
   else q.push({ id, t: 0, isNew });
   if (id !== 'bok') { const R = G.rs; if (R) { R.awT.push(G.st); while (R.awT.length && G.st - R.awT[0] > 10) R.awT.shift(); if (R.awT.length >= 3) award('bok'); } }
   metaCheck(); return true;
@@ -1448,15 +1446,26 @@ function achCard(id) {
 }
 // v23: timings back to v21 exactly (hold 2.6 s, backlog 1.6 s, in 0.22 s / out 0.25 s, no gap, 3+ queued merge); v22's raised position stays.
 const ACH_TOP = 33; // the HUD's top row (life + timer panels and their shadows) ends at y = 32
-const ACH_T = 2.6;
+// v25: a card holds 1.5 s on screen (0.22 s pop in + 0.25 s shrink out inside that), and a new card starts at most every 8 s
+// (start to start). Achievements earned meanwhile wait; 2+ waiting when the slot opens become ONE card: the first one's name
+// + '+N MORE'. Every one of them is saved and counts toward x/100 at the moment it's earned, shown or not.
+const ACH_T = 1.5, ACH_EVERY = 8;
 // v15 gun-tier pop-ups share the big gold card (not saved as trophies)
 function upgradePop(k, t) { (G.achQ = G.achQ || []).push({ id: 'up:' + k + ':' + t, t: 0, isNew: false }); }
 function tierDropPop(t) { (G.achQ = G.achQ || []).push({ id: 'drop:' + t, t: 0, isNew: false }); }
 function drawAch(dt) {
-  if (!G || !G.achQ || !G.achQ.length) return;
-  while (G.achQ.length && G.achQ[0].nohit && G.achQ[0].t === 0 && (G.hitN || 0) > G.achQ[0].hitN) achRevoke(G.achQ.shift()); // v19: hit before it showed = no award
-  if (!G.achQ.length) return; const a = G.achQ[0], AT = G.achQ.length > 2 ? 1.6 : ACH_T; // a backlog plays faster
-  if (a.cut) { a.cut = false; if (a.t > 0) a.t = Math.max(a.t, AT - 0.2); } // a no-hit award is waiting: wrap this card up now
+  if (!G) return; G.achClk = (G.achClk || 0) + dt; // the card clock (runs while playing)
+  const q = G.achQ; if (!q || !q.length) return;
+  if (q[0].t === 0) { // waiting for the next slot
+    if (G.achClk < (G.achNext || 0)) return;
+    // v19 kept: a no-hit card isn't shown after a hit landed (it stays earned + counted, v25), so 'UNTOUCHED' never shows right after a hit
+    for (let i = q.length - 1; i >= 0; i--) if (q[i].nohit && (G.hitN || 0) > q[i].hitN) { (G.achHidden = G.achHidden || []).push(q[i].id); q.splice(i, 1); }
+    if (!q.length) return;
+    if (q.length >= 2) { const names = q.map((x) => achDef(x.id)[0]), mid = 'multi:' + (++_multiN), isNew = q.some((x) => x.isNew);
+      MULTI[mid] = [names[0], '+' + (names.length - 1) + ' MORE']; const ids = q.map((x) => x.id); q.length = 0; q.push({ id: mid, t: 0, isNew, multi: true, names, ids }); }
+    G.achNext = G.achClk + ACH_EVERY; (G.achStarts = G.achStarts || []).push(+G.achClk.toFixed(2));
+  }
+  const a = q[0], AT = ACH_T;
   if (a.t === 0) { sfxAch(); flockPop(a.id); } a.t += dt;
   const c = achCard(a.id), e = Math.min(1, a.t / 0.22), s = a.t < 0.22 ? 0.3 + 0.95 * (1 - Math.pow(1 - e, 3)) + Math.sin(e * Math.PI) * 0.18 : a.t > AT - 0.25 ? Math.max(0.05, (AT - a.t) / 0.25) : 1;
   const fit = Math.min(1, (N - 6) / c.width); // never wider than the screen
@@ -1464,7 +1473,6 @@ function drawAch(dt) {
   hx.drawImage(c, cx - (w >> 1), cy - (h >> 1), w, h);
   const fw = Math.round(c.width * fit), fh = Math.round(c.height * fit), steady = a.t > 0.25 && a.t < AT - 0.25;
   if (a.isNew && steady) text('NEW!', cx + (fw >> 1) - 12, cy + (fh >> 1) + 2, 8, HRED, 'center'); // v22: tags under the card (clear of the label tab + the HUD)
-  if (G.achQ.length > 1 && steady) text('+' + (G.achQ.length - 1) + ' MORE', cx - (fw >> 1) + 22, cy + (fh >> 1) + 2, 8, HGOLD, 'center');
   if (a.t >= AT) G.achQ.shift();
 }
 // v16 no-hit streak meter (under the kill count): fills over each minute without a hit, one gold pip per minute banked
@@ -1601,7 +1609,12 @@ function seasonWipe() { lbName = null; ACH_UNLOCKED = {}; for (const k in LIFE) 
   for (const k of [NAME_KEY, ACH_KEY, LIFE_KEY, LOCAL_LB_KEY, BEST_KEY, 'lasttower.flockseen']) { try { localStorage.removeItem(k); } catch (e) {} } }
 function seasonCheck(s) { if (!Number.isSafeInteger(s) || s < 1) return; SEASON.seen = s; let had = null; try { had = localStorage.getItem(SEASON_KEY); } catch (e) {}
   const h = had === null ? 1 : Number(had); if (h !== s) { seasonWipe(); SEASON.wiped = s; } try { localStorage.setItem(SEASON_KEY, String(s)); } catch (e) {} }
-{ const A = window.MembersAuth; if (A && A.ready) A.ready.then(() => (A.available ? A.leaderboard(LB_GAME) : null)).then((b) => { if (b && b.status === 200 && b.json) seasonCheck(b.json.season); }).catch(() => {}); }
+// v25: the same page-load GET (and one per power-on) also feeds the intro's TOP 10 scroll (ILB). Read-only, never starts a play.
+const ILB = { rows: null, pend: false, show: null, x0: null };
+function ilbFetch() { const A = window.MembersAuth; if (!A || !A.ready || ILB.pend) return; ILB.pend = true;
+  A.ready.then(() => (A.available ? A.leaderboard(LB_GAME) : null)).then((b) => { ILB.pend = false; if (!b || b.status !== 200 || !b.json) return; seasonCheck(b.json.season);
+    if (Array.isArray(b.json.top)) ILB.rows = b.json.top.slice(0, 10).map((e) => ({ rank: e.rank | 0, name: String(e.name || '').toUpperCase().replace(/&AMP;/g, '&').replace(/[^A-Z0-9_.\- ]/g, '').slice(0, 12) || BLANK_NAME, ms: Math.max(0, e.ms | 0) })); }).catch(() => { ILB.pend = false; }); }
+ilbFetch();
 function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) {} return Array.isArray(l) ? l : []; }
 function lbRunEnd() { // called by die()
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.st = G.st; r.kills = G.kills; r.ms = Math.round(G.st * 1000);
@@ -2267,7 +2280,7 @@ function powerAudio(on) { PWR.off = !on; clearTimeout(PWR.susT); if (!AC) return
   const open = () => { const t = AC.currentTime; if (PWR.gain) { PWR.gain.gain.cancelScheduledValues(t); PWR.gain.gain.setValueAtTime(1, t); }
     if (MUS.bus) { MUS.bus.gain.cancelScheduledValues(t); MUS.bus.gain.setValueAtTime(0, t); MUS.bus.gain.setTargetAtTime(0.5, t, 0.6); } MUS.nextT = t + 0.1; MUS.step = 0; MUS.bar = 0; MUS.duck = 1; MUS.duckT = 0; };
   if (AC.state === 'suspended') AC.resume().then(open, open); else open(); }
-{ const _off = bootOff, _on = bootOn; bootOff = function () { _off(); powerAudio(false); }; bootOn = function () { _on(); powerAudio(true); }; }
+{ const _off = bootOff, _on = bootOn; bootOff = function () { _off(); powerAudio(false); }; bootOn = function () { _on(); powerAudio(true); ILB.show = null; ilbFetch(); }; }
 // v22 hidden tab: the game loop (rAF) stops but timers keep ticking at ~1 Hz, so the 0.16 s music lookahead came out as
 // choppy blips in a background tab. Hidden = suspend the AudioContext; visible again = resume (unless powered off or muted).
 document.addEventListener('visibilitychange', () => { if (!AC) return;
@@ -2343,6 +2356,22 @@ function domeTop(cx, feetY, k) { const R = 70 * k, top = feetY - 2 * k, y1 = N; 
   hx.fillStyle = '#6b737a'; for (let a = -3; a <= 3; a++) for (let r = 1; r < 6; r++) { const yy = top + r * 7 * k, d = yy - top, sx = Math.round(cx + a * 12 * k * Math.min(1, d / (20 * k) + 0.35) + 3 * k); if (yy < y1) hx.fillRect(sx, yy, k, k); } } // rivets
 function feetShadow(cx, feetY, k, wArt = 32) { hx.fillStyle = 'rgba(9,11,10,.42)'; const rx = wArt / 2 * k, ry = Math.max(1, Math.round(1.6 * k));
   for (let y = -ry; y <= ry; y++) { const h = Math.round(rx * Math.sqrt(1 - (y / (ry + 0.5)) ** 2)); hx.fillRect(Math.round(cx - h), Math.round(feetY + y), h * 2, 1); } }
+// ---- v25 intro TOP 10: the global board scrolls DOWN a translucent right-hand column for the whole intro (rank, name, time alive).
+// It only shows what the page-load / power-on fetch already has when the intro reaches 0.4 s: nothing ready (offline, slow) = no
+// column, and the intro never waits. Fewer than 10 entries = just those. In the close-up the buff hen slides left to stay clear of it.
+const ilbFmt = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + '.' + Math.floor(ms / 100) % 10; };
+function ilbLayout() { if (INTRO.t < 0.4) { ILB.show = null; ILB.x0 = null; return null; }
+  if (ILB.show === null) { ILB.show = ILB.rows && ILB.rows.length ? ILB.rows.slice() : false; if (ILB.show) { const r = ILB.show; ILB.colW = Math.max(CW('TOP 10', 8), ...r.map((e) => CW(e.name, 8)), ...r.map((e) => CW('#' + e.rank + '  ' + ilbFmt(e.ms), 8))) + 8; ILB.x0 = N - ILB.colW - 3; } }
+  return ILB.show ? ILB : null; }
+function ilbShift(right, left) { const L = ilbLayout(); if (!L) return 0; const d = Math.max(0, Math.min(left - 2, right + 3 - (L.x0 - 2))); L.hen = [left - d, right - d]; return d; }
+function ilbDraw(t) { const L = ilbLayout(); if (!L) return; const rows = L.show, lh = 21, head = 15, H = head + rows.length * lh, bar = Math.round(N * 0.08), x0 = L.x0, w = L.colW;
+  const a = Math.min(1, (t - 0.4) / 0.3, Math.max(0, (INTRO.T - 0.2 - t) / 0.3)), pr = (t - 0.4) / (INTRO.T - 0.7), y0 = Math.round(bar - H + pr * (N - 2 * bar + H));
+  hx.save(); hx.beginPath(); hx.rect(0, bar, N, N - 2 * bar); hx.clip(); hx.globalAlpha = a;
+  hx.fillStyle = 'rgba(9,11,10,.58)'; hx.fillRect(x0 - 2, y0 - 4, w + 4, H + 4); hx.fillStyle = HGOLD; hx.fillRect(x0 - 2, y0 + H - 1, w + 4, 1);
+  // the list falls DOWN the screen, so it's stacked bottom-up: the TOP 10 header enters first, then #1, #2 ... (#10 last, on top)
+  text('TOP 10', x0 + w / 2, y0 + rows.length * lh + 2, 8, HGOLD, 'center');
+  rows.forEach((r, i) => { const y = y0 + (rows.length - 1 - i) * lh; text(r.name, x0 + 4, y, 8, CREAM, 'left'); text('#' + r.rank, x0 + 4, y + 9, 8, HGOLD, 'left'); text(ilbFmt(r.ms), x0 + w - 4, y + 9, 8, '#ff8a8a', 'right'); });
+  hx.restore(); ILB.drawn = (ILB.drawn || 0) + 1; ILB.lastY = y0; }
 function drawIntro(dt) {
   INTRO.t += dt; const t = INTRO.t, C = INTRO.cuts; if (t >= INTRO.T) { introEnd(); return; }
   if (t - dt <= 0) ziReset();
@@ -2359,8 +2388,8 @@ function drawIntro(dt) {
     ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.05; const m = BUFF_MZ[Math.floor(t * 20) % 2]; ziShoot(bx + m[0] * k, by + m[1] * k, k); }
     ziDraw(k); ziTracers();
   } else if (shot === 1) { // CLOSE-UP: guns blazing against the dusk sky, casings flying
-    const k = Math.max(3, Math.floor(N * 0.62 / 50)), [ox, oy] = shake(4); introSky(t * 0.5, 0.95);
-    const bx = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, by = Math.round(N * 0.56 - 24 * k) + oy, fy = by + 46 * k; domeTop(bx + 24 * k, fy + k, k); feetShadow(bx + 24 * k, fy + k, k); buffDraw(bx, by, k, t, true); // v22: standing on the silo roof
+    let k = Math.max(3, Math.floor(N * 0.62 / 50)); { const L = ilbLayout(); while (L && k > 2 && 50 * k + 5 > L.x0 - 2) k--; } const [ox, oy] = shake(4); introSky(t * 0.5, 0.95); // v25: one size smaller if the hen can't fit beside the TOP 10 column (small screens)
+    const bx0 = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, bx = bx0 - ilbShift(bx0 + 50 * k, bx0), by = Math.round(N * 0.56 - 24 * k) + oy, fy = by + 46 * k; domeTop(bx + 24 * k, fy + k, k); feetShadow(bx + 24 * k, fy + k, k); buffDraw(bx, by, k, t, true); // v22: standing on the silo roof
     for (let i = 0; i < 8; i++) { const ph = (st * 3 + i * 0.13) % 1, m = BUFF_MZ[i % 2]; const cx = bx + m[0] * k - 20 * k * 0.3 - ph * 30 * u, cy = by + m[1] * k - 8 * u - ph * 50 * u + ph * ph * 90 * u; hx.fillStyle = OUT; hx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 4 * Math.ceil(u), 3 * Math.ceil(u)); hx.fillStyle = '#ffc42f'; hx.fillRect(Math.round(cx), Math.round(cy), 2 * Math.ceil(u), Math.ceil(u)); } // ejected casings
     hx.fillStyle = 'rgba(255,196,47,.9)'; for (let i = 0; i < 6; i++) { const y0 = by + 30 * k + i * 3, x0 = bx + 48 * k + ((st * 900 + i * 37) % (N)); hx.fillRect(Math.round(x0), Math.round(y0 + (x0 - bx) * 0.25), 10 * Math.ceil(u), Math.ceil(u)); } // tracer streaks leaving frame
   } else { // GROUND: zombie hens charge the camera's left and burst under the rain of fire
@@ -2369,6 +2398,7 @@ function drawIntro(dt) {
     ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.045; ziShoot(-10, -10 + Math.random() * N * 0.2, k); }
     ziDraw(k); ziTracers(); hx.restore();
   }
+  ilbDraw(t); // v25 TOP 10 scroll (right column, under the title slam)
   // title slam in the last wide shot
   if (shot === 3 && st > 0.45 && !INTRO.slam) { INTRO.slam = true; uiSnd('slam', 0.9, 1); } // SF2 thunk on the title slam
   if (shot === 3 && st > 0.45) { const e = Math.min(1, (st - 0.45) / 0.18), sc = 1 + (1 - e) * 2.2, sz = 16, img = textImg('ZOMBIE FARM', sz, HRED, false), ink = textImg('ZOMBIE FARM', sz, INK, false), k2 = Math.max(1, Math.round((N * 0.8) / img.width * 2) / 2) * sc;
