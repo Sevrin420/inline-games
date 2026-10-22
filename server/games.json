@@ -48,5 +48,23 @@
       "blankName": "ANON HEN",
       "postsPerPlayer": 20
     }
+  },
+  {
+    "id": "sovereign",
+    "title": "Sovereign",
+    "access": "open",
+    "scoreTrusted": false,
+    "leaderboard": {
+      "metric": "score",
+      "order": "desc",
+      "outcome": "died",
+      "postWindowHours": 2,
+      "top": 20,
+      "bestPerPlayer": true,
+      "nameMin": 1,
+      "nameMax": 12,
+      "blankName": "SURVIVOR",
+      "postsPerPlayer": 20
+    }
   }
 ]
