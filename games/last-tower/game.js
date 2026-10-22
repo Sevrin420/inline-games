@@ -1,4 +1,4 @@
-/* ZOMBIE FARM v25 (gold cards: 1.5 s hold, one start per 8 s, the backlog merges into one card) v24 (quote band 70% size, flush bottom-right beside the gun panel, fades to 35% over the hen) v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
+/* ZOMBIE FARM v26 (intro TOP 10 as a large falling overlay; the buff hen back in his normal close-up) v25 (gold cards: 1.5 s hold, one start per 8 s, the backlog merges into one card) v24 (quote band 70% size, flush bottom-right beside the gun panel, fades to 35% over the hen) v23 (achievement pop-up + quote band timings back to v21; v22 positions kept) v22 (the power switch drives all audio, a hidden tab suspends it; slower, raised achievement pop-ups; the intro buff hen stands on the silo dome; a shareable TIME CARD after each run; board seasons) v21 (off-white paper back for the player hen, smaller shell hen, REAL audio: Halo Reach multi-kills + Slayer/Game Over, UT99 streaks + First Blood, SF2 UI sounds; rare callouts with a shared 13 s cooldown) v20 (renamed from Last Tower; static dusk grade, sickly green/grey/brown zombies with blood, Paper-Mario cardboard standees with flip turns, buff-hen-on-the-silo intro, /zombie-farm/ alias) LAST TOWER v19 (OK lit at once: a blank name is fine and shows as ANON HEN; music ~2x louder via compressor + makeup gain, master limiter) v18 (100 achievements + count-only credits, big bottom-band flock cards, always bright day, full A-Z 0-9 name grid up to 12) v17 (blank name entry before the first credits: tappable letters, D-pad wheel, check; v16 auto names dropped) v16 (ending-credits death roll + global TOP 20 FLOCK leaderboard + arcade name, shoot restarts any time, original chiptune polka BOK-A-POLKA, no-hit streak meter, wordless shell) v15 (2 guns MG + SHOTGUN with per-minute tiers, faster ammo, THE FLOCK community pfps) v14 (round analog SHOOT stick, no pause, no instructions) v13 (3x pickups, achievements, single big START) v12 (2-button diagonal chord window 110 ms + tap-fires-on-release) v11 (hens.farm skin: real hens.farm art layers + skinned shell; 2-button diagonal shooting) v10 (twin-stick: compass SHOOT pad, no life drain — only hits hurt) v9 (swarm edition: enemy attack moves, guns + machine gun, punchier colours) (chikn edition, survival + egg throwers; interrupted meals are lost): no tower, draining life, eat on crates. v4: 3/4 top-down pixel survival, reskinned in the hens.farm cartoon vibe (HENS-STYLE-NOTES.md).
    Rendering rules from v2 (16-bit SNES adventure style):
    Original art, all generated in code: 16x16 metatiles, 4bpp-style sprites with near-black outlines,
    3-tone ramps lit from the top-left, drop shadows, ledge hopping. See STYLE-NOTES.md in the repo root. */
@@ -2356,22 +2356,40 @@ function domeTop(cx, feetY, k) { const R = 70 * k, top = feetY - 2 * k, y1 = N; 
   hx.fillStyle = '#6b737a'; for (let a = -3; a <= 3; a++) for (let r = 1; r < 6; r++) { const yy = top + r * 7 * k, d = yy - top, sx = Math.round(cx + a * 12 * k * Math.min(1, d / (20 * k) + 0.35) + 3 * k); if (yy < y1) hx.fillRect(sx, yy, k, k); } } // rivets
 function feetShadow(cx, feetY, k, wArt = 32) { hx.fillStyle = 'rgba(9,11,10,.42)'; const rx = wArt / 2 * k, ry = Math.max(1, Math.round(1.6 * k));
   for (let y = -ry; y <= ry; y++) { const h = Math.round(rx * Math.sqrt(1 - (y / (ry + 0.5)) ** 2)); hx.fillRect(Math.round(cx - h), Math.round(feetY + y), h * 2, 1); } }
-// ---- v25 intro TOP 10: the global board scrolls DOWN a translucent right-hand column for the whole intro (rank, name, time alive).
-// It only shows what the page-load / power-on fetch already has when the intro reaches 0.4 s: nothing ready (offline, slow) = no
-// column, and the intro never waits. Fewer than 10 entries = just those. In the close-up the buff hen slides left to stay clear of it.
+// ---- v26 intro TOP 10: a LARGE overlay that falls down the whole screen over the intro (centred, 2-3x pixel font with a heavy ink
+// outline + drop shadow, a light see-through strip per row). Stacked bottom-up so the TOP 10 header enters first, then #1 ... #10.
+// One pass from 0.4 s to 5.4 s. Only shows rows the page-load / power-on fetch already has at 0.4 s; nothing ready = no overlay, the
+// intro never waits. At most 10 rows. Single-line rows (rank, name, time) when they fit, else name on one line and rank + time below.
 const ilbFmt = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + '.' + Math.floor(ms / 100) % 10; };
-function ilbLayout() { if (INTRO.t < 0.4) { ILB.show = null; ILB.x0 = null; return null; }
-  if (ILB.show === null) { ILB.show = ILB.rows && ILB.rows.length ? ILB.rows.slice() : false; if (ILB.show) { const r = ILB.show; ILB.colW = Math.max(CW('TOP 10', 8), ...r.map((e) => CW(e.name, 8)), ...r.map((e) => CW('#' + e.rank + '  ' + ilbFmt(e.ms), 8))) + 8; ILB.x0 = N - ILB.colW - 3; } }
+const ILB_INK = '#0e090c';
+function bigText(str, x, y, k, col, align) { const img = textImg(str, 8, col, false), ink = textImg(str, 8, ILB_INK, false), w = img.width * k, h = img.height * k;
+  const dx = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x), dy = Math.round(y);
+  hx.drawImage(ink, dx + k + 1, dy + k + 1, w, h); // drop shadow
+  for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) hx.drawImage(ink, dx + ox * k, dy + oy * k, w, h); // 1 font-pixel ink outline
+  hx.drawImage(img, dx, dy, w, h); return w; }
+const ILB_RUN = 2.0; // s of scrolling (from 0.4 s) before the ~3 s hold
+function ilbLayout() { if (INTRO.t < 0.4) { ILB.show = null; return null; }
+  if (ILB.show === null) { ILB.show = ILB.rows && ILB.rows.length ? ILB.rows.slice(0, 10) : false;
+    if (ILB.show) { const r = ILB.show, W = (q) => textImg(q, 8, '#fff', false).width, rw = Math.max(...r.map((e) => W('#' + e.rank))), nw = Math.max(...r.map((e) => W(e.name))), tw = Math.max(...r.map((e) => W(ilbFmt(e.ms)))), one = rw + 6 + nw + 10 + tw;
+      let k = 3; while (k > 2 && one * k > N - 10) k--; ILB.two = one * k > N - 10; ILB.k = k; ILB.rw = rw; ILB.nw = nw; ILB.tw = tw;
+      ILB.rowW = (ILB.two ? Math.max(rw + 6 + nw, tw + rw + 6) : one) * k; ILB.lh = (ILB.two ? 20 * k + 4 : 10 * k + 5); ILB.head = 10 * k + 12; } }
   return ILB.show ? ILB : null; }
-function ilbShift(right, left) { const L = ilbLayout(); if (!L) return 0; const d = Math.max(0, Math.min(left - 2, right + 3 - (L.x0 - 2))); L.hen = [left - d, right - d]; return d; }
-function ilbDraw(t) { const L = ilbLayout(); if (!L) return; const rows = L.show, lh = 21, head = 15, H = head + rows.length * lh, bar = Math.round(N * 0.08), x0 = L.x0, w = L.colW;
-  const a = Math.min(1, (t - 0.4) / 0.3, Math.max(0, (INTRO.T - 0.2 - t) / 0.3)), pr = (t - 0.4) / (INTRO.T - 0.7), y0 = Math.round(bar - H + pr * (N - 2 * bar + H));
-  hx.save(); hx.beginPath(); hx.rect(0, bar, N, N - 2 * bar); hx.clip(); hx.globalAlpha = a;
-  hx.fillStyle = 'rgba(9,11,10,.58)'; hx.fillRect(x0 - 2, y0 - 4, w + 4, H + 4); hx.fillStyle = HGOLD; hx.fillRect(x0 - 2, y0 + H - 1, w + 4, 1);
-  // the list falls DOWN the screen, so it's stacked bottom-up: the TOP 10 header enters first, then #1, #2 ... (#10 last, on top)
-  text('TOP 10', x0 + w / 2, y0 + rows.length * lh + 2, 8, HGOLD, 'center');
-  rows.forEach((r, i) => { const y = y0 + (rows.length - 1 - i) * lh; text(r.name, x0 + 4, y, 8, CREAM, 'left'); text('#' + r.rank, x0 + 4, y + 9, 8, HGOLD, 'left'); text(ilbFmt(r.ms), x0 + w - 4, y + 9, 8, '#ff8a8a', 'right'); });
-  hx.restore(); ILB.drawn = (ILB.drawn || 0) + 1; ILB.lastY = y0; }
+function ilbDraw(t) { const L = ilbLayout(); if (!L) return; const rows = L.show, k = L.k, lh = L.lh, n = rows.length, bar = Math.round(N * 0.08);
+  // credits-style countdown: the list (TOP 10 header, #1 .. #n top to bottom) falls in from above, so #n shows first and #1 last;
+  // fast through the lower ranks, easing out (quadratic) by 2.4 s, then HOLDS with the header + top ranks on screen until the intro ends
+  const ys = bar - L.head - n * lh, ye = bar + 4, q = Math.max(0, Math.min(1, (t - 0.4) / ILB_RUN)), pr = 1 - (1 - q) * (1 - q);
+  const a = Math.min(1, (t - 0.4) / 0.2, Math.max(0, (INTRO.T - 0.05 - t) / 0.2)), y0 = Math.round(ys + pr * (ye - ys));
+  const x0 = Math.round(N / 2 - L.rowW / 2), x1 = x0 + L.rowW;
+  hx.save(); hx.globalAlpha = a;
+  if (y0 < N && y0 + 10 * k > 0) { hx.fillStyle = 'rgba(9,11,10,.3)'; hx.fillRect(0, y0 - 3, N, 10 * k + 4); bigText('TOP 10', N / 2, y0, k, HGOLD, 'center'); }
+  // once ZOMBIE FARM slams in (shot 3, +0.45 s) the rows behind the title band fade back to 25% so the title reads; rows clear of it stay full
+  const sl = t - INTRO.cuts[3] - 0.45, dimA = sl > 0 ? a * (1 - 0.75 * Math.min(1, sl / 0.15)) : a, tb0 = N * 0.38, tb1 = N * 0.66;
+  rows.forEach((r, i) => { const y = y0 + L.head + i * lh; if (y > N || y + lh < 0) return; hx.globalAlpha = y + lh - 5 > tb0 && y - 2 < tb1 ? dimA : a;
+    hx.fillStyle = 'rgba(9,11,10,.26)'; hx.fillRect(0, y - 2, N, lh - 3);
+    const rc = r.rank === 1 ? HGOLD : r.rank <= 3 ? '#ffd98a' : '#cfe9b8';
+    if (!L.two) { bigText('#' + r.rank, x0 + L.rw * k, y, k, rc, 'right'); bigText(r.name, x0 + (L.rw + 6) * k, y, k, CREAM, 'left'); bigText(ilbFmt(r.ms), x1, y, k, '#ff8a8a', 'right'); }
+    else { bigText(r.name, x0 + (L.rw + 6) * k, y, k, CREAM, 'left'); bigText('#' + r.rank, x0 + L.rw * k, y + 10 * k + 2, k, rc, 'right'); bigText(ilbFmt(r.ms), x0 + (L.rw + 6) * k, y + 10 * k + 2, k, '#ff8a8a', 'left'); } });
+  hx.restore(); ILB.drawn = (ILB.drawn || 0) + 1; ILB.lastY = y0; ILB.x0 = x0; ILB.x1 = x1; ILB.bar = bar; }
 function drawIntro(dt) {
   INTRO.t += dt; const t = INTRO.t, C = INTRO.cuts; if (t >= INTRO.T) { introEnd(); return; }
   if (t - dt <= 0) ziReset();
@@ -2388,8 +2406,8 @@ function drawIntro(dt) {
     ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.05; const m = BUFF_MZ[Math.floor(t * 20) % 2]; ziShoot(bx + m[0] * k, by + m[1] * k, k); }
     ziDraw(k); ziTracers();
   } else if (shot === 1) { // CLOSE-UP: guns blazing against the dusk sky, casings flying
-    let k = Math.max(3, Math.floor(N * 0.62 / 50)); { const L = ilbLayout(); while (L && k > 2 && 50 * k + 5 > L.x0 - 2) k--; } const [ox, oy] = shake(4); introSky(t * 0.5, 0.95); // v25: one size smaller if the hen can't fit beside the TOP 10 column (small screens)
-    const bx0 = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, bx = bx0 - ilbShift(bx0 + 50 * k, bx0), by = Math.round(N * 0.56 - 24 * k) + oy, fy = by + 46 * k; domeTop(bx + 24 * k, fy + k, k); feetShadow(bx + 24 * k, fy + k, k); buffDraw(bx, by, k, t, true); // v22: standing on the silo roof
+    const k = Math.max(3, Math.floor(N * 0.62 / 50)), [ox, oy] = shake(4); introSky(t * 0.5, 0.95);
+    const bx = Math.round(N * 0.5 - 25 * k - st * 10 * u) + ox, by = Math.round(N * 0.56 - 24 * k) + oy, fy = by + 46 * k; domeTop(bx + 24 * k, fy + k, k); feetShadow(bx + 24 * k, fy + k, k); buffDraw(bx, by, k, t, true); // v22: standing on the silo roof
     for (let i = 0; i < 8; i++) { const ph = (st * 3 + i * 0.13) % 1, m = BUFF_MZ[i % 2]; const cx = bx + m[0] * k - 20 * k * 0.3 - ph * 30 * u, cy = by + m[1] * k - 8 * u - ph * 50 * u + ph * ph * 90 * u; hx.fillStyle = OUT; hx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 4 * Math.ceil(u), 3 * Math.ceil(u)); hx.fillStyle = '#ffc42f'; hx.fillRect(Math.round(cx), Math.round(cy), 2 * Math.ceil(u), Math.ceil(u)); } // ejected casings
     hx.fillStyle = 'rgba(255,196,47,.9)'; for (let i = 0; i < 6; i++) { const y0 = by + 30 * k + i * 3, x0 = bx + 48 * k + ((st * 900 + i * 37) % (N)); hx.fillRect(Math.round(x0), Math.round(y0 + (x0 - bx) * 0.25), 10 * Math.ceil(u), Math.ceil(u)); } // tracer streaks leaving frame
   } else { // GROUND: zombie hens charge the camera's left and burst under the rain of fire
@@ -2398,15 +2416,15 @@ function drawIntro(dt) {
     ZI.fire -= dt; if (ZI.fire <= 0) { ZI.fire = 0.045; ziShoot(-10, -10 + Math.random() * N * 0.2, k); }
     ziDraw(k); ziTracers(); hx.restore();
   }
-  ilbDraw(t); // v25 TOP 10 scroll (right column, under the title slam)
+  const bar = Math.round(N * 0.08); hx.fillStyle = OUT; hx.fillRect(0, 0, N, bar); hx.fillRect(0, N - bar, N, bar); // letterbox
+  ilbDraw(t); // v26 TOP 10 overlay: counts down #10 -> #1 fast, then holds on the top ranks; under the title slam
   // title slam in the last wide shot
   if (shot === 3 && st > 0.45 && !INTRO.slam) { INTRO.slam = true; uiSnd('slam', 0.9, 1); } // SF2 thunk on the title slam
   if (shot === 3 && st > 0.45) { const e = Math.min(1, (st - 0.45) / 0.18), sc = 1 + (1 - e) * 2.2, sz = 16, img = textImg('ZOMBIE FARM', sz, HRED, false), ink = textImg('ZOMBIE FARM', sz, INK, false), k2 = Math.max(1, Math.round((N * 0.8) / img.width * 2) / 2) * sc;
     const w = Math.round(img.width * k2), h = Math.round(img.height * k2), x = Math.round(N / 2 - w / 2), y = Math.round(N * 0.5 - h / 2);
     for (let q = 1; q <= Math.round(3 * k2 / sc); q++) hx.drawImage(ink, x + q, y + q, w, h); for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) hx.drawImage(ink, x + dx, y + dy, w, h); hx.drawImage(img, x, y, w, h);
     if (e >= 1) { const s2 = textImg('BILLIONS MUST BOK.', 8, HGOLD, true); hx.drawImage(s2, Math.round(N / 2 - s2.width / 2), y + h + 6); } }
-  // letterbox + hard-cut white pop + fade in from the dark screen
-  const bar = Math.round(N * 0.08); hx.fillStyle = OUT; hx.fillRect(0, 0, N, bar); hx.fillRect(0, N - bar, N, bar);
+  // hard-cut white pop + fade in from the dark screen (letterbox drawn above, under the TOP 10)
   const sinceCut = shot ? t - C[shot] : 9; if (sinceCut < 0.07) { hx.fillStyle = `rgba(255,255,255,${0.9 * (1 - sinceCut / 0.07)})`; hx.fillRect(0, 0, N, N); }
   if (shot === 3 && st > 0.45 && st < 0.6) { hx.fillStyle = `rgba(255,255,255,${0.7 * (1 - (st - 0.45) / 0.15)})`; hx.fillRect(0, 0, N, N); } // slam flash
   if (t < 0.5) { hx.fillStyle = `rgba(0,0,0,${1 - t / 0.5})`; hx.fillRect(0, 0, N, N); }
