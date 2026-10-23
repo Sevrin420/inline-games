@@ -6,7 +6,7 @@
    See DESIGN.md. */
 'use strict';
 // ================================================================ basics
-const VERSION = 2;
+const VERSION = 3;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -475,36 +475,131 @@ function resizePack(I) { const n = packSlots(I); const spill = []; while (I.pack
 function P(x, X, Y, w, h, c) { x.fillStyle = c; x.fillRect(X, Y, w, h); }
 const ATLAS_V = 4; let ATLAS = null;
 function paintTile(x, ox, oy, t, v) {
-  const s = 977 + v * 131 + t * 7, r = rng(s), dots = (pal, n, a = 1, b = 2) => { for (let i = 0; i < n; i++) P(x, ox + ((r() * 16) | 0), oy + ((r() * 16) | 0), a, b > a ? ((r() * b) | 0) + 1 : 1, pal); };
+  const s = 977 + v * 131 + t * 7, r = rng(s);
+  const dots = (pal, n, a = 1, b = 2) => { for (let i = 0; i < n; i++) P(x, ox + ((r() * 16) | 0), oy + ((r() * 16) | 0), a, b > a ? ((r() * b) | 0) + 1 : 1, pal); };
   const base = (pal) => { P(x, ox, oy, 16, 16, pal[1]); };
+  const speck = (n, cols) => { for (let i = 0; i < n; i++) P(x, ox + ((r() * 16) | 0), oy + ((r() * 16) | 0), 1, 1, cols[(r() * cols.length) | 0]); };
   const G = PAL.grass;
   switch (t) {
-    case T.GRASS: case T.TREE: case T.PINE: case T.FENCE: base(G); dots(G[0], 7); dots(G[2], 6); if (v === 1) { P(x, ox + 4, oy + 6, 1, 3, G[3]); P(x, ox + 5, oy + 5, 1, 3, G[3]); } break;
-    case T.TALL: base(PAL.tall); for (let i = 0; i < 9; i++) { const X = ox + ((r() * 15) | 0), Y = oy + ((r() * 11) | 0); P(x, X, Y, 1, 5, PAL.tall[3]); P(x, X + 1, Y + 1, 1, 4, PAL.tall[0]); } break;
-    case T.FLOWER: base(G); dots(G[2], 5); for (let i = 0; i < 3; i++) { const X = ox + 2 + ((r() * 12) | 0), Y = oy + 2 + ((r() * 12) | 0), c = ['#ffe060', '#ff7aa0', '#ffffff', '#b080ff'][(r() * 4) | 0]; P(x, X, Y, 2, 2, c); P(x, X, Y + 2, 1, 2, G[3]); } break;
-    case T.BUSH: base(G); dots(G[2], 4); P(x, ox + 2, oy + 4, 12, 10, INK); P(x, ox + 1, oy + 6, 14, 7, INK); P(x, ox + 3, oy + 5, 10, 8, PAL.leaf[2]); P(x, ox + 2, oy + 7, 12, 5, PAL.leaf[2]); P(x, ox + 4, oy + 5, 6, 3, PAL.leaf[1]); P(x, ox + 5, oy + 6, 2, 1, PAL.leaf[0]); break;
-    case T.DIRT: base(PAL.dirt); dots(PAL.dirt[0], 6); dots(PAL.dirt[2], 7); dots(PAL.dirt[3], 2); break;
-    case T.SAND: base(PAL.sand); dots(PAL.sand[0], 8); dots(PAL.sand[2], 6); break;
-    case T.WATER: case T.SEA: { const W = t === T.SEA ? ['#4a84b8', '#2e6aa0', '#245886', '#1a4470'] : PAL.water; base(W); for (let i = 0; i < 3; i++) { const Y = oy + 2 + i * 5 + (v & 1), X = ox + ((v * 4 + i * 6) % 12); P(x, X, Y, 4, 1, W[0]); P(x, X + 4, Y + 1, 2, 1, W[0]); } dots(W[2], 4); break; }
-    case T.SHAL: base(PAL.shallow); dots(PAL.sand[2], 4); { const Y = oy + 4 + (v & 1) * 6, X = ox + ((v * 5) % 10); P(x, X, Y, 5, 1, PAL.shallow[0]); } break;
-    case T.ROAD: base(PAL.road); dots(PAL.road[0], 6); dots(PAL.road[2], 8); if (v === 3) P(x, ox + 3, oy + 9, 6, 1, PAL.road[3]); break;
-    case T.LINE: base(PAL.road); dots(PAL.road[2], 6); P(x, ox + 2, oy + 7, 12, 2, '#e8c840'); break;
-    case T.SIDE: case T.GLASS: base(PAL.side); P(x, ox, oy + 15, 16, 1, PAL.side[2]); P(x, ox + 15, oy, 1, 16, PAL.side[2]); P(x, ox, oy, 16, 1, PAL.side[0]); dots(PAL.side[2], 3);
-      if (t === T.GLASS) for (let i = 0; i < 5; i++) { const X = ox + 2 + ((r() * 12) | 0), Y = oy + 2 + ((r() * 12) | 0); P(x, X, Y, 2, 1, '#e8f8ff'); P(x, X + 1, Y + 1, 1, 1, '#8ed8ff'); P(x, X - 1, Y + 1, 1, 1, '#5aa6d2'); } break;
-    case T.WOOD: base(PAL.wood); for (let i = 0; i < 4; i++) { P(x, ox, oy + i * 4 + 3, 16, 1, PAL.wood[3]); P(x, ox + ((i * 7 + v * 3) % 16), oy + i * 4, 1, 3, PAL.wood[2]); P(x, ox, oy + i * 4, 16, 1, PAL.wood[0]); } break;
-    case T.TILE: base(PAL.tile); P(x, ox, oy, 8, 8, PAL.tile[0]); P(x, ox + 8, oy + 8, 8, 8, PAL.tile[0]); P(x, ox, oy + 15, 16, 1, PAL.tile[2]); P(x, ox + 15, oy, 1, 16, PAL.tile[2]); break;
-    case T.CONC: base(PAL.conc); dots(PAL.conc[0], 4); dots(PAL.conc[2], 5); if (v === 2) { P(x, ox + 3, oy + 5, 5, 1, PAL.conc[3]); P(x, ox + 8, oy + 6, 3, 1, PAL.conc[3]); } break;
-    case T.GRAVEL: base(PAL.gravel); dots(PAL.gravel[0], 10); dots(PAL.gravel[2], 10); dots(PAL.gravel[3], 3); break;
-    case T.ROCK: base(PAL.gravel); dots(PAL.gravel[2], 6); P(x, ox + 1, oy + 3, 14, 12, INK); P(x, ox + 2, oy + 2, 12, 13, INK); P(x, ox + 2, oy + 4, 12, 10, PAL.rock[2]); P(x, ox + 3, oy + 3, 10, 7, PAL.rock[1]); P(x, ox + 4, oy + 3, 5, 3, PAL.rock[0]); P(x, ox + 2, oy + 12, 12, 2, PAL.rock[3]); break;
-    case T.BRIDGE: base(PAL.wood); for (let i = 0; i < 4; i++) { P(x, ox + i * 4 + 3, oy, 1, 16, PAL.wood[3]); P(x, ox + i * 4, oy, 1, 16, PAL.wood[0]); } P(x, ox + ((v * 5) % 14), oy + 6, 2, 2, PAL.wood[2]); break;
-    case T.FIELD: base(PAL.field); for (let i = 0; i < 4; i++) { P(x, ox, oy + i * 4 + 2, 16, 2, PAL.dirt[2]); } for (let i = 0; i < 5; i++) P(x, ox + 1 + i * 3, oy + 1 + (i & 1) * 4, 1, 3, '#a8984a'); break;
-    case T.TILLED: base(PAL.tilled); for (let i = 0; i < 4; i++) { P(x, ox + 1, oy + i * 4 + 1, 14, 1, PAL.tilled[3]); P(x, ox + 1, oy + i * 4 + 2, 14, 1, PAL.tilled[0]); } break;
-    case T.MINE: base(PAL.gravel); P(x, ox, oy + 2, 16, 14, INK); P(x, ox + 1, oy + 3, 14, 13, PAL.rock[1]); P(x, ox + 3, oy + 6, 10, 10, '#1a1418'); P(x, ox + 2, oy + 5, 12, 2, PAL.wood[2]); P(x, ox + 2, oy + 5, 2, 11, PAL.wood[2]); P(x, ox + 12, oy + 5, 2, 11, PAL.wood[2]); break;
-    case T.WALL: case T.WALLW: case T.WALLC: { const C = t === T.WALL ? PAL.brick : t === T.WALLW ? PAL.wood : PAL.metal;
-      P(x, ox, oy, 16, 16, C[1]); P(x, ox, oy, 16, 2, C[0]);
-      if (v & 1) { P(x, ox, oy + 8, 16, 8, C[2]); if (t === T.WALL) for (let i = 0; i < 2; i++) { P(x, ox, oy + 11 + i * 3, 16, 1, C[3]); P(x, ox + (i ? 4 : 10), oy + 8 + i * 3, 1, 3, C[3]); } else if (t === T.WALLW) { P(x, ox, oy + 11, 16, 1, C[3]); P(x, ox, oy + 14, 16, 1, C[3]); } else { P(x, ox + 5, oy + 8, 1, 8, C[3]); P(x, ox + 11, oy + 8, 1, 8, C[3]); } P(x, ox, oy + 8, 16, 1, INK); }
-      if (v & 2 && t !== T.WALLC) { P(x, ox + 4, oy + 9, 8, 5, INK); P(x, ox + 5, oy + 10, 6, 3, '#8ed8ff'); P(x, ox + 5, oy + 10, 2, 1, '#e8f8ff'); } break; }
-    case T.DOOR: P(x, ox, oy, 16, 16, PAL.wood[1]); P(x, ox, oy, 2, 16, INK); P(x, ox + 14, oy, 2, 16, INK); P(x, ox + 2, oy, 12, 2, PAL.wood[3]); P(x, ox + 3, oy + 3, 10, 13, PAL.wood[2]); P(x, ox + 3, oy + 3, 10, 1, PAL.wood[3]); break;
+    case T.GRASS: case T.TREE: case T.PINE: case T.FENCE: {
+      base(G); dots(G[0], 10); dots(G[2], 9); dots(G[3], 4);
+      // grass blades + clumps
+      for (let i = 0; i < 5; i++) { const X = ox + 1 + ((r() * 14) | 0), Y = oy + 6 + ((r() * 8) | 0); P(x, X, Y, 1, 3 + ((r() * 2) | 0), G[3]); P(x, X + 1, Y + 1, 1, 2, G[0]); }
+      if (v === 0) { P(x, ox + 3, oy + 11, 3, 2, G[2]); P(x, ox + 10, oy + 4, 2, 2, G[3]); }
+      if (v === 1) { P(x, ox + 4, oy + 6, 1, 4, G[3]); P(x, ox + 5, oy + 5, 1, 4, G[3]); P(x, ox + 6, oy + 7, 1, 2, G[0]); P(x, ox + 11, oy + 10, 3, 1, '#5a4830'); } // dirt patch
+      if (v === 2) { P(x, ox + 2, oy + 3, 2, 1, '#4a3a28'); P(x, ox + 8, oy + 12, 1, 1, '#6a5a40'); P(x, ox + 12, oy + 7, 2, 2, G[2]); } // debris
+      if (v === 3) { P(x, ox + 5, oy + 9, 4, 2, '#3a5a68'); P(x, ox + 6, oy + 9, 2, 1, '#5a8498'); } // puddle
+      break; }
+    case T.TALL: base(PAL.tall); for (let i = 0; i < 12; i++) { const X = ox + ((r() * 15) | 0), Y = oy + ((r() * 10) | 0); P(x, X, Y, 1, 6, PAL.tall[3]); P(x, X + 1, Y + 1, 1, 5, PAL.tall[0]); P(x, X, Y, 1, 1, PAL.tall[1]); } speck(3, [PAL.tall[2], '#6a8a40']); break;
+    case T.FLOWER: base(G); dots(G[2], 6); for (let i = 0; i < 4; i++) { const X = ox + 2 + ((r() * 12) | 0), Y = oy + 2 + ((r() * 11) | 0), c = ['#c8a040', '#a84a58', '#c8c0a8', '#6a5080'][(r() * 4) | 0]; P(x, X, Y, 2, 2, c); P(x, X + 1, Y + 1, 1, 1, shade(c, 40)); P(x, X, Y + 2, 1, 3, G[3]); } break;
+    case T.BUSH: base(G); dots(G[2], 5); P(x, ox + 2, oy + 4, 12, 10, INK); P(x, ox + 1, oy + 6, 14, 7, INK); P(x, ox + 3, oy + 5, 10, 8, PAL.leaf[2]); P(x, ox + 2, oy + 7, 12, 5, PAL.leaf[2]); P(x, ox + 4, oy + 5, 6, 3, PAL.leaf[1]); P(x, ox + 5, oy + 6, 2, 1, PAL.leaf[0]); P(x, ox + 8, oy + 9, 3, 2, PAL.leaf[3]); P(x, ox + 3, oy + 10, 2, 1, '#4a2a1a'); break;
+    case T.DIRT: base(PAL.dirt); dots(PAL.dirt[0], 8); dots(PAL.dirt[2], 9); dots(PAL.dirt[3], 4); speck(4, ['#4a3420', '#8a6844']); if (v & 1) { P(x, ox + 2, oy + 8, 5, 1, PAL.dirt[3]); P(x, ox + 9, oy + 4, 4, 1, PAL.dirt[3]); } break;
+    case T.SAND: base(PAL.sand); dots(PAL.sand[0], 10); dots(PAL.sand[2], 8); speck(5, [PAL.sand[3], '#c4ae78']); if (v === 2) P(x, ox + 4, oy + 10, 6, 1, PAL.sand[3]); break;
+    case T.WATER: case T.SEA: { const W = t === T.SEA ? ['#3a6a88', '#2a5470', '#1e4060', '#142c48'] : PAL.water; base(W);
+      for (let i = 0; i < 4; i++) { const Y = oy + 2 + i * 4 + (v & 1), X = ox + ((v * 4 + i * 5) % 11); P(x, X, Y, 5, 1, W[0]); P(x, X + 5, Y + 1, 3, 1, W[0]); }
+      dots(W[2], 5); speck(3, [W[3], '#8ab0c8']); break; }
+    case T.SHAL: base(PAL.shallow); dots(PAL.sand[2], 5); speck(4, [PAL.sand[1], PAL.shallow[0]]); { const Y = oy + 4 + (v & 1) * 5, X = ox + ((v * 5) % 10); P(x, X, Y, 6, 1, PAL.shallow[0]); P(x, X + 1, Y - 1, 3, 1, '#8ab0c8'); } break;
+    case T.ROAD: {
+      base(PAL.road); dots(PAL.road[0], 8); dots(PAL.road[2], 10); speck(6, [PAL.road[3], '#5a585c']);
+      // cracks
+      if (v === 0 || v === 2) { P(x, ox + 3, oy + 2, 1, 5, PAL.road[3]); P(x, ox + 4, oy + 6, 3, 1, PAL.road[3]); P(x, ox + 7, oy + 7, 1, 4, PAL.road[3]); }
+      if (v === 1) { P(x, ox + 10, oy + 3, 1, 7, PAL.road[3]); P(x, ox + 8, oy + 9, 4, 1, PAL.road[3]); }
+      if (v === 3) { P(x, ox + 2, oy + 8, 7, 1, PAL.road[3]); P(x, ox + 5, oy + 9, 1, 3, PAL.road[3]); P(x, ox + 11, oy + 4, 3, 2, '#3a5a68'); } // oil/puddle
+      // gravel grit
+      speck(4, ['#6a686c', '#2a282c']); break; }
+    case T.LINE: base(PAL.road); dots(PAL.road[2], 7); speck(3, [PAL.road[3]]); P(x, ox + 2, oy + 7, 12, 2, '#c8a838'); P(x, ox + 2, oy + 7, 12, 1, '#e8c860'); P(x, ox + 5, oy + 4, 1, 3, PAL.road[3]); break;
+    case T.SIDE: case T.GLASS: {
+      base(PAL.side); P(x, ox, oy + 15, 16, 1, PAL.side[2]); P(x, ox + 15, oy, 1, 16, PAL.side[2]); P(x, ox, oy, 16, 1, PAL.side[0]);
+      dots(PAL.side[2], 5); speck(4, [PAL.side[3], '#5a544c']);
+      // sidewalk cracks / stains
+      if (v & 1) { P(x, ox + 6, oy + 3, 1, 8, PAL.side[3]); P(x, ox + 7, oy + 10, 4, 1, PAL.side[3]); }
+      if (v & 2) { P(x, ox + 2, oy + 12, 5, 2, '#4a4038'); }
+      if (t === T.GLASS) for (let i = 0; i < 6; i++) { const X = ox + 1 + ((r() * 13) | 0), Y = oy + 1 + ((r() * 13) | 0); P(x, X, Y, 2, 1, '#c8d8e0'); P(x, X + 1, Y + 1, 1, 1, '#6a8498'); P(x, X - 1, Y + 1, 1, 2, '#3a5a68'); }
+      break; }
+    case T.WOOD: {
+      base(PAL.wood);
+      for (let i = 0; i < 4; i++) {
+        P(x, ox, oy + i * 4, 16, 1, PAL.wood[0]);
+        P(x, ox, oy + i * 4 + 3, 16, 1, PAL.wood[3]);
+        P(x, ox + ((i * 7 + v * 3) % 14), oy + i * 4 + 1, 1, 2, PAL.wood[2]);
+        P(x, ox + ((i * 5 + v * 5) % 13) + 1, oy + i * 4 + 1, 1, 1, shade(PAL.wood[0], 20));
+      }
+      speck(3, [PAL.wood[3], '#3e2c1a']); if (v === 2) { P(x, ox + 4, oy + 8, 3, 1, '#4a2a1a'); P(x, ox + 10, oy + 3, 2, 2, '#3a2010'); } // blood/grime
+      break; }
+    case T.TILE: {
+      base(PAL.tile);
+      // 4x4 checker with grout + wear
+      for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {
+        const lit = (i + j + v) & 1; P(x, ox + i * 8, oy + j * 8, 8, 8, lit ? PAL.tile[0] : PAL.tile[1]);
+        P(x, ox + i * 8, oy + j * 8, 8, 1, PAL.tile[2]); P(x, ox + i * 8, oy + j * 8, 1, 8, PAL.tile[2]);
+        if (r() < 0.5) P(x, ox + i * 8 + 2 + ((r() * 4) | 0), oy + j * 8 + 2 + ((r() * 4) | 0), 2, 1, PAL.tile[3]);
+      }
+      P(x, ox, oy + 15, 16, 1, PAL.tile[2]); P(x, ox + 15, oy, 1, 16, PAL.tile[2]);
+      if (v === 3) { P(x, ox + 5, oy + 6, 4, 3, '#3a2a22'); } // stain
+      break; }
+    case T.CONC: {
+      base(PAL.conc); dots(PAL.conc[0], 6); dots(PAL.conc[2], 7); speck(5, [PAL.conc[3], '#8a8884']);
+      if (v === 0 || v === 2) { P(x, ox + 2, oy + 3, 1, 8, PAL.conc[3]); P(x, ox + 3, oy + 10, 5, 1, PAL.conc[3]); P(x, ox + 8, oy + 5, 1, 6, PAL.conc[3]); }
+      if (v === 1) { P(x, ox + 4, oy + 2, 6, 1, PAL.conc[3]); P(x, ox + 9, oy + 3, 1, 7, PAL.conc[3]); }
+      if (v === 3) { P(x, ox + 3, oy + 5, 5, 1, PAL.conc[3]); P(x, ox + 8, oy + 6, 4, 1, PAL.conc[3]); P(x, ox + 11, oy + 11, 3, 2, '#3a4a50'); }
+      break; }
+    case T.GRAVEL: base(PAL.gravel); dots(PAL.gravel[0], 12); dots(PAL.gravel[2], 12); dots(PAL.gravel[3], 5); speck(8, [PAL.rock[0], PAL.rock[2], '#5a5048']); break;
+    case T.ROCK: base(PAL.gravel); dots(PAL.gravel[2], 6); P(x, ox + 1, oy + 3, 14, 12, INK); P(x, ox + 2, oy + 2, 12, 13, INK); P(x, ox + 2, oy + 4, 12, 10, PAL.rock[2]); P(x, ox + 3, oy + 3, 10, 7, PAL.rock[1]); P(x, ox + 4, oy + 3, 5, 3, PAL.rock[0]); P(x, ox + 5, oy + 4, 2, 1, shade(PAL.rock[0], 30)); P(x, ox + 2, oy + 12, 12, 2, PAL.rock[3]); P(x, ox + 8, oy + 8, 3, 2, PAL.rock[3]); break;
+    case T.BRIDGE: base(PAL.wood); for (let i = 0; i < 4; i++) { P(x, ox + i * 4, oy, 1, 16, PAL.wood[0]); P(x, ox + i * 4 + 3, oy, 1, 16, PAL.wood[3]); P(x, ox + i * 4 + 1, oy, 2, 16, PAL.wood[1]); } P(x, ox, oy + 2, 16, 1, PAL.wood[3]); P(x, ox, oy + 13, 16, 1, PAL.wood[3]); P(x, ox + ((v * 5) % 14), oy + 6, 2, 2, PAL.wood[2]); break;
+    case T.FIELD: base(PAL.field); for (let i = 0; i < 4; i++) { P(x, ox, oy + i * 4 + 2, 16, 2, PAL.dirt[2]); P(x, ox, oy + i * 4 + 2, 16, 1, PAL.dirt[3]); } for (let i = 0; i < 6; i++) { P(x, ox + 1 + i * 2.5 | 0, oy + 1 + (i & 1) * 4, 1, 4, '#8a7840'); P(x, ox + 2 + i * 2.5 | 0, oy + 2 + (i & 1) * 4, 1, 2, '#a8984a'); } break;
+    case T.TILLED: base(PAL.tilled); for (let i = 0; i < 4; i++) { P(x, ox + 1, oy + i * 4 + 1, 14, 1, PAL.tilled[3]); P(x, ox + 1, oy + i * 4 + 2, 14, 1, PAL.tilled[0]); P(x, ox + 1, oy + i * 4 + 3, 14, 1, PAL.tilled[2]); } speck(3, [PAL.tilled[3]]); break;
+    case T.MINE: base(PAL.gravel); P(x, ox, oy + 2, 16, 14, INK); P(x, ox + 1, oy + 3, 14, 13, PAL.rock[1]); P(x, ox + 3, oy + 6, 10, 10, '#1a1418'); P(x, ox + 4, oy + 8, 8, 6, '#0a080c'); P(x, ox + 2, oy + 5, 12, 2, PAL.wood[2]); P(x, ox + 2, oy + 5, 2, 11, PAL.wood[2]); P(x, ox + 12, oy + 5, 2, 11, PAL.wood[2]); P(x, ox + 5, oy + 6, 2, 1, '#c8a050'); break;
+    case T.WALL: case T.WALLW: case T.WALLC: {
+      const C = t === T.WALL ? PAL.brick : t === T.WALLW ? PAL.wood : PAL.metal;
+      P(x, ox, oy, 16, 16, C[1]); P(x, ox, oy, 16, 2, C[0]); P(x, ox, oy, 16, 1, shade(C[0], 25));
+      if (t === T.WALL) {
+        // brick courses
+        for (let row = 0; row < 4; row++) {
+          const yy = oy + 2 + row * 3.5 | 0; P(x, ox, yy + 3, 16, 1, C[3]);
+          const off = (row & 1) * 4;
+          for (let bx = -off; bx < 16; bx += 8) { const X = ox + Math.max(0, bx); P(x, X, yy, 1, 3, C[3]); if (bx >= 0 && bx < 15) P(x, X + 1, yy, 2, 1, shade(C[0], -10)); }
+        }
+      } else if (t === T.WALLW) {
+        for (let i = 0; i < 4; i++) { P(x, ox, oy + 3 + i * 3, 16, 1, C[3]); P(x, ox + ((i * 5 + v) % 12), oy + 4 + i * 3, 1, 2, C[2]); }
+        speck(2, [C[3]]);
+      } else {
+        for (let i = 0; i < 3; i++) P(x, ox + 4 + i * 4, oy + 2, 1, 14, C[3]);
+        P(x, ox, oy + 8, 16, 1, C[3]); speck(3, [C[2], '#2a2e34']);
+      }
+      if (v & 1) { P(x, ox, oy + 8, 16, 8, C[2]); P(x, ox, oy + 8, 16, 1, INK); P(x, ox, oy + 15, 16, 1, C[3]);
+        if (t === T.WALL) for (let i = 0; i < 2; i++) { P(x, ox, oy + 11 + i * 3, 16, 1, C[3]); P(x, ox + (i ? 4 : 10), oy + 8 + i * 3, 1, 3, C[3]); }
+        else if (t === T.WALLW) { P(x, ox, oy + 11, 16, 1, C[3]); P(x, ox, oy + 14, 16, 1, C[3]); }
+        else { P(x, ox + 5, oy + 8, 1, 8, C[3]); P(x, ox + 11, oy + 8, 1, 8, C[3]); }
+      }
+      // window with frame + panes + sill
+      if (v & 2 && t !== T.WALLC) {
+        P(x, ox + 3, oy + 8, 10, 7, INK);
+        P(x, ox + 4, oy + 9, 8, 5, '#1a2838');
+        P(x, ox + 4, oy + 9, 8, 5, 'rgba(80,120,140,0.35)');
+        P(x, ox + 4, oy + 9, 3, 2, '#6a90a8'); P(x, ox + 8, oy + 9, 4, 1, '#8ab0c0');
+        P(x, ox + 7, oy + 9, 1, 5, INK); P(x, ox + 4, oy + 11, 8, 1, INK); // muntins
+        P(x, ox + 3, oy + 14, 10, 1, C[3]); // sill
+        if (r() < 0.4) { P(x, ox + 5, oy + 10, 2, 1, '#c8d8e0'); P(x, ox + 9, oy + 12, 1, 2, '#3a5a68'); } // crack/glare
+      }
+      // grime streak
+      if (v === 3) P(x, ox + 12, oy + 2, 2, 6, shade(C[2], -20));
+      break; }
+    case T.DOOR: {
+      P(x, ox, oy, 16, 16, PAL.wood[1]);
+      P(x, ox, oy, 2, 16, INK); P(x, ox + 14, oy, 2, 16, INK);
+      P(x, ox + 2, oy, 12, 2, PAL.wood[3]); // lintel
+      P(x, ox + 2, oy + 1, 12, 1, shade(PAL.wood[0], 20));
+      P(x, ox + 3, oy + 3, 10, 13, PAL.wood[2]);
+      P(x, ox + 3, oy + 3, 10, 1, PAL.wood[3]);
+      // door panels
+      P(x, ox + 4, oy + 5, 8, 4, PAL.wood[1]); P(x, ox + 4, oy + 10, 8, 5, PAL.wood[1]);
+      P(x, ox + 4, oy + 5, 8, 1, PAL.wood[0]); P(x, ox + 4, oy + 10, 8, 1, PAL.wood[0]);
+      P(x, ox + 4, oy + 5, 1, 4, PAL.wood[3]); P(x, ox + 11, oy + 5, 1, 4, PAL.wood[3]);
+      P(x, ox + 4, oy + 10, 1, 5, PAL.wood[3]); P(x, ox + 11, oy + 10, 1, 5, PAL.wood[3]);
+      // knob + hinges
+      P(x, ox + 11, oy + 9, 2, 2, '#c8a050'); P(x, ox + 11, oy + 9, 1, 1, '#e8c870');
+      P(x, ox + 3, oy + 5, 1, 2, '#6a6a70'); P(x, ox + 3, oy + 12, 1, 2, '#6a6a70');
+      break; }
   }
 }
 function buildAtlas() { const [c, x] = mk(16 * 32, 16 * ATLAS_V); for (let t = 0; t < 32; t++) for (let v = 0; v < ATLAS_V; v++) paintTile(x, t * 16, v * 16, t, v); ATLAS = c; }
@@ -524,28 +619,58 @@ function personFrames(L) {
   const key = JSON.stringify(L); let S = SPR.get(key); if (S) return S;
   const frames = [];
   for (let f = 0; f < 4; f++) {
-    const [c, x] = mk(15, 23), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
+    const [c, x] = mk(17, 26), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
     const sk = L.skin, skD = L.skinD, z = L.zombie;
-    if (L.pack) { p(0, 8, 4, 8, L.pack); p(0, 8, 4, 1, 'rgba(255,255,255,.35)'); p(1, 15, 2, 1, 'rgba(0,0,0,.3)'); }
-    // legs
+    // backpack
+    if (L.pack) { p(0, 9, 5, 9, L.pack); p(0, 9, 5, 1, 'rgba(255,255,255,.3)'); p(1, 10, 3, 6, shade(L.pack, -25)); p(1, 17, 2, 1, 'rgba(0,0,0,.35)'); p(4, 11, 1, 5, '#2a1a10'); }
+    // legs with thigh shading + cuff
     const la = f === 1 ? -1 : f === 2 ? 1 : 0;
-    p(4 + la, 15, 3, 5, L.pants); p(8 - la, 15, 3, 5, L.pantsD); p(4, 15, 7, 2, L.pants);
-    const foot = L.shoes || sk;
-    p(3 + la, 20, 4, 2, foot); p(8 - la, 20, 4, 2, L.shoes ? L.shoesD : skD);
-    // torso
+    p(5 + la, 16, 3, 6, L.pants); p(9 - la, 16, 3, 6, L.pantsD);
+    p(5, 16, 7, 2, L.pants); p(5 + la, 16, 1, 6, shade(L.pants, 20)); p(11 - la, 16, 1, 6, shade(L.pantsD, -15));
+    p(5 + la, 21, 3, 1, shade(L.pants, -30)); p(9 - la, 21, 3, 1, shade(L.pantsD, -30));
+    const foot = L.shoes || sk, footD = L.shoes ? L.shoesD : skD;
+    p(4 + la, 22, 4, 3, foot); p(9 - la, 22, 4, 3, footD);
+    p(4 + la, 24, 4, 1, shade(foot, -40)); p(9 - la, 24, 4, 1, shade(footD, -40));
+    if (L.shoes) { p(4 + la, 22, 4, 1, shade(foot, 30)); p(7 + la, 23, 1, 1, '#1a1a1a'); }
+    // torso with collar / belt
     const sh = L.shirt || sk, shD = L.shirt ? L.shirtD : skD;
-    p(4, 8, 7, 7, sh); p(4, 8, 2, 7, shD); if (!L.shirt) { p(6, 11, 1, 1, skD); p(9, 11, 1, 1, skD); p(7, 13, 2, 1, skD); }
-    if (L.pack) { p(7, 8, 1, 7, '#3a2a20'); }
-    if (z && L.torn) { p(9, 12, 2, 2, sk); p(5, 13, 1, 2, '#8a2a2a'); }
+    p(5, 9, 7, 8, sh); p(5, 9, 2, 8, shD); p(5, 9, 7, 1, shade(sh, 25));
+    if (L.shirt) { p(7, 9, 3, 1, shade(sh, -20)); p(5, 16, 7, 1, '#2a2a30'); p(8, 15, 1, 2, '#c8a050'); } // belt + buckle
+    else { p(7, 12, 1, 1, skD); p(10, 12, 1, 1, skD); p(8, 14, 2, 1, skD); p(6, 11, 1, 1, shade(sk, -15)); }
+    if (L.pack) p(8, 9, 1, 8, '#3a2a20');
+    if (z && L.torn) { p(10, 13, 2, 3, sk); p(6, 14, 2, 2, '#6a1818'); p(11, 11, 1, 2, skD); }
     // arms
-    if (z || f === 3) { p(9, 9, 5, 2, L.shirt && !z ? sh : sh); p(12, 9, 3, 2, sk); p(3, 10, 2, 2, shD); }
-    else { const sw = f === 1 ? 1 : f === 2 ? -1 : 0; p(10, 9 + (sw > 0 ? 0 : 1), 2, 5, L.shirt && L.sleeve ? sh : sk); p(10, 13 + (sw > 0 ? 0 : 1), 2, 1, sk); p(2, 9 + (sw < 0 ? 0 : 1), 2, 5, L.shirt && L.sleeve ? shD : skD); }
-    // head
-    p(4, 0, 8, 8, sk); p(4, 0, 2, 8, skD); p(4, 7, 8, 1, skD);
-    p(4, 0, 8, 2, L.hair); if (L.hairS === 1) { p(3, 1, 2, 5, L.hair); } else if (L.hairS === 2) { p(4, 0, 8, 3, L.hair); p(3, 2, 2, 6, L.hair); } else if (L.hairS === 3) { p(4, 0, 3, 2, sk); }
-    if (L.hat) { p(3, 0, 10, 2, L.hat); p(4, -1, 7, 2, L.hat); p(10, 2, 3, 1, L.hat); }
-    p(8, 4, 1, 2, z ? '#ff3a2a' : INK); p(10, 4, 1, 2, z ? '#ff3a2a' : INK); if (z) { p(8, 6, 3, 1, '#3a1a1a'); p(5, 2, 1, 1, '#6a2a2a'); } else p(9, 6, 2, 1, skD);
-    if (z && L.blood) { p(6, 9, 1, 3, '#8a1a1a'); p(5, 10, 2, 1, '#8a1a1a'); }
+    if (z || f === 3) {
+      p(10, 10, 5, 2, L.shirt && !z ? sh : sh); p(13, 10, 3, 2, sk); p(14, 10, 1, 1, skD);
+      p(3, 11, 2, 2, shD); p(2, 11, 1, 2, skD);
+      if (z) { p(14, 11, 2, 1, '#4a1818'); p(15, 10, 1, 1, sk); }
+    } else {
+      const sw = f === 1 ? 1 : f === 2 ? -1 : 0;
+      p(11, 10 + (sw > 0 ? 0 : 1), 2, 6, L.shirt && L.sleeve ? sh : sk);
+      p(11, 15 + (sw > 0 ? 0 : 1), 2, 1, sk); p(12, 10 + (sw > 0 ? 0 : 1), 1, 5, shade(L.shirt && L.sleeve ? sh : sk, -20));
+      p(3, 10 + (sw < 0 ? 0 : 1), 2, 6, L.shirt && L.sleeve ? shD : skD);
+      p(3, 15 + (sw < 0 ? 0 : 1), 2, 1, skD);
+    }
+    // head with jaw / cheek shade
+    p(5, 1, 8, 8, sk); p(5, 1, 2, 8, skD); p(5, 8, 8, 1, skD); p(11, 3, 1, 4, shade(sk, -15));
+    // hair
+    p(5, 1, 8, 2, L.hair); p(5, 1, 8, 1, shade(L.hair, 25));
+    if (L.hairS === 1) { p(4, 2, 2, 5, L.hair); p(4, 2, 1, 5, shade(L.hair, -20)); }
+    else if (L.hairS === 2) { p(5, 1, 8, 3, L.hair); p(4, 3, 2, 6, L.hair); p(12, 3, 1, 4, L.hair); }
+    else if (L.hairS === 3) { p(5, 1, 3, 2, sk); p(10, 1, 2, 1, sk); }
+    if (L.hat) { p(4, 0, 10, 2, L.hat); p(5, -1, 7, 2, L.hat); p(4, 0, 10, 1, shade(L.hat, 30)); p(11, 2, 3, 1, L.hat); }
+    // face
+    if (z) {
+      p(9, 4, 1, 2, '#ff2a1a'); p(11, 4, 1, 2, '#ff2a1a');
+      p(9, 5, 1, 1, '#ff8a60'); p(11, 5, 1, 1, '#ff8a60'); // glow
+      p(9, 7, 3, 1, '#2a1010'); p(8, 7, 1, 1, '#4a1818');
+      p(6, 3, 1, 1, '#5a2020'); p(12, 6, 1, 1, '#3a1010');
+      if (L.blood) { p(7, 10, 1, 4, '#6a1010'); p(6, 11, 3, 1, '#6a1010'); p(10, 8, 1, 2, '#5a0808'); }
+    } else {
+      p(9, 4, 1, 2, INK); p(11, 4, 1, 2, INK);
+      p(10, 6, 2, 1, skD); p(9, 7, 3, 1, shade(sk, -25)); // mouth line
+      p(8, 5, 1, 1, 'rgba(255,80,80,0.25)'); // cheek
+    }
     frames.push(cutout(c));
   }
   S = { frames, back: frames.map((fr) => silhouette(fr, CARD)), edge: frames.map((fr) => silhouette(fr, CARD2)) };
@@ -569,7 +694,7 @@ function survivorLook(seed) { const r = rng(seed), s = SKINS[(r() * SKINS.length
 function drawStandee(S, fr, sx, sy, fs, bob = 0, tilt = 0, alpha = 1) {
   const img = S.frames[fr], w = img.width, h = img.height;
   hx.save(); hx.globalAlpha = alpha; hx.translate(Math.round(sx), Math.round(sy));
-  hx.fillStyle = 'rgba(14,11,16,0.3)'; hx.fillRect(-5, -2, 10, 3); hx.fillRect(-4, -3, 8, 5);
+  hx.fillStyle = 'rgba(8,6,10,0.45)'; hx.fillRect(-6, -2, 12, 3); hx.fillRect(-5, -3, 10, 4); hx.fillStyle = 'rgba(8,6,10,0.2)'; hx.fillRect(-4, -4, 8, 2);
   hx.translate(0, Math.round(bob)); if (tilt) hx.rotate(tilt);
   const a = Math.abs(fs) < 0.08 ? 0.08 * Math.sign(fs || 1) : fs; hx.scale(a, 1);
   hx.drawImage(S.edge[fr], -w / 2 + 1, -h + 2); // cardboard thickness
@@ -580,40 +705,167 @@ function drawStandee(S, fr, sx, sy, fs, bob = 0, tilt = 0, alpha = 1) {
 const PROP = {};
 function propImg(k, open) {
   const key = k + (open ? '_o' : ''); if (PROP[key]) return PROP[key];
-  const [c, x] = mk(14, 16), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
+  const [c, x] = mk(16, 18), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
   switch (k) {
-    case 'fridge': p(2, 0, 10, 16, '#e8ecf0'); p(2, 0, 3, 16, '#c8ccd2'); p(2, 6, 10, 1, '#9aa0a8'); p(10, 2, 1, 3, '#7a8088'); p(10, 8, 1, 4, '#7a8088'); if (open) p(5, 1, 6, 4, '#ffe8a0'); break;
-    case 'cabinet': case 'dresser': p(1, 4, 12, 12, PAL.wood[1]); p(1, 4, 12, 2, PAL.wood[0]); p(1, 10, 12, 1, PAL.wood[3]); p(6, 7, 2, 1, '#e8c860'); p(6, 13, 2, 1, '#e8c860'); if (k === 'dresser') p(1, 7, 12, 1, PAL.wood[3]); if (open) p(2, 11, 10, 4, '#3a2a1a'); break;
-    case 'desk': p(0, 7, 14, 4, PAL.wood[1]); p(0, 7, 14, 1, PAL.wood[0]); p(1, 11, 2, 5, PAL.wood[3]); p(11, 11, 2, 5, PAL.wood[3]); p(4, 1, 7, 6, '#3a3a4a'); p(5, 2, 5, 4, open ? '#2a2a2a' : '#6ab8e8'); break;
-    case 'shelf': p(0, 1, 14, 15, '#8a909a'); p(1, 2, 12, 13, '#4a4e58'); for (let i = 0; i < 3; i++) { p(1, 5 + i * 5, 12, 1, '#a8aeb8'); if (!open) { p(2, 2 + i * 5, 3, 3, ['#d84a3a', '#e8c040', '#4a9ae0'][i]); p(7, 3 + i * 5, 2, 2, ['#5ab870', '#e87a2a', '#e8e8e8'][i]); p(10, 2 + i * 5, 2, 3, '#c84a8a'); } } break;
-    case 'register': p(0, 8, 14, 8, PAL.wood[2]); p(0, 8, 14, 2, PAL.wood[0]); p(3, 3, 8, 5, '#5a5a66'); p(4, 4, 6, 2, '#a8e8a0'); if (open) p(4, 7, 6, 2, '#2a2a2a'); break;
-    case 'medcab': p(1, 2, 12, 12, '#f0f0f0'); p(1, 2, 3, 12, '#d0d0d8'); p(6, 4, 2, 7, '#e83a3a'); p(3, 6, 8, 3, '#e83a3a'); if (open) p(2, 3, 10, 10, '#c8d0d8'); break;
-    case 'rack': p(1, 1, 12, 1, '#8a909a'); p(1, 1, 1, 15, '#8a909a'); p(12, 1, 1, 15, '#8a909a'); if (!open) for (let i = 0; i < 4; i++) p(2 + i * 3, 2, 3, 8, ['#5a6ac8', '#c84a5a', '#e8e0c8', '#3a8a5a'][i]); break;
-    case 'locker': p(2, 0, 10, 16, '#6a7a8a'); p(2, 0, 2, 16, '#4a5a6a'); p(7, 0, 1, 16, '#3a4450'); for (let i = 0; i < 3; i++) p(4, 2 + i * 2, 3, 1, '#3a4450'); if (open) p(8, 1, 3, 14, '#1a1e24'); break;
-    case 'gunsafe': case 'safe': p(1, 2, 12, 14, '#3a3e48'); p(1, 2, 12, 2, '#5a606c'); p(6, 7, 3, 3, '#c8c8d0'); p(7, 8, 1, 1, '#3a3e48'); if (open) p(2, 4, 10, 11, '#141418'); break;
-    case 'toolbox': p(1, 8, 12, 7, '#d83a2a'); p(1, 8, 12, 2, '#f05a4a'); p(4, 5, 6, 3, '#2a2a2a'); p(5, 6, 4, 2, '#d83a2a'); if (open) p(2, 9, 10, 2, '#5a5a5a'); break;
-    case 'crate': case 'seedbox': case 'orecart': if (k === 'orecart') { p(1, 6, 12, 7, '#6a5a4a'); p(1, 6, 12, 1, '#8a7a6a'); p(2, 13, 3, 3, INK); p(9, 13, 3, 3, INK); if (!open) { p(3, 3, 3, 3, '#8a8078'); p(6, 2, 4, 4, '#a09890'); p(8, 4, 2, 2, '#ffd040'); } break; }
-      p(1, 3, 12, 12, PAL.wood[1]); p(1, 3, 12, 1, PAL.wood[0]); p(1, 3, 1, 12, PAL.wood[2]); p(12, 3, 1, 12, PAL.wood[2]); p(1, 14, 12, 1, PAL.wood[3]);
-      for (let i = 0; i < 10; i++) { p(2 + i, 4 + i, 1, 1, PAL.wood[3]); p(11 - i, 4 + i, 1, 1, PAL.wood[3]); }
-      if (k === 'seedbox') { p(4, 7, 6, 4, '#e8e0c8'); p(6, 8, 2, 2, '#5ab870'); } if (open) p(2, 4, 10, 4, '#3a2a1a'); break;
-    case 'gascan': p(3, 4, 8, 11, '#d82a2a'); p(3, 4, 8, 2, '#f04a4a'); p(9, 1, 2, 3, '#2a2a2a'); p(5, 2, 4, 2, '#d82a2a'); break;
-    case 'pump': p(3, 1, 8, 15, '#e8e8e8'); p(3, 1, 8, 3, '#d82a2a'); p(5, 5, 4, 3, '#2a2a3a'); p(6, 6, 2, 1, open ? '#5a5a5a' : '#a8e8a0'); p(11, 6, 2, 6, '#2a2a2a'); break;
-    case 'mine': p(0, 4, 14, 12, PAL.rock[2]); p(2, 6, 10, 10, '#140e10'); p(1, 5, 12, 2, PAL.wood[2]); p(1, 5, 2, 11, PAL.wood[2]); p(11, 5, 2, 11, PAL.wood[2]); break;
-    case 'trader': p(0, 9, 14, 7, PAL.wood[1]); p(0, 9, 14, 2, PAL.wood[0]); p(2, 6, 3, 3, '#e8c040'); p(9, 5, 3, 4, '#5ab870'); break;
-    // built structures
-    case 'woodwall': p(0, 0, 14, 16, PAL.wood[2]); for (let i = 0; i < 4; i++) { p(i * 4, 0, 3, 16, PAL.wood[1]); p(i * 4, 0, 1, 16, PAL.wood[0]); } p(0, 4, 14, 2, PAL.wood[3]); p(0, 11, 14, 2, PAL.wood[3]); p(2, 4, 1, 1, '#c8c8c8'); p(10, 11, 1, 1, '#c8c8c8'); break;
-    case 'metalwall': p(0, 0, 14, 16, PAL.metal[1]); p(0, 0, 14, 2, PAL.metal[0]); p(0, 7, 14, 1, PAL.metal[3]); p(4, 0, 1, 16, PAL.metal[2]); p(10, 0, 1, 16, PAL.metal[2]); p(2, 3, 1, 1, '#5a5a5a'); p(12, 10, 1, 1, '#5a5a5a'); p(6, 11, 3, 3, '#c87a3a'); break;
-    case 'gate': p(0, 2, 2, 14, PAL.wood[3]); p(12, 2, 2, 14, PAL.wood[3]); p(2, 4, 10, 2, PAL.wood[1]); p(2, 10, 10, 2, PAL.wood[1]); for (let i = 0; i < 8; i++) p(2 + i, 4 + ((i * 6) / 8 | 0), 1, 2, PAL.wood[2]); break;
-    case 'spikes': p(1, 11, 12, 4, PAL.wood[2]); for (let i = 0; i < 4; i++) { p(2 + i * 3, 5, 1, 6, '#c8c8d0'); p(2 + i * 3, 4, 1, 1, '#ffffff'); p(3 + i * 3, 7, 1, 4, '#8a8a90'); } break;
-    case 'beartrap': p(1, 9, 12, 5, '#5a5a62'); p(2, 10, 10, 3, '#2a2a30'); for (let i = 0; i < 5; i++) { p(2 + i * 2, 8, 1, 2, '#c8c8d0'); p(3 + i * 2, 13, 1, 2, '#c8c8d0'); } p(6, 11, 2, 1, '#c87a3a'); break;
-    case 'wire': for (let i = 0; i < 3; i++) { p(0, 5 + i * 4, 14, 1, '#8a8a90'); for (let j = 0; j < 4; j++) p(1 + j * 4 + (i & 1) * 2, 4 + i * 4, 1, 3, '#c8c8d0'); } p(0, 3, 1, 12, PAL.wood[3]); p(13, 3, 1, 12, PAL.wood[3]); break;
-    case 'turret': p(2, 9, 10, 7, PAL.metal[2]); p(2, 9, 10, 2, PAL.metal[0]); p(4, 4, 6, 5, '#3a3e48'); p(9, 5, 5, 2, '#2a2a2a'); p(5, 5, 2, 1, '#d83a2a'); break;
-    case 'campfire': p(1, 12, 12, 3, PAL.wood[3]); p(2, 11, 4, 2, PAL.wood[1]); p(8, 11, 4, 2, PAL.wood[1]); for (let i = 0; i < 5; i++) p(2 + i * 2 + (i & 1), 13, 2, 2, '#7a7068'); break;
-    case 'chest': p(1, 5, 12, 10, PAL.wood[1]); p(1, 5, 12, 3, PAL.wood[0]); p(1, 8, 12, 1, PAL.wood[3]); p(6, 8, 2, 3, '#e8c860'); p(1, 5, 1, 10, PAL.wood[3]); p(12, 5, 1, 10, PAL.wood[3]); break;
-    case 'bunk': case 'bed': p(0, 3, 14, 12, k === 'bed' ? '#5a7a4a' : PAL.wood[2]); p(1, 4, 12, 10, k === 'bed' ? '#7a9a5a' : '#c8b8a0'); p(1, 4, 5, 4, '#f0e8d8'); p(1, 9, 12, 5, k === 'bed' ? '#4a6a3a' : '#8a5a5a'); break;
-    case 'barrel': p(2, 2, 10, 14, '#4a6a8a'); p(2, 2, 10, 2, '#6a8aaa'); p(2, 7, 10, 1, '#2a3a4a'); p(2, 12, 10, 1, '#2a3a4a'); p(4, 3, 6, 1, '#8ed8ff'); break;
-    case 'sprinkler': p(5, 9, 4, 6, PAL.metal[2]); p(3, 13, 8, 2, PAL.metal[3]); p(6, 6, 2, 3, PAL.metal[0]); p(4, 6, 6, 1, '#8ed8ff'); break;
-    case 'deadz': p(0, 11, 14, 4, '#6a8a5a'); p(1, 12, 4, 3, '#a8c088'); p(9, 12, 4, 2, '#5a4a3a'); p(6, 13, 2, 1, '#8a1a1a'); break;
+    case 'fridge':
+      p(2, 0, 12, 18, '#c8ccd2'); p(2, 0, 3, 18, '#a8acb4'); p(2, 0, 12, 1, '#e8ecf0');
+      p(2, 8, 12, 1, '#7a8088'); p(12, 2, 1, 4, '#5a6068'); p(12, 10, 1, 5, '#5a6068');
+      p(3, 1, 9, 6, '#b8bcc4'); p(3, 9, 9, 8, '#b0b4bc');
+      if (open) { p(5, 1, 8, 6, '#1a1e24'); p(6, 2, 3, 2, '#ffe8a0'); p(6, 5, 2, 1, '#e8e0d0'); }
+      else { p(4, 3, 2, 1, '#8a9098'); p(4, 11, 2, 1, '#8a9098'); }
+      break;
+    case 'cabinet': case 'dresser':
+      p(1, 4, 14, 14, PAL.wood[1]); p(1, 4, 14, 2, PAL.wood[0]); p(1, 4, 1, 14, PAL.wood[2]); p(14, 4, 1, 14, PAL.wood[3]);
+      p(1, 10, 14, 1, PAL.wood[3]); p(7, 7, 2, 1, '#c8a050'); p(7, 14, 2, 1, '#c8a050');
+      if (k === 'dresser') { p(1, 7, 14, 1, PAL.wood[3]); p(1, 13, 14, 1, PAL.wood[3]); p(7, 11, 2, 1, '#c8a050'); }
+      p(2, 5, 12, 1, shade(PAL.wood[0], 20));
+      if (open) p(2, 11, 12, 5, '#2a1a10');
+      break;
+    case 'desk':
+      p(0, 8, 16, 4, PAL.wood[1]); p(0, 8, 16, 1, PAL.wood[0]); p(1, 12, 2, 6, PAL.wood[3]); p(13, 12, 2, 6, PAL.wood[3]);
+      p(0, 8, 1, 4, PAL.wood[2]); p(15, 8, 1, 4, PAL.wood[3]);
+      p(4, 1, 8, 7, '#2a2a34'); p(5, 2, 6, 5, open ? '#1a1a20' : '#4a8ab0');
+      p(5, 2, 2, 1, '#8ab8d0'); p(9, 2, 1, 5, '#2a3a48');
+      break;
+    case 'shelf':
+      p(0, 1, 16, 17, '#6a7078'); p(1, 2, 14, 15, '#3a3e48');
+      for (let i = 0; i < 3; i++) {
+        p(1, 5 + i * 5, 14, 1, '#8a909a'); p(1, 5 + i * 5, 14, 1, shade('#8a909a', 20));
+        if (!open) {
+          p(2, 2 + i * 5, 3, 3, ['#a83828', '#b89830', '#3a7ab0'][i]);
+          p(6, 3 + i * 5, 3, 2, ['#4a8860', '#c86820', '#d0d0d0'][i]);
+          p(11, 2 + i * 5, 3, 3, ['#a83868', '#6a4a28', '#485868'][i]);
+          p(2, 2 + i * 5, 1, 1, 'rgba(255,255,255,.3)');
+        }
+      }
+      break;
+    case 'register':
+      p(0, 9, 16, 9, PAL.wood[2]); p(0, 9, 16, 2, PAL.wood[0]); p(0, 9, 1, 9, PAL.wood[3]);
+      p(3, 3, 10, 6, '#3a3a44'); p(4, 4, 8, 3, '#78c070'); p(4, 4, 3, 1, '#a8e8a0');
+      p(12, 5, 2, 2, '#2a2a30'); if (open) p(4, 8, 8, 2, '#1a1a1a');
+      break;
+    case 'medcab':
+      p(1, 2, 14, 14, '#e0e0e4'); p(1, 2, 3, 14, '#c0c0c8'); p(1, 2, 14, 1, '#f0f0f4');
+      p(7, 4, 2, 8, '#c82828'); p(3, 7, 10, 3, '#c82828'); p(7, 4, 2, 1, '#e85050');
+      if (open) { p(2, 3, 12, 12, '#a0a8b0'); p(4, 5, 3, 2, '#e8e8e8'); p(9, 8, 3, 4, '#d0d8e0'); }
+      break;
+    case 'rack':
+      p(1, 1, 14, 1, '#6a7078'); p(1, 1, 1, 17, '#6a7078'); p(14, 1, 1, 17, '#6a7078');
+      p(1, 8, 14, 1, '#5a6068');
+      if (!open) for (let i = 0; i < 4; i++) {
+        const cols = ['#3a4a98', '#a83848', '#d0c8b0', '#2a6840'];
+        p(2 + i * 3, 2, 3, 9, cols[i]); p(2 + i * 3, 2, 3, 1, shade(cols[i], 30)); p(2 + i * 3, 10, 3, 1, shade(cols[i], -30));
+      }
+      break;
+    case 'locker':
+      p(2, 0, 12, 18, '#4a5a6a'); p(2, 0, 2, 18, '#3a4a58'); p(2, 0, 12, 1, '#6a7a8a');
+      p(8, 0, 1, 18, '#2a3440'); for (let i = 0; i < 4; i++) p(4, 2 + i * 2, 3, 1, '#2a3440');
+      p(12, 8, 1, 2, '#c8a050'); if (open) p(9, 1, 4, 16, '#12161c');
+      break;
+    case 'gunsafe': case 'safe':
+      p(1, 2, 14, 16, '#2a2e38'); p(1, 2, 14, 2, '#4a505c'); p(1, 2, 14, 1, '#6a707c');
+      p(3, 5, 10, 11, '#1a1e26'); p(7, 8, 3, 3, '#a8a8b0'); p(8, 9, 1, 1, '#2a2e38');
+      p(4, 4, 2, 1, '#6a7078'); if (open) p(2, 5, 12, 12, '#0a0a0e');
+      break;
+    case 'toolbox':
+      p(1, 9, 14, 8, '#b82820'); p(1, 9, 14, 2, '#d84838'); p(1, 9, 14, 1, '#e86850');
+      p(4, 5, 8, 4, '#1a1a1a'); p(5, 6, 6, 2, '#b82820'); p(6, 6, 4, 1, '#d84838');
+      if (open) p(2, 10, 12, 3, '#3a3a3a');
+      break;
+    case 'crate': case 'seedbox': case 'orecart':
+      if (k === 'orecart') {
+        p(1, 7, 14, 8, '#5a4a3a'); p(1, 7, 14, 1, '#7a6a5a'); p(2, 15, 3, 3, INK); p(11, 15, 3, 3, INK);
+        p(2, 15, 3, 1, '#4a4a50'); p(11, 15, 3, 1, '#4a4a50');
+        if (!open) { p(3, 3, 4, 4, '#7a7068'); p(7, 2, 5, 5, '#908880'); p(9, 4, 2, 2, '#c8a040'); }
+        break;
+      }
+      p(1, 3, 14, 14, PAL.wood[1]); p(1, 3, 14, 1, PAL.wood[0]); p(1, 3, 1, 14, PAL.wood[2]); p(14, 3, 1, 14, PAL.wood[2]);
+      p(1, 16, 14, 1, PAL.wood[3]);
+      for (let i = 0; i < 11; i++) { p(2 + i, 4 + i, 1, 1, PAL.wood[3]); p(13 - i, 4 + i, 1, 1, PAL.wood[3]); }
+      p(2, 4, 12, 1, shade(PAL.wood[0], 15));
+      if (k === 'seedbox') { p(4, 8, 8, 5, '#d8d0b8'); p(7, 9, 2, 2, '#4a8860'); p(5, 10, 1, 1, '#6a5030'); }
+      if (open) p(2, 4, 12, 5, '#2a1a10');
+      break;
+    case 'gascan':
+      p(3, 5, 10, 12, '#b82020'); p(3, 5, 10, 2, '#d84038'); p(3, 5, 10, 1, '#e85848');
+      p(10, 1, 3, 4, '#1a1a1a'); p(5, 2, 5, 3, '#b82020'); p(6, 8, 4, 2, '#1a1a1a');
+      break;
+    case 'pump':
+      p(3, 1, 10, 17, '#d0d0d0'); p(3, 1, 10, 3, '#b82020'); p(3, 1, 10, 1, '#d84038');
+      p(5, 5, 6, 4, '#1a1a28'); p(6, 6, 4, 2, open ? '#3a3a3a' : '#78c070');
+      p(12, 7, 3, 7, '#1a1a1a'); p(13, 8, 1, 5, '#3a3a42'); p(4, 14, 8, 1, '#8a8a90');
+      break;
+    case 'mine':
+      p(0, 4, 16, 14, PAL.rock[2]); p(2, 6, 12, 12, '#100a0c'); p(3, 8, 10, 8, '#080508');
+      p(1, 5, 14, 2, PAL.wood[2]); p(1, 5, 2, 13, PAL.wood[2]); p(13, 5, 2, 13, PAL.wood[2]);
+      p(5, 6, 2, 1, '#c8a050');
+      break;
+    case 'trader':
+      p(0, 10, 16, 8, PAL.wood[1]); p(0, 10, 16, 2, PAL.wood[0]); p(0, 10, 1, 8, PAL.wood[3]);
+      p(2, 6, 4, 4, '#c8a030'); p(10, 5, 4, 5, '#4a8860'); p(3, 7, 2, 1, shade('#c8a030', 40));
+      break;
+    case 'woodwall':
+      p(0, 0, 16, 18, PAL.wood[2]); for (let i = 0; i < 4; i++) { p(i * 4, 0, 3, 18, PAL.wood[1]); p(i * 4, 0, 1, 18, PAL.wood[0]); p(i * 4 + 2, 0, 1, 18, PAL.wood[3]); }
+      p(0, 4, 16, 2, PAL.wood[3]); p(0, 12, 16, 2, PAL.wood[3]); p(2, 4, 1, 1, '#a8a8a8'); p(11, 12, 1, 1, '#a8a8a8');
+      break;
+    case 'metalwall':
+      p(0, 0, 16, 18, PAL.metal[1]); p(0, 0, 16, 2, PAL.metal[0]); p(0, 8, 16, 1, PAL.metal[3]);
+      p(4, 0, 1, 18, PAL.metal[2]); p(11, 0, 1, 18, PAL.metal[2]); p(2, 3, 1, 1, '#4a4a4a'); p(13, 11, 1, 1, '#4a4a4a');
+      p(6, 12, 4, 4, '#a86830'); p(7, 13, 2, 2, '#c88840');
+      break;
+    case 'gate':
+      p(0, 2, 2, 16, PAL.wood[3]); p(14, 2, 2, 16, PAL.wood[3]);
+      p(2, 4, 12, 2, PAL.wood[1]); p(2, 11, 12, 2, PAL.wood[1]);
+      for (let i = 0; i < 10; i++) p(2 + i, 4 + ((i * 7) / 10 | 0), 1, 2, PAL.wood[2]);
+      p(7, 7, 2, 2, '#c8a050');
+      break;
+    case 'spikes':
+      p(1, 12, 14, 5, PAL.wood[2]); p(1, 12, 14, 1, PAL.wood[0]);
+      for (let i = 0; i < 5; i++) { p(2 + i * 3, 5, 1, 7, '#b0b0b8'); p(2 + i * 3, 4, 1, 1, '#e8e8f0'); p(3 + i * 3, 7, 1, 5, '#707078'); }
+      break;
+    case 'beartrap':
+      p(1, 10, 14, 6, '#4a4a52'); p(2, 11, 12, 4, '#1a1a20');
+      for (let i = 0; i < 6; i++) { p(2 + i * 2, 8, 1, 3, '#b0b0b8'); p(3 + i * 2, 14, 1, 3, '#b0b0b8'); }
+      p(7, 12, 2, 1, '#a86830');
+      break;
+    case 'wire':
+      for (let i = 0; i < 3; i++) { p(0, 5 + i * 4, 16, 1, '#707078'); for (let j = 0; j < 5; j++) p(1 + j * 3 + (i & 1) * 2, 4 + i * 4, 1, 3, '#b0b0b8'); }
+      p(0, 3, 1, 14, PAL.wood[3]); p(15, 3, 1, 14, PAL.wood[3]);
+      break;
+    case 'turret':
+      p(2, 10, 12, 8, PAL.metal[2]); p(2, 10, 12, 2, PAL.metal[0]); p(4, 4, 8, 6, '#2a2e38');
+      p(10, 5, 6, 2, '#1a1a1a'); p(5, 5, 2, 1, '#b82020'); p(6, 6, 4, 2, '#3a3e48');
+      break;
+    case 'campfire':
+      p(1, 13, 14, 4, PAL.wood[3]); p(2, 12, 5, 2, PAL.wood[1]); p(9, 12, 5, 2, PAL.wood[1]);
+      for (let i = 0; i < 6; i++) p(2 + i * 2 + (i & 1), 14, 2, 2, '#5a5048');
+      p(6, 11, 4, 2, '#3a3028');
+      break;
+    case 'chest':
+      p(1, 5, 14, 12, PAL.wood[1]); p(1, 5, 14, 3, PAL.wood[0]); p(1, 9, 14, 1, PAL.wood[3]);
+      p(7, 9, 2, 3, '#c8a050'); p(1, 5, 1, 12, PAL.wood[3]); p(14, 5, 1, 12, PAL.wood[3]);
+      p(2, 6, 12, 1, shade(PAL.wood[0], 25)); p(6, 10, 4, 1, '#a88840');
+      break;
+    case 'bunk': case 'bed':
+      p(0, 3, 16, 14, k === 'bed' ? '#3a5a38' : PAL.wood[2]);
+      p(1, 4, 14, 12, k === 'bed' ? '#5a7a48' : '#b8a890');
+      p(1, 4, 6, 5, '#e0d8c8'); p(1, 4, 6, 1, '#f0e8dc');
+      p(1, 10, 14, 6, k === 'bed' ? '#3a5a30' : '#6a4040');
+      p(0, 3, 16, 1, k === 'bed' ? '#2a4a28' : PAL.wood[0]);
+      break;
+    case 'barrel':
+      p(2, 2, 12, 16, '#3a5a78'); p(2, 2, 12, 2, '#5a7a98'); p(2, 2, 12, 1, '#7a9ab0');
+      p(2, 8, 12, 1, '#1a2a38'); p(2, 13, 12, 1, '#1a2a38'); p(4, 3, 8, 1, '#6ab0c8');
+      p(3, 4, 1, 12, shade('#3a5a78', 20)); p(13, 4, 1, 12, shade('#3a5a78', -25));
+      break;
+    case 'sprinkler':
+      p(6, 10, 4, 7, PAL.metal[2]); p(3, 14, 10, 2, PAL.metal[3]); p(7, 6, 2, 4, PAL.metal[0]);
+      p(4, 6, 8, 1, '#6ab0c8'); p(5, 5, 1, 1, '#8ad0e8'); p(10, 5, 1, 1, '#8ad0e8');
+      break;
+    case 'deadz':
+      p(0, 12, 16, 5, '#4a6840'); p(1, 13, 5, 3, '#5a7850'); p(10, 13, 5, 3, '#3a2a22');
+      p(7, 14, 3, 1, '#5a1010'); p(3, 12, 2, 1, '#3a1818'); p(12, 15, 2, 1, '#2a1010');
+      break;
   }
   PROP[key] = cutout(c, false); return PROP[key];
 }
@@ -621,11 +873,27 @@ function propImg(k, open) {
 const VEH = {};
 function vehImg(type, col, dir) {
   const key = type + col + dir; if (VEH[key]) return VEH[key];
-  const CC = ['#d84a3a', '#4a7ac8', '#e8e0c8', '#3a3a42', '#5ab870'][col % 5]; let w = 24, h = 12; if (type === 'moto') { w = 16; h = 7; } if (type === 'bike') { w = 14; h = 6; }
+  const CC = ['#a83828', '#2a5a98', '#c8c0a8', '#2a2a32', '#3a8860'][col % 5]; let w = 28, h = 14; if (type === 'moto') { w = 18; h = 8; } if (type === 'bike') { w = 16; h = 8; }
   const [c, x] = mk(w, h), p = (X, Y, ww, hh, cc) => P(x, X, Y, ww, hh, cc);
-  if (type === 'car') { p(0, 1, 24, 10, CC); p(0, 1, 24, 2, shade(CC, 30)); p(0, 9, 24, 2, shade(CC, -40)); p(7, 2, 9, 8, '#2a3a4a'); p(8, 3, 3, 6, '#6ab8e8'); p(14, 3, 2, 6, '#5aa0d0'); p(22, 2, 2, 2, '#fff8c0'); p(22, 8, 2, 2, '#fff8c0'); p(0, 2, 1, 2, '#e83a2a'); p(0, 8, 1, 2, '#e83a2a'); p(3, 0, 4, 1, INK); p(17, 0, 4, 1, INK); p(3, 11, 4, 1, INK); p(17, 11, 4, 1, INK); }
-  else if (type === 'moto') { p(1, 3, 14, 2, '#2a2a2a'); p(4, 2, 7, 3, CC); p(4, 2, 7, 1, shade(CC, 30)); p(0, 2, 3, 3, INK); p(13, 2, 3, 3, INK); p(12, 0, 1, 7, '#8a8a90'); }
-  else { p(0, 2, 4, 3, INK); p(10, 2, 4, 3, INK); p(1, 3, 2, 1, '#8a8a90'); p(11, 3, 2, 1, '#8a8a90'); p(3, 3, 8, 1, CC); p(6, 1, 3, 2, '#3a3a3a'); p(10, 0, 1, 6, '#8a8a90'); }
+  if (type === 'car') {
+    p(1, 2, 26, 10, CC); p(1, 2, 26, 2, shade(CC, 35)); p(1, 10, 26, 2, shade(CC, -40));
+    p(1, 2, 1, 10, shade(CC, 20)); p(26, 2, 1, 10, shade(CC, -25));
+    p(8, 3, 11, 8, '#1a2430'); p(9, 4, 4, 6, '#4a88a8'); p(14, 4, 4, 6, '#3a7090');
+    p(9, 4, 4, 1, '#7ab0c8'); p(18, 5, 1, 4, '#1a2838');
+    p(24, 3, 3, 2, '#fff0a0'); p(24, 9, 3, 2, '#fff0a0'); p(24, 3, 1, 2, '#ffffff');
+    p(1, 3, 2, 2, '#c82820'); p(1, 9, 2, 2, '#c82820');
+    p(3, 0, 5, 2, INK); p(18, 0, 5, 2, INK); p(3, 12, 5, 2, INK); p(18, 12, 5, 2, INK);
+    p(4, 1, 3, 1, '#3a3a42'); p(19, 1, 3, 1, '#3a3a42');
+    p(12, 11, 4, 1, shade(CC, -50)); // under shadow
+  } else if (type === 'moto') {
+    p(1, 3, 16, 3, '#1a1a1a'); p(4, 2, 9, 4, CC); p(4, 2, 9, 1, shade(CC, 30));
+    p(0, 2, 4, 4, INK); p(14, 2, 4, 4, INK); p(1, 3, 2, 2, '#4a4a52'); p(15, 3, 2, 2, '#4a4a52');
+    p(13, 0, 1, 8, '#707078'); p(6, 1, 4, 1, shade(CC, -20)); p(8, 5, 2, 1, '#c8a050');
+  } else {
+    p(0, 2, 5, 4, INK); p(11, 2, 5, 4, INK); p(1, 3, 3, 2, '#606068'); p(12, 3, 3, 2, '#606068');
+    p(3, 3, 10, 2, CC); p(3, 3, 10, 1, shade(CC, 30)); p(7, 1, 3, 2, '#2a2a2a');
+    p(11, 0, 1, 8, '#707078'); p(5, 2, 2, 1, '#1a1a1a'); p(9, 5, 1, 1, '#c8a050');
+  }
   const base = cutout(c, false), D = Math.max(base.width, base.height) + 2, [r, rx] = mk(D, D);
   rx.translate(D / 2, D / 2); rx.rotate(dir * Math.PI / 4); rx.drawImage(base, -base.width / 2, -base.height / 2); VEH[key] = r; return r;
 }
@@ -1064,13 +1332,31 @@ try { Object.assign(OPT, JSON.parse(localStorage.getItem('sovereign.opt') || '{}
 const saveOpt = () => { try { localStorage.setItem('sovereign.opt', JSON.stringify(OPT)); } catch (e) { } };
 let TREE_IMG = null, PINE_IMG = null, STUMP = null;
 function buildTrees() {
-  { const [c, x] = mk(22, 26), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col); p(9, 16, 4, 10, PAL.wood[3]); p(9, 16, 1, 10, PAL.wood[2]);
-    for (const [X, Y, r] of [[11, 9, 9], [6, 12, 5], [16, 12, 5], [11, 5, 6]]) { x.fillStyle = PAL.leaf[2]; x.beginPath(); x.arc(X, Y, r, 0, 6.283); x.fill(); }
-    for (const [X, Y, r] of [[9, 7, 5], [14, 9, 4]]) { x.fillStyle = PAL.leaf[1]; x.beginPath(); x.arc(X, Y, r, 0, 6.283); x.fill(); } p(7, 4, 3, 2, PAL.leaf[0]); p(13, 7, 2, 2, PAL.leaf[0]); p(4, 15, 14, 2, PAL.leaf[3]);
+  { const [c, x] = mk(24, 28), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
+    p(10, 18, 4, 10, PAL.wood[3]); p(10, 18, 1, 10, PAL.wood[2]); p(13, 18, 1, 10, PAL.wood[3]);
+    for (const [X, Y, r] of [[12, 10, 10], [6, 13, 6], [18, 13, 6], [12, 5, 7], [8, 8, 5]]) {
+      x.fillStyle = PAL.leaf[2]; x.beginPath(); x.arc(X, Y, r, 0, 6.283); x.fill();
+    }
+    for (const [X, Y, r] of [[10, 7, 5], [15, 9, 4], [9, 12, 3]]) {
+      x.fillStyle = PAL.leaf[1]; x.beginPath(); x.arc(X, Y, r, 0, 6.283); x.fill();
+    }
+    p(8, 4, 3, 2, PAL.leaf[0]); p(14, 6, 2, 2, PAL.leaf[0]); p(11, 8, 2, 1, PAL.leaf[0]);
+    p(4, 16, 16, 2, PAL.leaf[3]); p(6, 15, 3, 1, PAL.leaf[3]);
+    // trunk bark notches
+    p(11, 20, 1, 1, PAL.wood[1]); p(12, 23, 1, 1, PAL.wood[1]);
     TREE_IMG = cutout(c, false); }
-  { const [c, x] = mk(18, 28), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col); p(7, 22, 4, 6, PAL.wood[3]);
-    for (let i = 0; i < 3; i++) { const w = 6 + i * 4, y = 2 + i * 6; for (let j = 0; j < 8; j++) p(9 - (w * j / 8 | 0) / 1 - 0, y + j, Math.max(1, (w * j / 4) | 0), 1, PAL.pine[i === 0 ? 1 : 2]); }
-    for (let i = 0; i < 3; i++) { const y = 2 + i * 6; for (let j = 0; j < 8; j++) { const hw = ((3 + i * 2) * j / 8) + 1; p(9 - hw, y + j, hw * 2, 1, j > 5 ? PAL.pine[3] : PAL.pine[1 + (i > 1)]); p(9 - hw, y + j, 1, 1, PAL.pine[0]); } }
+  { const [c, x] = mk(20, 30), p = (X, Y, w, h, col) => P(x, X, Y, w, h, col);
+    p(8, 24, 4, 6, PAL.wood[3]); p(8, 24, 1, 6, PAL.wood[2]);
+    for (let i = 0; i < 4; i++) {
+      const y = 1 + i * 5;
+      for (let j = 0; j < 9; j++) {
+        const hw = ((4 + i * 2) * j / 8) + 1;
+        p(10 - hw, y + j, hw * 2, 1, j > 6 ? PAL.pine[3] : PAL.pine[1 + (i > 2)]);
+        p(10 - hw, y + j, 1, 1, PAL.pine[0]);
+        p(10 + hw - 1, y + j, 1, 1, PAL.pine[3]);
+      }
+    }
+    p(9, 3, 2, 1, PAL.pine[0]);
     PINE_IMG = cutout(c, false); }
 }
 const W2S = (wx, wy) => [Math.round(wx * TS - CAM.px + N / 2), Math.round(wy * TS - CAM.py + N / 2)];
@@ -1130,15 +1416,50 @@ function drawCrop(c, sx, sy) { const C = CROPS[c.c], f = Math.min(1, c.age / C.d
 function drawFire(x, y) { const t = G.clock * 12; for (let i = 0; i < 4; i++) { const h = 3 + ((Math.sin(t + i * 2) + 1) * 2 | 0); rect(x - 4 + i * 2, y - h, 2, h, i & 1 ? '#ffb030' : '#ff6a2a'); } rect(x - 1, y - 6 - ((Math.sin(t * 1.3) + 1) | 0), 2, 3, '#ffe890'); }
 function drawTrader(o, sx, sy) { const look = survivorLook(hashS(o.id)); look.hat = '#c8a060'; drawStandee(personFrames(look), 0, sx + 8, sy + 8, Math.sin(G.clock * 0.7) > 0 ? 1 : -1); text('$', sx + 8, sy - 26, '#ffd76a', 'center'); }
 function drawRoof(b) {
-  const [sx, sy] = W2S(b.x, b.y), w = b.w * TS, top = sy - 5, bot = sy + (b.h - 1) * TS + 8, R = PAL.roofs[b.roof % PAL.roofs.length];
+  const [sx, sy] = W2S(b.x, b.y), w = b.w * TS, top = sy - 6, bot = sy + (b.h - 1) * TS + 8, R = PAL.roofs[b.roof % PAL.roofs.length];
   if (sx > N || sx + w < 0 || bot < 0 || top > N) return;
-  rect(sx - 1, top - 1, w + 2, bot - top + 2, INK); rect(sx, top, w, bot - top, R[0]);
-  const mid = Math.round((top + bot) / 2); rect(sx, mid, w, bot - mid, R[1]);
-  for (let y = top + 3; y < bot - 1; y += 4) for (let x = sx + ((y >> 2) & 1) * 3; x < sx + w - 1; x += 6) rect(x, y, 3, 1, y < mid ? R[1] : shade(R[1], -18));
-  rect(sx, mid, w, 1, INK); rect(sx, top, w, 1, shade(R[0], 35));
-  const [dx, dy] = b.door, [ds, dt] = W2S(dx, dy); if (dy === b.y) rect(ds + 4, top - 1, 8, 3, INK); else if (dx === b.x) rect(sx - 2, dt + 2, 3, 10, INK); else if (dx === b.x + b.w - 1) rect(sx + w - 1, dt + 2, 3, 10, INK);
+  // drop shadow
+  rect(sx + 2, bot - 2, w, 4, 'rgba(10,8,12,0.35)');
+  rect(sx - 1, top - 1, w + 2, bot - top + 2, INK);
+  rect(sx, top, w, bot - top, R[0]);
+  const mid = Math.round((top + bot) / 2);
+  rect(sx, mid, w, bot - mid, R[1]);
+  // shingle rows with stagger + wear
+  for (let y = top + 2; y < bot - 1; y += 3) {
+    const dark = y < mid ? R[1] : shade(R[1], -22);
+    const light = y < mid ? shade(R[0], 18) : shade(R[1], -8);
+    for (let x = sx + ((y >> 2) & 1) * 3; x < sx + w - 1; x += 5) {
+      rect(x, y, 4, 1, dark); rect(x, y, 1, 1, light);
+    }
+  }
+  // ridge + eave highlight
+  rect(sx, mid, w, 1, INK); rect(sx, top, w, 1, shade(R[0], 40));
+  rect(sx, top + 1, w, 1, shade(R[0], 15));
+  rect(sx, bot - 1, w, 1, shade(R[1], -30));
+  // chimney
+  if (b.w >= 4 && (b.id % 3) !== 0) {
+    const cx = sx + w - 10 - (b.id % 5), cy = top - 4;
+    rect(cx, cy, 6, 10, '#4a3a38'); rect(cx, cy, 6, 1, '#6a5a58'); rect(cx + 1, cy + 2, 4, 2, '#2a1a18');
+    rect(cx + 5, cy + 1, 1, 8, '#2a1a18');
+  }
+  // facade windows along south edge when wide enough
+  if (b.w >= 3) {
+    const wy = bot - 14;
+    for (let i = 1; i < b.w - 1; i++) {
+      if ((i + b.id) % 2) continue;
+      const wx = sx + i * TS + 3;
+      rect(wx, wy, 8, 7, INK); rect(wx + 1, wy + 1, 6, 5, '#1a2430');
+      rect(wx + 1, wy + 1, 3, 2, '#3a5060'); rect(wx + 4, wy + 1, 1, 5, INK); rect(wx + 1, wy + 3, 6, 1, INK);
+      rect(wx, wy + 6, 8, 1, shade(R[1], -40));
+    }
+  }
+  // door marker
+  const [dx, dy] = b.door, [ds, dt] = W2S(dx, dy);
+  if (dy === b.y) { rect(ds + 3, top - 2, 10, 4, INK); rect(ds + 4, top - 1, 8, 2, PAL.wood[2]); }
+  else if (dx === b.x) { rect(sx - 3, dt + 2, 4, 12, INK); rect(sx - 2, dt + 3, 2, 10, PAL.wood[2]); }
+  else if (dx === b.x + b.w - 1) { rect(sx + w - 1, dt + 2, 4, 12, INK); rect(sx + w, dt + 3, 2, 10, PAL.wood[2]); }
   const lab = KIND_LABEL[b.kind]; if (lab && w > textW(lab) + 4) { const tw = textW(lab); panel(sx + w / 2 - tw / 2 - 1, mid - 6, tw + 2, 11, b.kind === 'trader' ? '#ffd76a' : CREAM, 1); text(lab, sx + w / 2, mid - 6, INK, 'center', false); }
-  if (G.looted['b' + b.id]) { rect(sx + 3, top + 3, 3, 3, '#8af06a'); }
+  if (G.looted['b' + b.id]) { rect(sx + 3, top + 3, 3, 3, '#8af06a'); rect(sx + 4, top + 4, 1, 1, '#c8ff90'); }
 }
 function drawZombie(z) {
   const [sx, sy] = W2S(z.x, z.y), S = personFrames(z.look);
@@ -1164,24 +1485,61 @@ function drawGhost() { const [tx, ty] = facingTile(), [sx, sy] = W2S(tx, ty), ok
 // ---- night, dusk grade, rain
 function drawLight() {
   const k = nightK(), L = lightC.x; const indoors = !!buildingAt(PL.x, PL.y);
-  // gloomier outdoor dusk/night; interiors stay dark even at noon
   let a = k * 0.9 + (G.rain ? 0.14 : 0) + (OPT.dusk && k < 0.4 ? 0.08 : 0);
   if (indoors) a = Math.max(a, 0.55 + k * 0.25);
   if (G.sleeping && !G.wave) a = Math.max(a, 0.55);
-  if (OPT.dusk) { hx.fillStyle = 'rgba(70,40,90,0.18)'; hx.fillRect(0, 0, N, N); hx.fillStyle = 'rgba(180,90,40,0.08)'; hx.fillRect(0, 0, N, N); }
-  // mild always-on grade so daytime is never cartoon-bright
-  hx.fillStyle = 'rgba(18,12,16,0.08)'; hx.fillRect(0, 0, N, N);
+  // dusk grade with subtle vertical gradient (sky darker at top)
+  if (OPT.dusk) {
+    const g = hx.createLinearGradient(0, 0, 0, N);
+    g.addColorStop(0, 'rgba(50,28,70,0.22)'); g.addColorStop(0.45, 'rgba(70,40,90,0.12)'); g.addColorStop(1, 'rgba(160,70,30,0.14)');
+    hx.fillStyle = g; hx.fillRect(0, 0, N, N);
+    hx.fillStyle = 'rgba(180,90,40,0.06)'; hx.fillRect(0, 0, N, N);
+  }
+  hx.fillStyle = 'rgba(18,12,16,0.1)'; hx.fillRect(0, 0, N, N);
+  // soft vignette for depth on phone screens
+  {
+    const vg = hx.createRadialGradient(N / 2, N / 2, N * 0.35, N / 2, N / 2, N * 0.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(8,6,10,0.28)');
+    hx.fillStyle = vg; hx.fillRect(0, 0, N, N);
+  }
   if (a < 0.02) return;
   L.globalCompositeOperation = 'source-over'; L.clearRect(0, 0, N, N); L.fillStyle = `rgba(6,5,10,${a.toFixed(3)})`; L.fillRect(0, 0, N, N);
   L.globalCompositeOperation = 'destination-out';
-  const hole = (wx, wy, r, s = 1) => { const [sx, sy] = W2S(wx, wy), R = r * TS; const g = L.createRadialGradient(sx, sy, R * 0.12, sx, sy, R); g.addColorStop(0, `rgba(0,0,0,${s})`); g.addColorStop(1, 'rgba(0,0,0,0)'); L.fillStyle = g; L.fillRect(sx - R, sy - R, R * 2, R * 2); };
-  // player light: tight indoors (flashlight pool), wider outdoors
+  const hole = (wx, wy, r, s = 1) => {
+    const [sx, sy] = W2S(wx, wy), R = r * TS;
+    const g = L.createRadialGradient(sx, sy, R * 0.08, sx, sy, R);
+    g.addColorStop(0, `rgba(0,0,0,${s})`);
+    g.addColorStop(0.45, `rgba(0,0,0,${(s * 0.55).toFixed(2)})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    L.fillStyle = g; L.fillRect(sx - R, sy - R, R * 2, R * 2);
+  };
   hole(PL.x, PL.y - 0.5, PL.veh ? 3 : (indoors ? 2.4 : 3.2), indoors ? 0.95 : 0.8);
+  // warm interior lamp pools from nearby furniture when indoors
+  if (indoors) {
+    const myB = buildingAt(PL.x, PL.y);
+    if (myB) {
+      const cx0 = Math.floor(myB.x / CH), cy0 = Math.floor(myB.y / CH);
+      for (let cy = cy0; cy <= cy0 + 1; cy++) for (let cx = cx0; cx <= cx0 + 1; cx++) {
+        if (cx < 0 || cy < 0 || cx >= NC || cy >= NC) continue;
+        for (const o of chunk(cx, cy).objs) {
+          if (o.x < myB.x || o.y < myB.y || o.x >= myB.x + myB.w || o.y >= myB.y + myB.h) continue;
+          if (o.k === 'fridge' || o.k === 'desk' || o.k === 'register' || o.k === 'medcab') hole(o.x + 0.5, o.y + 0.4, 1.6, 0.55);
+          else if (o.k === 'shelf' || o.k === 'locker') hole(o.x + 0.5, o.y + 0.4, 1.2, 0.4);
+        }
+      }
+    }
+  }
   for (const b of BUILD.values()) if (b.k === 'campfire') hole(b.x + 0.5, b.y + 0.5, 5.5 + Math.sin(G.clock * 9) * 0.2, 1);
   if (PL.veh) { const v = VEHS.get(PL.veh); if (v && v.type !== 'bike') hole(v.x + Math.cos(v.ang) * 4, v.y + Math.sin(v.ang) * 4, 4, 0.9); }
   if (PL.flash > 0) hole(PL.x, PL.y, 6, 1);
   for (const f of FX) if (f.k === 'tracer') hole(f.x2, f.y2, 1.5, 0.6);
   hx.drawImage(lightC.c, 0, 0);
+  // warm rim on light holes (subtle, phone-cheap — one full-screen pass already done)
+  if (indoors || k > 0.3) {
+    hx.globalCompositeOperation = 'lighter';
+    hx.fillStyle = 'rgba(255,200,120,0.03)'; hx.fillRect(0, 0, N, N);
+    hx.globalCompositeOperation = 'source-over';
+  }
 }
 function drawRain() { if (!G.rain) return; hx.fillStyle = 'rgba(200,220,255,0.35)'; const t = G.clock; for (let i = 0; i < 70; i++) { const x = ((i * 53 + t * 140) % (N + 40)) - 20, y = ((i * 97 + t * 420) % (N + 20)) - 10; hx.fillRect(x | 0, y | 0, 1, 4); } }
 // ---- minimap (real tiles, 1 px = 2 tiles) + world map (macro features, built progressively)
@@ -1233,7 +1591,7 @@ function bar(x, y, w, v, col, lab) { rect(x - 1, y - 1, w + 2, 5, INK); rect(x, 
 function drawHUD() {
   const small = N < 200, bw = small ? 30 : 40;
   // stats
-  panel(2, 2, bw + 14, 31, 'rgba(14,11,16,0.55)', 0);
+  panel(2, 2, bw + 14, 31, 'rgba(10,8,12,0.72)', 0);
   bar(13, 5, bw, PL.hp, '#ff5a5a', 'H'); bar(13, 12, bw, PL.sta, '#ffd76a', 'S'); bar(13, 19, bw, PL.hun, '#f0a040', 'F'); bar(13, 26, bw, PL.thi, '#6ac8ff', 'W');
   text('$' + G.money, 3, 35, '#ffd76a'); const w = invWeight(PL.inv), c = capKg(); text(w.toFixed(1) + '/' + c.toFixed(0) + 'KG', 3, 45, w > c ? '#ff6a5a' : CREAM);
   // minimap + clock

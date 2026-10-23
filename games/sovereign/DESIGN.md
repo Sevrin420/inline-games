@@ -1,8 +1,8 @@
-# Sovereign — design (v2)
+# Sovereign — design (v3)
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=2`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=3`.
 
 ## Pillars
 
@@ -19,7 +19,16 @@ and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
 - **Night wave at 22:00.** Watch live or skip to morning; damage persists.
 - **Grow toward utopia.** Recruits take jobs: farmer / guard / scavenger / builder.
 
-## Look (v2)
+## Look (v3)
+
+- Same dark/edgy v2 direction, with denser procedural detail that still runs on phones:
+  grass clumps, dirt patches, cracked asphalt, puddles, debris; brick courses,
+  window muntins/sills, detailed doors; denser standees (clothing, belt, limb
+  shade, grimmer zombie faces); richer props/vehicles; roof shingles, chimneys,
+  facade windows; dusk gradient + vignette + warmer interior lamp pools.
+- Atlas/standee/prop draws stay cached — no big sprite sheets.
+
+## Look (v2 legacy notes)
 
 - Muted, desaturated palette; deeper ink outlines; dusk grade on by default.
 - Gloomier sky (earlier dusk / night). Interiors stay dark — flashlight-style
@@ -66,7 +75,7 @@ Hearing still uses the noise circle — quiet footsteps rarely alert.
 
 Health / stamina / hunger / thirst. Weight capacity grows slowly with strength.
 Start barefoot with pockets + 2 hands; backpacks and shoes are loot / shop.
-VERSION=2 invalidates v1 saves.
+VERSION=3 invalidates v1/v2 saves (sprite sizes / atlas changed).
 
 ## Phone-first
 
