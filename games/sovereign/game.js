@@ -1,4 +1,4 @@
-/* SOVEREIGN v4: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
+/* SOVEREIGN v2: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
    Scavenge a seeded 3072x3072-tile world (about 15 minutes on foot edge to edge), sell what you find, found a camp anywhere,
    build walls / traps / a bed, farm through the seasons, survive the nights (watch or skip the wave), recruit survivors.
    One bite = death. Kills give nothing. Permadeath; the run saves to localStorage while you are alive.
@@ -6,7 +6,7 @@
    See DESIGN.md. */
 'use strict';
 // ================================================================ basics
-const VERSION = 4;
+const VERSION = 5;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -415,6 +415,10 @@ D('bandage', 'BANDAGE', 0.05, 4, 10, 'med', { ic: 'med', heal: 15 }); D('pills',
 D('watch', 'GOLD WATCH', 0.1, 40, 5, 'val', { ic: 'gem', col: '#f0c040' }); D('ring', 'DIAMOND RING', 0.05, 55, 5, 'val', { ic: 'gem', col: '#c8f0ff' }); D('phone', 'PHONE', 0.2, 22, 5, 'val', { ic: 'elec', col: '#303040' });
 D('laptop', 'LAPTOP', 2.0, 65, 1, 'val', { ic: 'elec', col: '#8a8a9a' }); D('gold', 'GOLD NUGGET', 0.5, 180, 5, 'val', { ic: 'gem', col: '#ffd040' }); D('comic', 'COMIC BOOK', 0.2, 7, 5, 'val', { ic: 'book', col: '#e84a8a' });
 D('gascan', 'GAS CAN', 0.8, 8, 1, 'fuel', { ic: 'gascan', cap: 10 }); D('bedroll', 'BEDROLL', 2.5, 20, 1, 'kit', { ic: 'bed' });
+D('spear', 'SPEAR', 1.4, 16, 1, 'weap', { ic: 'pipe', dmg: 2.2, rate: 0.55, noise: 4, reach: 1.55, two: true });
+D('shield', 'WOOD SHIELD', 2.0, 18, 1, 'weap', { ic: 'plank', dmg: 0.8, rate: 0.7, noise: 3, reach: 0.9 });
+D('torch', 'TORCH', 0.4, 4, 8, 'kit', { ic: 'bar', col: '#ff8a2a' });
+D('charcoal', 'CHARCOAL', 0.2, 2, 20, 'mat', { ic: 'scrap', col: '#2a2a2a' });
 // worth of an item stack (a gas can is worth its fuel)
 const valOf = (s) => (IT[s.id].v + (s.id === 'gascan' ? (s.q || 0) * 5 : 0)) * (s.n || 1);
 const wOf = (s) => (IT[s.id].w + (s.id === 'gascan' ? (s.q || 0) * 0.75 : s.id === 'wcan' ? (s.q || 0) * 0.1 : 0)) * (s.n || 1);
@@ -862,6 +866,19 @@ function propImg(k, open) {
       p(6, 10, 4, 7, PAL.metal[2]); p(3, 14, 10, 2, PAL.metal[3]); p(7, 6, 2, 4, PAL.metal[0]);
       p(4, 6, 8, 1, '#6ab0c8'); p(5, 5, 1, 1, '#8ad0e8'); p(10, 5, 1, 1, '#8ad0e8');
       break;
+    case 'workbench':
+      p(0, 8, 16, 9, PAL.wood[2]); p(0, 8, 16, 2, PAL.wood[0]); p(1, 4, 14, 4, PAL.wood[1]);
+      p(2, 5, 3, 2, '#5a6068'); p(6, 5, 4, 2, '#8a909a'); p(11, 5, 3, 2, '#3a4048');
+      p(1, 17, 2, 2, PAL.wood[3]); p(13, 17, 2, 2, PAL.wood[3]);
+      break;
+    case 'anvil':
+      p(2, 10, 12, 7, '#3a3e48'); p(3, 6, 10, 4, '#5a6068'); p(4, 4, 8, 2, '#8a909a');
+      p(1, 14, 14, 3, '#2a2e38'); p(5, 7, 2, 1, '#c8a050');
+      break;
+    case 'forge':
+      p(1, 8, 14, 10, '#3a2a28'); p(2, 4, 12, 4, '#5a3a30'); p(4, 2, 8, 2, '#2a1a18');
+      p(5, 5, 6, 5, '#ff6a2a'); p(6, 6, 4, 3, '#ffd76a'); p(3, 12, 10, 2, '#1a1010');
+      break;
     case 'deadz':
       p(0, 12, 16, 5, '#4a6840'); p(1, 13, 5, 3, '#5a7850'); p(10, 13, 5, 3, '#3a2a22');
       p(7, 14, 3, 1, '#5a1010'); p(3, 12, 2, 1, '#3a1818'); p(12, 15, 2, 1, '#2a1010');
@@ -956,15 +973,18 @@ const BDEF = {
   turret: { n: 'PISTOL TURRET', cost: { pistol: 1, scrap: 4, elec: 2 }, hp: 50, zs: 1, ps: 1, d: 'SHOOTS AT NIGHT. LOAD 9MM' },
   campfire: { n: 'CAMPFIRE', cost: { plank: 1 }, hp: 20, ps: 1, zs: 1, d: 'LIGHT + COOKING' },
   chest: { n: 'CHEST', cost: { plank: 3, nails: 6 }, hp: 40, ps: 1, zs: 1, d: 'STORAGE. CAMP FOOD GOES HERE' },
+  workbench: { n: 'WORKBENCH', cost: { plank: 4, nails: 8 }, hp: 50, ps: 1, zs: 1, d: 'CRAFT TOOLS, GEAR, AMMO' },
+  anvil: { n: 'ANVIL', cost: { scrap: 6, nails: 4 }, hp: 80, ps: 1, zs: 1, d: 'CRAFT WEAPONS + METAL' },
+  forge: { n: 'FORGE', cost: { scrap: 8, plank: 2, nails: 6 }, hp: 70, ps: 1, zs: 1, d: 'ADVANCED METALWORK' },
   bunk: { n: 'BUNK', cost: { plank: 4, cloth: 2, nails: 8 }, hp: 30, zs: 1, d: 'A BED FOR ONE RECRUIT' },
   barrel: { n: 'RAIN BARREL', cost: { plank: 2, scrap: 1 }, hp: 30, ps: 1, zs: 1, d: 'FILLS 2 WATERS A DAY. 5 IF RAIN' },
   sprinkler: { n: 'SPRINKLER', cost: { scrap: 2, elec: 1 }, hp: 20, d: 'WATERS 3X3 EVERY MORNING' },
 };
-const BORDER = ['woodwall', 'metalwall', 'gate', 'spikes', 'beartrap', 'wire', 'turret', 'campfire', 'chest', 'bunk', 'barrel', 'sprinkler'];
+const BORDER = ['woodwall', 'metalwall', 'gate', 'spikes', 'beartrap', 'wire', 'turret', 'campfire', 'chest', 'workbench', 'anvil', 'forge', 'bunk', 'barrel', 'sprinkler'];
 function newRun(seed) {
   WD = genWorld(seed); CHUNKS.clear(); chunkOrder = []; MOD.clear(); LAYOUTS.clear(); VEHS.clear(); NPCS.clear(); BUILD.clear(); ACTIVE.clear(); ZOMS = []; FX = []; NOISE = [];
   G = { seed, v: VERSION, day: 1, time: 7 * 60, money: 15, base: null, crops: {}, recruits: [], looted: {}, zk: {}, fog: new Uint8Array(NC * NC), npc: {}, gone: {}, rain: false, kills: 0, stock: {}, pumps: {}, seenNames: {}, log: [], playId: null, started: Date.now(), msgs: [], alive: true, wave: null, awake: 0 };
-  PL = { x: WD.spawn.x, y: WD.spawn.y, dir: [1, 0], face: 1, fs: 1, hp: 100, sta: 100, hun: 80, thi: 80, str: 1, strXP: 0, inv: newInv(), veh: null, sneak: false, sprint: false, anim: 0, swingT: 0, cd: 0, aim: 0, step: 0, hurtT: 0, moving: false };
+  PL = { x: WD.spawn.x, y: WD.spawn.y, dir: [1, 0], face: 1, fs: 1, hp: 100, sta: 100, hun: 80, thi: 80, str: 1, strXP: 0, inv: newInv(), veh: null, sneak: false, sprint: false, anim: 0, swingT: 0, cd: 0, aim: 0, step: 0, hurtT: 0, moving: false, invuln: 0, _bid: null, flash: 0 };
   addItem(PL.inv, 'water', 1); addItem(PL.inv, 'chips', 1);
   const sp = findWalkableSpawn(PL.x, PL.y); PL.x = sp.x; PL.y = sp.y; WD.spawn = { x: sp.x, y: sp.y };
 }
@@ -1157,7 +1177,7 @@ function hurtZ(z, dmg, kx, ky, src) {
   if (z.hp <= 0) { z.dead = true; z.dt = 0; G.kills++; if (z.hk >= 0) G.zk[z.hk] = (G.zk[z.hk] || 0) + 1; if (G.wave) G.wave.killed++; sfx('zdie', z.x, z.y); blood(z.x, z.y - 0.4, 10); }
   else if (z.st !== 'chase' && !G.wave) { z.st = 'chase'; z.lost = 0; }
 }
-function bite(z) { if (PL.dead) return; blood(PL.x, PL.y - 0.6, 18); sfx('bite', PL.x, PL.y); die('BITTEN'); }
+function bite(z) { if (PL.dead) return; if ((PL.invuln || 0) > 0) { sfx('thud', PL.x, PL.y); puff(PL.x, PL.y - 0.5, '#8ad0ff', 4); return; } blood(PL.x, PL.y - 0.6, 18); sfx('bite', PL.x, PL.y); die('BITTEN'); }
 // ---- player combat
 function swing() {
   const h = held(), d = h ? IT[h.id] : null;
@@ -1519,6 +1539,7 @@ function drawPlayer() {
   const h = held(); if (h) { const im = iconImg(h.id), sw = PL.swingT > 0 ? Math.sin(PL.swingT * 14) * 4 : 0; hx.save(); hx.translate(sx + PL.face * (6 + sw), sy - 12); hx.scale(PL.face, 1); hx.drawImage(im, -2, -im.height / 2); hx.restore(); }
   if (PL.flash > 0) { rect(sx + PL.dir[0] * 14 - 2, sy - 11 + PL.dir[1] * 10 - 2, 5, 5, '#fff2a0'); }
   if (PL.hurtT > 0) { hx.globalAlpha = PL.hurtT; rect(sx - 6, sy - 22, 12, 20, 'rgba(255,40,40,0.4)'); hx.globalAlpha = 1; }
+  if ((PL.invuln || 0) > 0) { const a = 0.25 + 0.2 * Math.sin(G.totalT * 10); hx.globalAlpha = a; rect(sx - 8, sy - 24, 16, 24, '#8ad0ff'); hx.globalAlpha = 1; hx.strokeStyle = '#c8f0ff'; hx.lineWidth = 1; hx.strokeRect(sx - 8.5, sy - 24.5, 17, 25); }
 }
 function drawGhost() { const [tx, ty] = facingTile(), [sx, sy] = W2S(tx, ty), ok = canBuild(G.bsel) && !SOLID[tileAt(tx, ty)] && !BUILD.has(tkey(tx, ty));
   hx.globalAlpha = 0.6; const im = propImg(G.bsel); hx.drawImage(im, sx + 8 - im.width / 2, sy + 18 - im.height); hx.globalAlpha = 1;
@@ -1651,6 +1672,14 @@ function drawHUD() {
   let my = small ? 50 : 58; for (const m of G.msgs) { const s = fitText(m.s, N - 8); hx.globalAlpha = Math.min(1, m.t * 2); text(s, N / 2, my, m.col, 'center'); hx.globalAlpha = 1; my += 10; }
   if (G.wave && G.wave.live) { const left = G.wave.total - G.wave.killed; panel(N / 2 - 36, 3, 72, 12, '#ff5a4a', 1); text('WAVE ' + left + ' LEFT', N / 2, 4, INK, 'center', false); }
   if (G.ui === 'build') { const d = BDEF[G.bsel]; const t = d.n + '  A: PLACE  B: DONE'; const tw = textW(t); panel(N / 2 - tw / 2 - 3, N - 20, tw + 6, 13, '#8af06a', 1); text(t, N / 2, N - 18, INK, 'center', false); }
+  // phone-friendly SAVE (top-left under stats)
+  if (!G.ui) {
+    const sx0 = 2, sy0 = 56, sw = small ? 34 : 40, sh = 14;
+    const flash = (G.saveFlash || 0) > 0;
+    panel(sx0, sy0, sw, sh, flash ? '#8af06a' : '#ffd76a', 1);
+    text(flash ? 'SAVED' : 'SAVE', sx0 + sw / 2, sy0 + 2, INK, 'center', false);
+    hitR(sx0, sy0, sw, sh, () => manualSave());
+  }
 }
 // ================================================================ audio: everything synthesized with WebAudio (no samples)
 const SFX_ON = { v: true }; let AC = null, MASTER = null, SFXG = null, MUSG = null, AMBG = null, NBUF = null, MUTED = false, POWER = true;
@@ -1773,11 +1802,14 @@ function findInteract() {
     if (o.k === 'trader') add(d - 0.3, 'TRADE', () => openShop(o));
     else if (o.k === 'pump') add(d, pumpFuel(o) > 0 ? 'PUMP GAS (' + pumpFuel(o).toFixed(0) + 'L)' : 'PUMP IS DRY', () => usePump(o));
     else if (o.k === 'mine') add(d, 'MINE ORE', () => mineOre(o));
-    else { const nm = PROP_NAME[o.k] || o.k.toUpperCase(), L = G.looted[o.id]; add(d, L ? (L.length ? 'OPEN ' + nm : nm + ' (EMPTY)') : o.lock && !G.looted[o.id] ? 'PRY OPEN ' + nm : 'SEARCH ' + nm, () => searchObj(o)); }
+    else { const nm = PROP_NAME[o.k] || o.k.toUpperCase(), L = G.looted[o.id];
+      const lab = L ? ('STOCKPILE ' + nm) : (o.lock ? 'PRY OPEN ' + nm : 'SEARCH ' + nm);
+      add(d, lab, () => searchObj(o)); }
   }
   for (const b of BUILD.values()) { const d = Math.hypot(b.x + 0.5 - PL.x, b.y + 0.6 - PL.y); if (d > 1.3) continue;
-    if (b.k === 'chest') add(d, 'OPEN CHEST', () => openLoot('CHEST', b.items = b.items || [], 'chest'));
-    else if (b.k === 'campfire') add(d, 'COOK', () => { G.ui = 'cook'; G.sel = 0; sfx('ui'); });
+    if (b.k === 'chest') add(d, 'OPEN CHEST', () => openLoot('CHEST', b.items = b.items || [], 'stash'));
+    else if (b.k === 'workbench' || b.k === 'anvil' || b.k === 'forge') add(d, 'CRAFT (' + BDEF[b.k].n + ')', () => openCraft(b.k));
+    else if (b.k === 'campfire') add(d, 'COOK / CRAFT', () => { G.ui = 'list'; G.list = { title: 'CAMPFIRE', items: [{ t: 'COOK FOOD', fn: () => { G.ui = 'cook'; G.sel = 0; } }, { t: 'CRAFT HERE', fn: () => openCraft('campfire') }, { t: 'LEAVE', fn: () => { G.ui = null; } }] }; G.sel = 0; sfx('ui'); });
     else if (b.k === 'barrel') add(d, b.wt > 0 ? 'DRINK RAINWATER (' + b.wt + ')' : 'BARREL EMPTY', () => { if (b.wt > 0) { const can = PL.inv.hands.find((s) => s && s.id === 'wcan'); if (can && (can.q || 0) < IT.wcan.cap) { can.q = IT.wcan.cap; b.wt--; sfx('water'); msg('CAN FILLED'); } else { b.wt--; PL.thi = Math.min(100, PL.thi + 40); sfx('drink'); } } });
     else if (b.k === 'turret') add(d, 'TURRET: ' + (b.ammo || 0) + ' ROUNDS' + (countItem(PL.inv, 'a9') ? ' (LOAD)' : ''), () => { const n = Math.min(60 - (b.ammo || 0), countItem(PL.inv, 'a9')); if (n > 0) { takeItem(PL.inv, 'a9', n); b.ammo = (b.ammo || 0) + n; sfx('click'); msg('LOADED ' + n + ' ROUNDS'); } else msg('NEEDS 9MM ROUNDS'); });
   }
@@ -1805,8 +1837,8 @@ function updateChan(dt) { const c = G.chan; if (!c) return; if (Math.hypot(PL.x 
 function chop(tx, ty) { if (PL.cd > 0) return; if (PL.sta < 10) { msg('TOO TIRED'); return; } PL.sta -= 10; PL.cd = 0.6; PL.swingT = 0.22; const k = tkey(tx, ty); if (!G.chop || G.chop.k !== k) G.chop = { k, n: 0, sh: 0 }; G.chop.n++; G.chop.sh = 2; sfx('chop', tx, ty); noise(tx, ty, 7, 'chop'); PL.strXP += 0.4; puff(tx + 0.5, ty + 0.3, PAL.wood[1], 4);
   if (G.chop.n >= 4) { setTile(tx, ty, T.GRASS); G.chop = null; sfx('treefall', tx, ty); const l = addItem(PL.inv, 'plank', 2); if (l) dropItem('plank', l, tx + 0.5, ty + 0.5); msg('+2 PLANKS', '#8af06a'); } }
 function searchObj(o) {
-  const L = G.looted[o.id]; if (L) { openLoot(PROP_NAME[o.k] || 'BOX', L, 'obj'); return; }
-  const open = () => { const r = rollLoot(o); G.looted[o.id] = r.items; if (r.money) { G.money += r.money; sfx('coin'); msg('+$' + r.money, '#ffd76a'); } sfx('open', o.x, o.y); if (r.items.length) openLoot(PROP_NAME[o.k] || 'BOX', r.items, 'obj'); else msg('NOTHING USEFUL'); G.saveDirty = true; };
+  const L = G.looted[o.id]; if (L) { openLoot('STOCKPILE', L, 'stash'); return; }
+  const open = () => { const r = rollLoot(o); G.looted[o.id] = r.items; if (r.money) { G.money += r.money; sfx('coin'); msg('+$' + r.money, '#ffd76a'); } sfx('open', o.x, o.y); if (r.items.length) openLoot(PROP_NAME[o.k] || 'BOX', r.items, 'stash'); else { msg('EMPTY — YOU CAN STOCKPILE HERE', '#8af06a'); openLoot('STOCKPILE', G.looted[o.id], 'stash'); } G.saveDirty = true; };
   if (o.lock) { const h = PL.inv.hands.find((s) => s && IT[s.id].pry); if (!h) { msg('LOCKED. A CROWBAR COULD PRY IT', '#ff8a6a'); sfx('deny'); return; } channel(2.5, 'PRYING', () => { sfx('pry', o.x, o.y); open(); }, 11); return; }
   channel(o.k === 'shelf' ? 0.5 : 0.8, 'SEARCHING', open, 2); sfx('open', o.x, o.y);
 }
@@ -1856,7 +1888,9 @@ function updateNPCs(dt) {
 // ---- the player
 const SURF_NOISE = { grass: 1, dirt: 1, wood: 1.1, hard: 1, tile: 1.05, gravel: 1.2, water: 1.3, glass: 1.5 };
 function updatePlayer(dt, ix, iy) {
-  PL.cd -= dt; PL.swingT -= dt; PL.hurtT = Math.max(0, PL.hurtT - dt * 2); PL.flash -= dt; if (G.chop) G.chop.sh = Math.max(0, G.chop.sh - dt * 8);
+  PL.cd -= dt; PL.swingT -= dt; PL.hurtT = Math.max(0, PL.hurtT - dt * 2); PL.flash -= dt; PL.invuln = Math.max(0, (PL.invuln || 0) - dt); if (G.chop) G.chop.sh = Math.max(0, G.chop.sh - dt * 8);
+  // door enter/exit: 3s bite invulnerability
+  { const b = buildingAt(PL.x, PL.y), bid = b ? b.id : null; if (PL._bid !== bid) { if (PL._bid != null || bid != null) { PL.invuln = 3; sfx('door'); } PL._bid = bid; } }
   PL.noise = Math.max(PL.noise - dt * 30, PL.noiseMax || 0); PL.noiseMax = 0;
   if (PL.str < 3) PL.str = 1 + Math.min(2, PL.strXP / 160);
   if (PL.veh) { const v = VEHS.get(PL.veh); if (v) { driveUpdate(v, dt, ix, iy); PL.moving = v.spd > 0.3; if (ix) PL.face = ix > 0 ? 1 : -1; PL.fs = lerp(PL.fs, PL.face, Math.min(1, dt * 10)); if (v.spd > 0.5) PL.dir = [Math.cos(v.ang), Math.sin(v.ang)]; } PL.sta = Math.min(100, PL.sta + dt * (v && v.type === 'bike' ? 0 : 8)); return; }
@@ -1902,6 +1936,7 @@ const MAXR = () => Math.floor((N - 50) / RH);
 // ---- START menu: PACK / BUILD / CAMP / SYS
 const TABS = ['PACK', 'BUILD', 'CAMP', 'SYS'];
 function packRows() { const I = PL.inv, out = [], name = (s) => s ? IT[s.id].n + (s.n > 1 ? ' x' + s.n : '') + (s.id === 'gascan' ? ' ' + (s.q || 0).toFixed(1) + 'L' : s.id === 'wcan' ? ' ' + (s.q || 0) + '/12' : '') : '-';
+  out.push({ t: 'CRAFTING…', r: 'OPEN', rc: '#3a8a3a', col: '#3a5a8a', craft: 1 });
   for (let i = 0; i < 2; i++) { const s = I.hands[i]; out.push({ t: (i ? 'L HAND: ' : 'R HAND: ') + (s ? name(s) : i === 1 && twoHanded(I) ? '(BOTH HANDS)' : '-'), r: s ? wOf(s).toFixed(1) : '', ic: s && s.id, ref: { a: I.hands, i }, dis: !s }); }
   for (let i = 0; i < I.pockets.length; i++) { const s = I.pockets[i]; out.push({ t: 'POCKET: ' + name(s), r: s ? wOf(s).toFixed(1) : '', ic: s && s.id, ref: { a: I.pockets, i }, dis: !s }); }
   for (let i = 0; i < I.pack.length; i++) { const s = I.pack[i]; out.push({ t: 'PACK: ' + name(s), r: s ? wOf(s).toFixed(1) : '', ic: s && s.id, ref: { a: I.pack, i }, dis: !s }); }
@@ -1937,13 +1972,13 @@ function campRows() { const out = []; const t = campTier(); out.push({ t: (G.bas
   const n = 2 + G.day + Math.floor(G.day * G.day / 12); out.push({ t: 'TONIGHT: ' + n + ' ZOMBIES AT 22:00', dis: true, col: '#a83a2a' });
   let cf = 0; for (const b of chests()) for (const s of b.items) if (IT[s.id].c === 'food') cf += s.n; out.push({ t: 'FOOD IN CHESTS: ' + cf + ' (RECRUITS EAT 1/DAY)', dis: true }); return out; }
 const JOBS = ['farmer', 'guard', 'scavenger', 'builder'], JOB_D = { farmer: 'HARVESTS + WATERS CROPS', guard: 'FIGHTS AT NIGHT', scavenger: 'LOOTS BY DAY. RISKY', builder: 'REPAIRS WALLS' };
-function sysRows() { return [{ t: 'DUSK PALETTE', r: OPT.dusk ? 'ON' : 'OFF' }, { t: 'SOUND', r: OPT.sfx ? 'ON' : 'OFF' }, { t: 'MUSIC', r: OPT.music ? 'ON' : 'OFF' }, { t: 'CONTROLS' }, { t: 'MAP (SELECT)' }, { t: 'SAVE + QUIT TO TITLE', col: '#a83a2a' }]; }
+function sysRows() { return [{ t: 'DUSK PALETTE', r: OPT.dusk ? 'ON' : 'OFF' }, { t: 'SOUND', r: OPT.sfx ? 'ON' : 'OFF' }, { t: 'MUSIC', r: OPT.music ? 'ON' : 'OFF' }, { t: 'CONTROLS' }, { t: 'MAP (SELECT)' }, { t: 'SAVE GAME', r: 'KEEP RUN', rc: '#3a8a3a', col: '#3a8a3a' }, { t: 'SAVE + QUIT TO TITLE', col: '#a83a2a' }]; }
 function menuRows() { return [packRows, buildRows, campRows, sysRows][G.tab](); }
 function menuPick(i) { const rows = menuRows(), r = rows[i]; if (!r) return;
-  if (G.tab === 0) { if (r.dis) { sfx('deny'); return; } itemActions(r.ref); }
+  if (G.tab === 0) { if (r.craft) { openCraft(null); return; } if (r.dis) { sfx('deny'); return; } itemActions(r.ref); }
   else if (G.tab === 1) { if (!r.k) return; if (r.k === 'remove') { const [tx, ty] = facingTile(), b = BUILD.get(tkey(tx, ty)); if (!b) { msg('FACE A BUILT THING FIRST'); sfx('deny'); } else { removeBuild(b); sfx('break'); } G.ui = null; return; } if (r.dis) { sfx('deny'); msg('MISSING MATERIALS'); return; } G.ui = 'build'; G.bsel = r.k; sfx('ui'); }
   else if (G.tab === 2) { if (!r.r0) return; const j = JOBS.indexOf(r.r0.job); r.r0.job = JOBS[(j + 1) % 4]; sfx('ui'); msg(r.r0.name + ': ' + JOB_D[r.r0.job]); }
-  else { if (i === 0) { OPT.dusk = !OPT.dusk; } else if (i === 1) { OPT.sfx = !OPT.sfx; audioLevels(); } else if (i === 2) { OPT.music = !OPT.music; audioLevels(); } else if (i === 3) { G.ui = 'help'; } else if (i === 4) { openMap(); } else if (i === 5) { saveGame(); toTitle(); } saveOpt(); sfx('ui'); } }
+  else { if (i === 0) { OPT.dusk = !OPT.dusk; } else if (i === 1) { OPT.sfx = !OPT.sfx; audioLevels(); } else if (i === 2) { OPT.music = !OPT.music; audioLevels(); } else if (i === 3) { G.ui = 'help'; } else if (i === 4) { openMap(); } else if (i === 5) { manualSave(); } else if (i === 6) { saveGame(); toTitle(); } saveOpt(); sfx('ui'); } }
 function drawMenu() {
   frame('', ''); const tw = (N - 8) / 4; for (let i = 0; i < 4; i++) { const x = 4 + i * tw; rect(x, 4, tw - 1, 12, i === G.tab ? '#ffd76a' : CARD); text(TABS[i], x + tw / 2, 5, i === G.tab ? INK : CREAM, 'center', i !== G.tab); hitR(x, 4, tw, 12, () => { G.tab = i; G.sel = 0; sfx('ui'); }); }
   const rows = menuRows(); G.sel = clamp(G.sel, 0, rows.length - 1);
@@ -1967,7 +2002,7 @@ function myItems() { return allSlots(PL.inv).filter((s) => s.a[s.i]); }
 function drawLoot() { const L = G.loot; frame(L.title, 'A: MOVE  L/R: SIDE  B: DONE'); const w = (N - 20) / 2, mr = MAXR() - 1;
   const left = L.items.map((s) => ({ t: IT[s.id].n + (s.n > 1 ? ' x' + s.n : ''), ic: s.id, r: wOf(s).toFixed(1) })); if (L.items.length) left.unshift({ t: 'TAKE ALL', col: '#3a8a3a' }); else left.push({ t: '(EMPTY)', dis: true });
   const right = myItems().map((s) => { const it = s.a[s.i]; return { t: IT[it.id].n + (it.n > 1 ? ' x' + it.n : ''), ic: it.id, r: wOf(it).toFixed(1) }; }); if (!right.length) right.push({ t: '(NOTHING)', dis: true });
-  text(L.kind === 'trunk' ? 'TRUNK ' + trunkKg(L.ref).toFixed(0) + '/' + VSPEC[L.ref.type].kg : 'IN HERE', 8 + w / 2, 18, '#6a5a4a', 'center', false); text('YOU ' + invWeight(PL.inv).toFixed(1) + '/' + capKg().toFixed(0), 12 + w * 1.5, 18, invWeight(PL.inv) > capKg() ? '#c83a2a' : '#6a5a4a', 'center', false);
+  text(L.kind === 'trunk' ? 'TRUNK ' + trunkKg(L.ref).toFixed(0) + '/' + VSPEC[L.ref.type].kg : (L.kind === 'stash' || L.kind === 'chest' ? 'STOCKPILE' : 'IN HERE'), 8 + w / 2, 18, '#6a5a4a', 'center', false); text('YOU ' + invWeight(PL.inv).toFixed(1) + '/' + capKg().toFixed(0), 12 + w * 1.5, 18, invWeight(PL.inv) > capKg() ? '#c83a2a' : '#6a5a4a', 'center', false);
   const sel0 = L.col === 0 ? G.sel : -1, sel1 = L.col === 1 ? G.sel : -1;
   rowsUI(6, 30, w, left, sel0, mr - 1, (i) => { L.col = 0; G.sel = i; lootPick(); }); rowsUI(14 + w, 30, w, right, sel1, mr - 1, (i) => { L.col = 1; G.sel = i; lootPick(); });
   for (const h of UIHIT.slice(-left.length - right.length)) { const f = h.fn, col = h.x < N / 2 ? 0 : 1; h.fn = () => { if (L.col !== col) { L.col = col; G.sel = -1; } f(); }; }
@@ -1977,7 +2012,7 @@ function lootPick() { const L = G.loot;
     const s = L.items[G.sel - 1]; if (!s) return; const l = addItem(PL.inv, s.id, s.n, s.q); if (l === s.n) { msg('NO ROOM. WEAR A BACKPACK'); sfx('deny'); return; } s.n = l; if (!l) L.items.splice(G.sel - 1, 1); sfx('loot'); G.sel = Math.min(G.sel, L.items.length); }
   else { const my = myItems(); const sl = my[G.sel]; if (!sl) return; const it = sl.a[sl.i];
     if (L.kind === 'trunk' && trunkKg(L.ref) + wOf(it) > VSPEC[L.ref.type].kg) { msg('THE TRUNK IS FULL'); sfx('deny'); return; }
-    if (L.kind === 'chest') { const nStacks = L.items.length; if (!L.items.find((x) => x.id === it.id && IT[x.id].s > 1) && nStacks >= 24) { msg('THE CHEST IS FULL'); sfx('deny'); return; } }
+    if (L.kind === 'chest' || L.kind === 'stash' || L.kind === 'obj') { const nStacks = L.items.length; if (!L.items.find((x) => x.id === it.id && IT[x.id].s > 1) && nStacks >= 24) { msg('STORAGE FULL'); sfx('deny'); return; } }
     const ex = IT[it.id].s > 1 && L.items.find((x) => x.id === it.id); if (ex) ex.n += it.n; else L.items.push({ id: it.id, n: it.n, q: it.q }); sl.a[sl.i] = null; sfx('pickup'); G.sel = Math.min(G.sel, myItems().length - 1); }
   G.saveDirty = true; }
 // ---- the trader
@@ -2034,10 +2069,137 @@ function drawReport() { const R = G.report; frame('DAY ' + R.day + ' DAWN', 'A: 
   L(SEASONS[season()] + ' DAY ' + (((G.day - 1) % 7) + 1) + '/7' + (G.rain ? '. IT IS RAINING (CROPS WATERED)' : ''), '#3a5a8a');
   L('CAMP: ' + campTier() + ', ' + campSize() + ' SOULS. SCORE ' + score(), '#8a6a2a'); }
 // ---- help
-const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK, ENTER', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP', 'WALK QUIET. SNEAK QUIETER. SPRINT LOUD.', 'EVERY BUILDING OPENS. LOOT THE ROOMS.', 'NOISE DRAWS THEM. ONE BITE KILLS.', 'SELL LOOT TO TRADERS ($).', 'FOUND A CAMP WITH A BEDROLL,', 'WALL IT, TRAP IT, SLEEP IN IT.', 'THE HORDE COMES EVERY 22:00.', 'FEED SURVIVORS TO RECRUIT THEM.'];
+const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK, ENTER', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP. HUD SAVE KEEPS RUN.', 'POWER OFF→ON WIPES SAVE (FRESH).', 'DOORS: 3s SAFE ENTER/EXIT.', 'STOCKPILE IN CRATES / CHESTS / LOCKERS.', 'CRAFT AT WORKBENCH / ANVIL / FORGE.', 'RECIPES NEED MATERIALS + TOOLS.', 'WALK QUIET. ONE BITE KILLS.', 'SELL LOOT. FOUND CAMP WITH BEDROLL.', 'HORDE AT 22:00. FEED TO RECRUIT.'];
 function drawHelp() { frame('HOW TO SURVIVE', 'B: BACK'); let y = 22; for (const l of HELP) { text(fitText(l, N - 18), 10, y, INK, 'left', false); y += 10; } hitR(0, 0, N, N, () => { G.ui = G.helpFrom || 'menu'; }); }
 // ---- map
 function openMap() { G.ui = 'map'; G.mapZoom = 1; G.mapCX = PL.x; G.mapCY = PL.y; sfx('ui'); }
+// ================================================================ crafting (Minecraft-like recipe book; needs materials + tools + station)
+const CRAFT_CATS = ['ALL', 'MAT', 'TOOLS', 'WEAP', 'AMMO', 'MED', 'GEAR', 'CAMP'];
+const STATION_N = { workbench: 'WORKBENCH', anvil: 'ANVIL', forge: 'FORGE', campfire: 'CAMPFIRE' };
+/** Recipes: out/n, need{}, optional tool id, optional station key, cat. */
+const CRAFT = [
+  // materials
+  { out: 'nails', n: 12, need: { scrap: 1 }, tool: 'hammer', station: 'workbench', cat: 'MAT' },
+  { out: 'rope', n: 1, need: { cloth: 3 }, station: 'workbench', cat: 'MAT' },
+  { out: 'cloth', n: 2, need: { hoodie: 1 }, station: 'workbench', cat: 'MAT' },
+  { out: 'scrap', n: 2, need: { pipe: 1 }, tool: 'hammer', station: 'anvil', cat: 'MAT' },
+  { out: 'scrap', n: 1, need: { bat: 1 }, tool: 'hammer', station: 'workbench', cat: 'MAT' },
+  { out: 'elec', n: 1, need: { phone: 1, battery: 1 }, tool: 'hammer', station: 'workbench', cat: 'MAT' },
+  { out: 'elec', n: 2, need: { laptop: 1 }, tool: 'hammer', station: 'workbench', cat: 'MAT' },
+  // tools
+  { out: 'hammer', n: 1, need: { scrap: 1, plank: 1 }, station: 'workbench', cat: 'TOOLS' },
+  { out: 'hoe', n: 1, need: { plank: 2, scrap: 1, nails: 4 }, tool: 'hammer', station: 'workbench', cat: 'TOOLS' },
+  { out: 'wcan', n: 1, need: { scrap: 2, nails: 4 }, tool: 'hammer', station: 'workbench', cat: 'TOOLS' },
+  { out: 'rod', n: 1, need: { plank: 2, rope: 1, cloth: 1 }, station: 'workbench', cat: 'TOOLS' },
+  { out: 'crowbar', n: 1, need: { scrap: 2, nails: 2 }, tool: 'hammer', station: 'anvil', cat: 'TOOLS' },
+  // weapons
+  { out: 'knife', n: 1, need: { scrap: 1, cloth: 1 }, tool: 'hammer', station: 'workbench', cat: 'WEAP' },
+  { out: 'bat', n: 1, need: { plank: 2, nails: 4 }, tool: 'hammer', station: 'workbench', cat: 'WEAP' },
+  { out: 'pipe', n: 1, need: { scrap: 2 }, tool: 'hammer', station: 'anvil', cat: 'WEAP' },
+  { out: 'axe', n: 1, need: { plank: 2, scrap: 2, nails: 6 }, tool: 'hammer', station: 'anvil', cat: 'WEAP' },
+  { out: 'machete', n: 1, need: { scrap: 3, cloth: 1, nails: 2 }, tool: 'hammer', station: 'anvil', cat: 'WEAP' },
+  { out: 'spear', n: 1, need: { plank: 2, knife: 1, rope: 1 }, station: 'workbench', cat: 'WEAP' },
+  { out: 'shield', n: 1, need: { plank: 3, scrap: 1, nails: 8 }, tool: 'hammer', station: 'workbench', cat: 'WEAP' },
+  // ammo / parts
+  { out: 'a9', n: 6, need: { scrap: 1, nails: 4 }, tool: 'hammer', station: 'workbench', cat: 'AMMO' },
+  { out: 'shell', n: 2, need: { scrap: 1, nails: 6 }, tool: 'hammer', station: 'workbench', cat: 'AMMO' },
+  { out: 'r556', n: 3, need: { scrap: 1, elec: 1, nails: 4 }, tool: 'hammer', station: 'forge', cat: 'AMMO' },
+  { out: 'gascan', n: 1, need: { scrap: 2, cloth: 1 }, tool: 'hammer', station: 'workbench', cat: 'AMMO' },
+  // medical
+  { out: 'bandage', n: 2, need: { cloth: 2 }, station: null, cat: 'MED' },
+  { out: 'bandage', n: 4, need: { cloth: 3 }, station: 'workbench', cat: 'MED' },
+  { out: 'pills', n: 2, need: { berry: 2, cloth: 1 }, station: 'campfire', cat: 'MED' },
+  { out: 'medkit', n: 1, need: { bandage: 3, pills: 1, cloth: 1 }, station: 'workbench', cat: 'MED' },
+  // gear / wear
+  { out: 'hoodie', n: 1, need: { cloth: 4, rope: 1 }, station: 'workbench', cat: 'GEAR' },
+  { out: 'jacket', n: 1, need: { cloth: 5, rope: 2 }, station: 'workbench', cat: 'GEAR' },
+  { out: 'sneakers', n: 1, need: { cloth: 3, rope: 1 }, station: 'workbench', cat: 'GEAR' },
+  { out: 'boots', n: 1, need: { cloth: 2, scrap: 1, rope: 1 }, tool: 'hammer', station: 'workbench', cat: 'GEAR' },
+  { out: 'pack_s', n: 1, need: { cloth: 4, rope: 2 }, station: 'workbench', cat: 'GEAR' },
+  { out: 'pack_h', n: 1, need: { cloth: 6, rope: 3, scrap: 1 }, tool: 'hammer', station: 'workbench', cat: 'GEAR' },
+  { out: 'bedroll', n: 1, need: { cloth: 4, rope: 2 }, station: 'workbench', cat: 'GEAR' },
+  // camp / survival
+  { out: 'torch', n: 2, need: { plank: 1, cloth: 1 }, station: 'campfire', cat: 'CAMP' },
+  { out: 'charcoal', n: 2, need: { plank: 1 }, station: 'campfire', cat: 'CAMP' },
+  { out: 'scrap', n: 2, need: { charcoal: 1, nails: 10 }, tool: 'hammer', station: 'forge', cat: 'CAMP' },
+  { out: 'nails', n: 20, need: { scrap: 1, charcoal: 1 }, tool: 'hammer', station: 'forge', cat: 'CAMP' },
+  { out: 'pipe', n: 1, need: { scrap: 2, charcoal: 1 }, tool: 'hammer', station: 'forge', cat: 'WEAP' },
+  { out: 'crowbar', n: 1, need: { scrap: 3, charcoal: 1 }, tool: 'hammer', station: 'forge', cat: 'TOOLS' },
+  { out: 'machete', n: 1, need: { scrap: 4, charcoal: 1, cloth: 1 }, tool: 'hammer', station: 'forge', cat: 'WEAP' },
+  { out: 'axe', n: 1, need: { plank: 1, scrap: 3, charcoal: 1 }, tool: 'hammer', station: 'forge', cat: 'WEAP' },
+];
+// filter hide + ensure IT exists for new craft outputs
+const CRAFT_R = CRAFT.filter((r) => !r.hide);
+
+function nearStation(k) {
+  if (!k) return true;
+  if (k === 'campfire') return nearFire(PL.x, PL.y);
+  for (const b of BUILD.values()) if (b.k === k && Math.hypot(b.x + 0.5 - PL.x, b.y + 0.5 - PL.y) < 2.4) return true;
+  return false;
+}
+function haveTool(id) { return !id || countItem(PL.inv, id) > 0; }
+function craftHaveNeed(r) { return Object.entries(r.need).every(([id, n]) => !n || haveMat(id, n)); }
+function craftReady(r) { return craftHaveNeed(r) && haveTool(r.tool) && nearStation(r.station); }
+function craftMissing(r) {
+  const m = [];
+  for (const [id, n] of Object.entries(r.need)) if (n && !haveMat(id, n)) m.push(n + ' ' + (IT[id] ? IT[id].n : id));
+  if (r.tool && !haveTool(r.tool)) m.push('NEED ' + IT[r.tool].n);
+  if (r.station && !nearStation(r.station)) m.push('AT ' + (STATION_N[r.station] || r.station));
+  return m;
+}
+function openCraft(station) {
+  G.ui = 'craft'; G.craft = { station: station || null, cat: 0, filter: station || null }; G.sel = 0; sfx('ui');
+}
+function craftList() {
+  const C = G.craft || {}, want = CRAFT_CATS[C.cat || 0], st = C.filter;
+  return CRAFT_R.filter((r) => {
+    if (want !== 'ALL' && r.cat !== want) return false;
+    // at a station: that station's recipes + hand (no-station) recipes
+    if (st) { if (r.station && r.station !== st) return false; }
+    return true;
+  });
+}
+function craftRows() {
+  return craftList().map((r) => {
+    const miss = craftMissing(r), ok = !miss.length;
+    const need = Object.entries(r.need).filter(([, n]) => n).map(([id, n]) => n + '×' + (IT[id] ? IT[id].n.split(' ')[0] : id)).join(' ');
+    const extra = [r.tool ? IT[r.tool].n.split(' ')[0] : '', r.station ? STATION_N[r.station] : 'HANDS'].filter(Boolean).join(' · ');
+    return { t: IT[r.out].n + (r.n > 1 ? ' x' + r.n : ''), ic: r.out, r: ok ? extra : miss[0], dis: !ok, rc: ok ? '#3a8a3a' : '#a83a2a', ref: r, need, miss };
+  });
+}
+function craftPick(i) {
+  const rows = craftRows(), row = rows[i]; if (!row || !row.ref) return;
+  const r = row.ref; if (!craftReady(r)) { sfx('deny'); msg(craftMissing(r)[0] || 'MISSING', '#ff8a6a'); return; }
+  for (const [id, n] of Object.entries(r.need)) if (n) useMat(id, n);
+  const left = addItem(PL.inv, r.out, r.n); if (left) { dropItem(r.out, left, PL.x, PL.y); msg('NO ROOM — DROPPED', '#ffd76a'); }
+  else msg('CRAFTED ' + IT[r.out].n + (r.n > 1 ? ' x' + r.n : ''), '#8af06a');
+  sfx('uiok'); G.saveDirty = true; G.time += 8;
+}
+function drawCraft() {
+  const C = G.craft || {}, list = craftRows(), st = C.filter;
+  frame(st ? 'CRAFT · ' + (STATION_N[st] || st) : 'CRAFTING', 'A: MAKE  L/R: CAT  B: BACK');
+  const cw = (N - 10) / CRAFT_CATS.length;
+  for (let i = 0; i < CRAFT_CATS.length; i++) {
+    const x = 5 + i * cw; rect(x, 16, cw - 1, 10, i === C.cat ? '#ffd76a' : CARD);
+    text(CRAFT_CATS[i].slice(0, 4), x + cw / 2, 16, i === C.cat ? INK : CREAM, 'center', false);
+    hitR(x, 16, cw, 10, () => { C.cat = i; G.sel = 0; sfx('ui'); });
+  }
+  if (!list.length) { text('NO RECIPES HERE', N / 2, N / 2, '#6a5a4a', 'center'); return; }
+  G.sel = clamp(G.sel, 0, list.length - 1);
+  rowsUI(8, 30, N - 16, list, G.sel, MAXR() - 3, craftPick);
+  const row = list[G.sel];
+  let hint = '';
+  if (row) {
+    const bits = [];
+    if (row.need) bits.push(row.need);
+    if (row.ref.tool) bits.push('TOOL ' + IT[row.ref.tool].n);
+    if (row.ref.station) bits.push(STATION_N[row.ref.station]);
+    else bits.push('HANDS');
+    if (row.miss && row.miss.length) bits.push('NEED: ' + row.miss.join(', '));
+    hint = bits.join(' · ');
+  }
+  rect(4, N - 28, N - 8, 12, '#efe2c4'); text(fitText(hint, N - 12), N / 2, N - 27, '#6a5a4a', 'center', false);
+}
 // ================================================================ input, title, save/load, death + best runs, main loop
 const SAVE_KEY = 'sovereign.save1', NAME_KEY = 'sovereign.name', LOCAL_LB_KEY = 'sovereign.lb', LB_GAME = 'sovereign', BLANK_NAME = 'SURVIVOR';
 let MODE = 'title', lbName = null; try { lbName = localStorage.getItem(NAME_KEY); } catch (e) { }
@@ -2063,7 +2225,7 @@ cv.addEventListener('pointerdown', (e) => { audioInit(); const r = cv.getBoundin
   for (let i = UIHIT.length - 1; i >= 0; i--) { const h = UIHIT[i]; if (x >= h.x && y >= h.y && x < h.x + h.w && y < h.y + h.h) { e.preventDefault(); h.fn(); return; } } });
 // ---- one button press, routed by screen
 function navSel(d, n) { if (n <= 0) return; G.sel = ((G.sel || 0) + d + n) % n; sfx('ui'); }
-function uiCount() { switch (G.ui) { case 'menu': return menuRows().length; case 'list': return G.list.items.length; case 'shop': return shopRows().length; case 'cook': return RECIPES.length; case 'talk': return 3;
+function uiCount() { switch (G.ui) { case 'menu': return menuRows().length; case 'list': return G.list.items.length; case 'shop': return shopRows().length; case 'cook': return RECIPES.length; case 'craft': return craftRows().length; case 'talk': return 3;
   case 'loot': return G.loot.col === 0 ? Math.max(1, G.loot.items.length + (G.loot.items.length ? 1 : 0)) : Math.max(1, myItems().length); } return 0; }
 function press(b) {
   if (MODE === 'title') return titlePress(b);
@@ -2081,7 +2243,14 @@ function press(b) {
   if (ui === 'loot') { if (b === 'left' || b === 'right') { G.loot.col = b === 'left' ? 0 : 1; G.sel = clamp(G.sel, 0, uiCount() - 1); sfx('ui'); } else if (b === 'a') lootPick(); else if (b === 'b' || b === 'start') { G.ui = null; sfx('back'); } return; }
   if (ui === 'shop') { if (b === 'left' || b === 'right') { G.shop.tab = b === 'left' ? 0 : 1; G.sel = 0; sfx('ui'); } else if (b === 'a') shopPick(G.sel); else if (b === 'b' || b === 'start') { G.ui = null; sfx('back'); } return; }
   if (ui === 'cook') { if (b === 'a') cookPick(G.sel); else if (b === 'b') G.ui = null; return; }
+  if (ui === 'craft') { if (b === 'left' || b === 'right') { const C = G.craft || (G.craft = { cat: 0 }); C.cat = (C.cat + (b === 'left' ? CRAFT_CATS.length - 1 : 1)) % CRAFT_CATS.length; G.sel = 0; sfx('ui'); } else if (b === 'a') craftPick(G.sel); else if (b === 'b' || b === 'start') { G.ui = null; sfx('back'); } return; }
   if (ui === 'talk') { if (b === 'a') talkPick(G.sel); else if (b === 'b') { G.ui = null; G.talkSay = null; } return; }
+}
+function manualSave() {
+  if (MODE !== 'play' || !G || PL.dead) { sfx('deny'); return false; }
+  if (G.wave && !G.sleeping) { msg('CANT SAVE MID-WAVE', '#ff8a6a'); sfx('deny'); return false; }
+  if (saveGame()) { G.saveFlash = 1.6; msg('SAVED', '#8af06a'); sfx('uiok'); return true; }
+  msg('SAVE FAILED', '#ff8a6a'); sfx('deny'); return false;
 }
 // ---- save / continue (localStorage)
 const G_KEEP = ['seed', 'v', 'day', 'time', 'money', 'base', 'crops', 'recruits', 'looted', 'zk', 'npc', 'gone', 'rain', 'kills', 'stock', 'pumps', 'seenNames', 'started', 'awake', 'drops', 'totalT', 'tab'];
@@ -2099,6 +2268,7 @@ function loadGame(s) {
   G.msgs = []; G.wave = null; G.alive = true; G.drops = G.drops || []; G.totalT = G.totalT || 0; Object.assign(PL, s.p);
   for (const [k, t] of s.mod) MOD.set(k, t); for (const b of s.build) BUILD.set(tkey(b.x, b.y), b); for (const v of s.vehs) VEHS.set(v.id, v);
   if (PL.veh && !VEHS.has(PL.veh)) PL.veh = null; resizePack(PL.inv);
+  PL.invuln = 0; { const b = buildingAt(PL.x, PL.y); PL._bid = b ? b.id : null; }
   for (const r of G.recruits) { const b = BUILD.get(r.bunk); if (b) { r.x = b.x + 0.5; r.y = b.y + 1.2; } }
   if (G.base && (G.time >= 22 * 60 || G.time < 5 * 60)) startWave(inBase(PL.x, PL.y, BASE_R + 6));
 }
@@ -2209,6 +2379,7 @@ function step(dt) {
   fogT -= dt; if (fogT <= 0) { fogT = 0.5; markFog(); }
   engineUpdate(); ambUpdate(dt); musicUpdate(dt);
   saveT -= dt; if (saveT <= 0) { saveT = 20; saveGame(); }
+  if (G.saveFlash) G.saveFlash = Math.max(0, G.saveFlash - dt);
 }
 function render() {
   UIHIT = []; hx.setTransform(1, 0, 0, 1, 0, 0); hx.globalAlpha = 1;
@@ -2218,10 +2389,10 @@ function render() {
   if (PL.dead) { drawDead(); return; }
   drawHUD(); const ms = N < 200 ? 40 : 52; if (!G.ui) { hitR(N - ms - 3, 3, ms, ms, () => openMap()); hitR(3, N - 22, 34, 16, () => press('start')); }
   if (G.sleeping) { const t = (G.clock * 2 | 0) % 4; panel(N / 2 - 50, N / 2 - 40, 100, 24, 'rgba(14,11,16,0.7)', 0); text('SLEEPING' + '.'.repeat(t), N / 2, N / 2 - 37, '#8ab0ff', 'center'); text(G.wave ? 'THE HORDE IS HERE' : 'A/B: GET UP', N / 2, N / 2 - 27, CREAM, 'center'); }
-  switch (G.ui) { case 'menu': drawMenu(); break; case 'list': drawList(); break; case 'loot': drawLoot(); break; case 'shop': drawShop(); break; case 'cook': drawCook(); break; case 'talk': drawTalk(); break; case 'report': drawReport(); hitR(0, 0, N, N, () => press('a')); break; case 'help': drawHelp(); break; }
+  switch (G.ui) { case 'menu': drawMenu(); break; case 'list': drawList(); break; case 'loot': drawLoot(); break; case 'shop': drawShop(); break; case 'cook': drawCook(); break; case 'craft': drawCraft(); break; case 'talk': drawTalk(); break; case 'report': drawReport(); hitR(0, 0, N, N, () => press('a')); break; case 'help': drawHelp(); break; }
   if (G.ui && G.ui !== 'build' && G.ui !== 'report' && G.ui !== 'help') hitR(N - 18, 4, 14, 12, () => press('b')), text('X', N - 11, 5, CREAM, 'center');
 }
 function loop(now) { const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now; if (POWER) { try { step(dt); render(); } catch (e) { console.error(e); window.__sovErr = String(e && e.stack || e); } } requestAnimationFrame(loop); }
 // ---- boot
 addEventListener('resize', resize); resize(); buildAtlas(); buildTrees(); toTitle(); requestAnimationFrame(loop);
-window.__sov = { get G() { return G; }, get PL() { return PL; }, get MODE() { return MODE; }, press, saveGame, startGame, KEYS, WD: () => WD, BUILD, VEHS, NPCS, get ZOMS() { return ZOMS; }, IT, addItem, foundBase: (x, y) => foundBase(x, y), die };
+window.__sov = { get G() { return G; }, get PL() { return PL; }, get MODE() { return MODE; }, press, saveGame, manualSave, startGame, KEYS, WD: () => WD, BUILD, VEHS, NPCS, get ZOMS() { return ZOMS; }, IT, addItem, foundBase: (x, y) => foundBase(x, y), die, openCraft, CRAFT_R, craftReady };

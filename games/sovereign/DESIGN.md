@@ -2,7 +2,7 @@
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=4`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=5`.
 
 ## Pillars
 
@@ -86,3 +86,12 @@ VERSION=3 invalidates v1/v2 saves (sprite sizes / atlas changed).
 
 Built for phones (iPhone 14 → Pixel 7 → desktop). Touch D-pad + A/B; same
 canvas shell as the other handheld games.
+
+
+## v5 (save / door invuln / stockpile / crafting)
+- **VERSION=5** — wipes incompatible v4 saves (`hasSave` checks `s.v === VERSION`).
+- **Easy save:** HUD **SAVE** button (phone tap) + SYS **SAVE GAME**; brief **SAVED** flash/toast. Autosave (~20s) + pagehide still run. **Power off→on still wipes save** (v4 cold-boot restart).
+- **Door invuln:** Entering or exiting a building grants **3s** bite invulnerability (`PL.invuln`); cyan standee tint while active.
+- **Stockpile:** After searching a world container (crate/locker/cabinet/etc.), it becomes a persistent **STOCKPILE** (deposit/withdraw, 24 stacks). Camp chests same UI. Persists via `G.looted` / build `items` in save.
+- **Crafting:** Recipe book (~42 recipes) at **workbench / anvil / forge / campfire** (also PACK → CRAFTING). Needs **materials + tool** (e.g. hammer) **and** the right **station** when required; UI shows missing ingredients/tools. Build stations from BUILD menu.
+- Keeps v4: walkable outdoor spawn; power cycle = fresh run.
