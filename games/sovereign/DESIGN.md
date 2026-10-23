@@ -1,8 +1,8 @@
-# Sovereign — design (v3)
+# Sovereign — design (v4)
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=3`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=4`.
 
 ## Pillars
 
@@ -18,6 +18,11 @@ and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
 - **Found a camp anywhere** (not in the city). Wall it, trap it, sleep in it.
 - **Night wave at 22:00.** Watch live or skip to morning; damage persists.
 - **Grow toward utopia.** Recruits take jobs: farmer / guard / scavenger / builder.
+
+## Fixes (v4)
+
+- **Power off→on restarts.** Shell `handheld:power` on wipes the mid-run save and cold-boots to the title with a fresh world (same idea as Last Tower `bootOn`), instead of resuming the frozen mid-run.
+- **Walkable spawn only.** `findWalkableSpawn` rejects roofs/building footprints, walls, water, and other non-walkable tiles; spiral-searches from the town-edge hint onto road/ground. Used by every `newRun` (new game, title demo, power restart).
 
 ## Look (v3)
 
