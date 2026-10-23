@@ -1,4 +1,4 @@
-/* SOVEREIGN v2: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
+/* SOVEREIGN v4: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
    Scavenge a seeded 3072x3072-tile world (about 15 minutes on foot edge to edge), sell what you find, found a camp anywhere,
    build walls / traps / a bed, farm through the seasons, survive the nights (watch or skip the wave), recruit survivors.
    One bite = death. Kills give nothing. Permadeath; the run saves to localStorage while you are alive.
@@ -6,7 +6,7 @@
    See DESIGN.md. */
 'use strict';
 // ================================================================ basics
-const VERSION = 3;
+const VERSION = 4;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -179,9 +179,9 @@ function genWorld(seed) {
   for (let a = 0, n = 0; a < 6000 && n < 12; a++) { const px = 100 + R() * (WS - 200), py = 100 + R() * (WS - 200); if (W.forest(px, py) < 0.62 || elev0(px, py) > 0.48 || wet(px, py, 12) || !far(px, py, W.sets, 80)) continue;
     W.sets.push({ kind: 'cabin', x: px | 0, y: py | 0, r: 12, name: 'CABIN' }); n++; }
   W.sets.forEach((s, i) => { s.id = i; s.bb = [s.x - s.r - 40, s.y - s.r - 40, s.x + s.r + 40, s.y + s.r + 40]; });
-  // spawn: on a road just outside a town that has a trader
+  // spawn hint: east of a town (buildings often reach ~r+P); findWalkableSpawn refines onto a road/ground tile
   const towns = W.sets.filter((s) => s.kind === 'town'); const home = towns[(R() * towns.length) | 0] || city; W.home = home.id;
-  W.spawn = { x: home.x + home.r + 6, y: home.y + 0.5 };
+  W.spawn = { x: home.x + home.r + 22, y: home.y + 0.5 };
   return W;
 }
 // ---- settlement layouts (lazy, deterministic)
@@ -964,10 +964,51 @@ const BORDER = ['woodwall', 'metalwall', 'gate', 'spikes', 'beartrap', 'wire', '
 function newRun(seed) {
   WD = genWorld(seed); CHUNKS.clear(); chunkOrder = []; MOD.clear(); LAYOUTS.clear(); VEHS.clear(); NPCS.clear(); BUILD.clear(); ACTIVE.clear(); ZOMS = []; FX = []; NOISE = [];
   G = { seed, v: VERSION, day: 1, time: 7 * 60, money: 15, base: null, crops: {}, recruits: [], looted: {}, zk: {}, fog: new Uint8Array(NC * NC), npc: {}, gone: {}, rain: false, kills: 0, stock: {}, pumps: {}, seenNames: {}, log: [], playId: null, started: Date.now(), msgs: [], alive: true, wave: null, awake: 0 };
-  PL = { x: WD.spawn.x, y: WD.spawn.y, dir: [1, 0], face: 1, fs: 1, hp: 100, sta: 100, hun: 80, thi: 80, str: 1, strXP: 0, inv: newInv(), veh: null, sneak: false, sprint: false, anim: 0, swingT: 0, cd: 0, noise: 0, step: 0, hurtT: 0, moving: false };
+  PL = { x: WD.spawn.x, y: WD.spawn.y, dir: [1, 0], face: 1, fs: 1, hp: 100, sta: 100, hun: 80, thi: 80, str: 1, strXP: 0, inv: newInv(), veh: null, sneak: false, sprint: false, anim: 0, swingT: 0, cd: 0, aim: 0, step: 0, hurtT: 0, moving: false };
   addItem(PL.inv, 'water', 1); addItem(PL.inv, 'chips', 1);
-  // a spawn that is never in water / walls
-  for (let r = 0; r < 30 && solidAt(PL.x, PL.y, 'p'); r++) PL.x += 1;
+  const sp = findWalkableSpawn(PL.x, PL.y); PL.x = sp.x; PL.y = sp.y; WD.spawn = { x: sp.x, y: sp.y };
+}
+/** True if floor(x,y) sits on any building footprint (walls + interior) — roofs cover these outdoors. */
+function onBuildingFootprint(x, y) {
+  x = Math.floor(x); y = Math.floor(y);
+  const cx0 = ((x / CH) | 0) - 1, cy0 = ((y / CH) | 0) - 1;
+  for (let cy = cy0; cy <= cy0 + 2; cy++) for (let cx = cx0; cx <= cx0 + 2; cx++) {
+    if (cx < 0 || cy < 0 || cx >= NC || cy >= NC) continue;
+    for (const b of chunk(cx, cy).bl) if (x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h) return true;
+  }
+  return false;
+}
+/** Outdoor walkable tile: not solid, not water, not under a roof / inside a building. */
+function spawnTileOk(x, y) {
+  const t = tileAt(x, y);
+  if (SOLID[t] || t === T.WATER || t === T.SEA || t === T.SHAL) return false;
+  if (buildingAt(x, y) || onBuildingFootprint(x, y)) return false;
+  return freeAt(x + 0.5, y + 0.5, 0.28, 'p');
+}
+function spawnTileScore(x, y) {
+  const t = tileAt(x, y);
+  if (t === T.ROAD || t === T.LINE || t === T.SIDE) return 0;
+  if (t === T.DIRT || t === T.CONC || t === T.GRAVEL || t === T.BRIDGE) return 1;
+  if (t === T.GRASS || t === T.TALL || t === T.SAND || t === T.FIELD || t === T.FLOWER || t === T.TILLED) return 2;
+  return 3;
+}
+/** Spiral-search from (ox,oy) for a walkable outdoor tile. Used by newRun and any restart spawn. */
+function findWalkableSpawn(ox, oy) {
+  const ix = Math.floor(ox), iy = Math.floor(oy);
+  if (spawnTileOk(ix, iy)) return { x: ix + 0.5, y: iy + 0.5 };
+  let best = null, bestS = 99;
+  for (let r = 1; r < 96; r++) {
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const x = ix + dx, y = iy + dy;
+      if (x < 8 || y < 8 || x >= WS - 8 || y >= WS - 8) continue;
+      if (!spawnTileOk(x, y)) continue;
+      const s = spawnTileScore(x, y);
+      if (s < bestS) { bestS = s; best = { x: x + 0.5, y: y + 0.5 }; if (s === 0) return best; }
+    }
+    if (best && bestS <= 2) return best;
+  }
+  return best || { x: ox, y: oy };
 }
 const season = () => ((G.day - 1) / 7 | 0) % 4; const SEASONS = ['SPRING', 'SUMMER', 'FALL', 'WINTER'];
 const isNight = () => G.time >= 21 * 60 || G.time < 6 * 60;
@@ -1626,7 +1667,7 @@ function audioInit() {
 }
 function audioLevels() { if (!AC) return; const t = AC.currentTime; MASTER.gain.setTargetAtTime(MUTED || !POWER ? 0 : 0.8, t, 0.05); SFXG.gain.setTargetAtTime(OPT.sfx ? 0.9 : 0, t, 0.05); AMBG.gain.setTargetAtTime(OPT.sfx ? 0.5 : 0, t, 0.05); MUSG.gain.setTargetAtTime(OPT.music ? 0.22 : 0, t, 0.05); }
 addEventListener('handheld:mute', (e) => { MUTED = !!(e.detail && e.detail.muted); audioLevels(); });
-addEventListener('handheld:power', (e) => { POWER = !(e.detail && e.detail.on === false); audioLevels(); });
+addEventListener('handheld:power', (e) => { POWER = !(e.detail && e.detail.on === false); audioLevels(); if (typeof onHandheldPower === 'function') onHandheldPower(POWER); });
 document.addEventListener('visibilitychange', () => { if (!AC) return; if (document.hidden) AC.suspend(); else AC.resume(); });
 function tone(type, f0, f1, dur, vol, dl = 0, out = SFXG) { const t = AC.currentTime + dl, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02); }
@@ -2112,6 +2153,17 @@ function drawDead() { const t = G.deadT; hx.fillStyle = 'rgba(40,0,0,' + Math.mi
 // ---- title screen (the next world pans behind it)
 const TT = { sel: 0, sub: null, t: 0, board: null, save: null };
 function toTitle() { MODE = 'title'; TT.save = hasSave(); const seed = TT.save ? TT.save.seed : (Math.random() * 1e9) | 0; if (!WD || G.seed !== seed || !G.demo) { newRun(seed); MAPI.row = 0; } G.demo = true; G.drops = []; TT.sel = 0; TT.sub = null; NE.on = false; CAM.x = PL.x; CAM.y = PL.y; }
+/** Shell power off→on: wipe mid-run save and cold-boot to title (fresh world), like Last Tower bootOn. */
+function onHandheldPower(on) {
+  if (!on) return;
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+  NE.on = false;
+  if (G) { G.ui = null; G.wave = null; G.report = null; G.sleeping = false; G.chan = null; G.loot = null; }
+  newRun((Math.random() * 1e9) | 0); MAPI.row = 0;
+  MODE = 'title'; G.demo = true; G.drops = [];
+  TT.save = null; TT.sel = 0; TT.sub = null; TT.confirm = false; TT.board = null;
+  CAM.x = PL.x; CAM.y = PL.y;
+}
 function titleItems() { return (TT.save ? [{ t: 'CONTINUE (DAY ' + TT.save.g.day + ')', fn: () => startGame(true) }] : []).concat([{ t: 'NEW RUN', fn: () => startGame(false) }, { t: 'BEST RUNS', fn: openBest }, { t: 'HOW TO SURVIVE', fn: () => { TT.sub = 'help'; } }]); }
 function openBest() { TT.sub = 'best'; TT.board = { local: localBoard() }; const A = window.MembersAuth; if (A && A.ready) A.ready.then(() => (A.available ? A.leaderboard(LB_GAME) : null)).then((b) => { if (b && b.status === 200 && b.json) TT.board.server = b.json; }).catch(() => { }); }
 function titlePress(b) { if (TT.sub) { if (b === 'a' || b === 'b' || b === 'start') { TT.sub = null; sfx('back'); } return; } if (TT.confirm) { if (b === 'a') { TT.confirm = false; startGame(false, true); } else if (b === 'b') TT.confirm = false; return; }
