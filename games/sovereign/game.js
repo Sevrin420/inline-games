@@ -1,4 +1,4 @@
-/* SOVEREIGN v1: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
+/* SOVEREIGN v2: an open-world zombie survival + base-building tower-defence game for the MEMBERSONLY POCKET handheld.
    Scavenge a seeded 3072x3072-tile world (about 15 minutes on foot edge to edge), sell what you find, found a camp anywhere,
    build walls / traps / a bed, farm through the seasons, survive the nights (watch or skip the wave), recruit survivors.
    One bite = death. Kills give nothing. Permadeath; the run saves to localStorage while you are alive.
@@ -6,7 +6,7 @@
    See DESIGN.md. */
 'use strict';
 // ================================================================ basics
-const VERSION = 1;
+const VERSION = 2;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -48,21 +48,21 @@ function resize() {
 addEventListener('resize', () => { resize(); setTimeout(resize, 120); });
 
 // ================================================================ palette (shared with Zombie Farm: ink outlines, cream paper, dusk grade)
-const INK = '#0e0b10', CREAM = '#fff4dc', CARD = '#b98a55', CARD2 = '#8a6236';
+const INK = '#0a080c', CREAM = '#e8dcc4', CARD = '#8a6240', CARD2 = '#5a3a22';
 const PAL = {
-  grass: ['#6fbf4a', '#5aa83c', '#47902f', '#336d22'], tall: ['#7fcf55', '#5fb043', '#4a9434', '#2f6a20'],
-  dirt: ['#c89a64', '#b0824e', '#93693c', '#6e4c2a'], sand: ['#f0dca0', '#e2c886', '#cbae6a', '#a08648'],
-  water: ['#7cc8f0', '#4ea6dc', '#3384c0', '#1f5e94'], shallow: ['#9edaf2', '#78c2e6', '#5aa6d2', '#3c80aa'],
-  road: ['#6c6a70', '#5a585e', '#4a484e', '#38363c'], side: ['#c8c2b4', '#b4ad9e', '#9c9586', '#7a7466'],
-  wood: ['#d6a468', '#bf8b52', '#a37240', '#7a5430'], tile: ['#e8e4dc', '#d4cec2', '#bab3a4', '#958e80'],
-  conc: ['#b8b6b0', '#a4a29c', '#8e8c86', '#6e6c66'], gravel: ['#a89c8c', '#948878', '#7c7262', '#5e5648'],
-  rock: ['#9a9088', '#827870', '#6a6058', '#4a423c'], leaf: ['#4caa4a', '#3a8e3c', '#2c7230', '#1c5222'],
-  pine: ['#3a8a58', '#2c7048', '#20583a', '#143e28'], field: ['#c8a65a', '#b08e48', '#957638', '#6e5428'],
-  tilled: ['#8a5e3a', '#764e30', '#603e26', '#462c1a'], wet: ['#5e3e26', '#4e321e', '#3e2616', '#2c1a0e'],
-  brick: ['#c8604c', '#ae4c3c', '#8e3a2e', '#682820'], metal: ['#c4ccd2', '#a6aeb6', '#88909a', '#626a74'],
-  roofs: [['#c8503c', '#a83e2e'], ['#4c6a8c', '#3a5470'], ['#6c6c74', '#54545c'], ['#8c6a3c', '#70522c'], ['#3c7a5a', '#2e6046'], ['#a8a49c', '#8a867e']],
+  grass: ['#4a7a38', '#3a6430', '#2e5226', '#1e3a1a'], tall: ['#527e3c', '#3e6630', '#325226', '#203a18'],
+  dirt: ['#8a6844', '#725436', '#5a422c', '#3e2c1c'], sand: ['#c4ae78', '#a89460', '#8a7850', '#6a5a3c'],
+  water: ['#3a6a88', '#2a5470', '#1e4060', '#142c48'], shallow: ['#5a8498', '#446c80', '#345868', '#244050'],
+  road: ['#4a484c', '#3a383c', '#2c2a2e', '#1e1c20'], side: ['#8a8478', '#726c62', '#5a544c', '#403c36'],
+  wood: ['#8a6840', '#725434', '#5a4028', '#3e2c1a'], tile: ['#9a9288', '#827a70', '#6a625a', '#4e4840'],
+  conc: ['#7a7874', '#666460', '#52504c', '#3a3834'], gravel: ['#7a7064', '#665c52', '#504840', '#38322c'],
+  rock: ['#6a6058', '#564c46', '#423a34', '#2c2622'], leaf: ['#2e6a30', '#245428', '#1a3e1e', '#102814'],
+  pine: ['#286040', '#1e4a32', '#143626', '#0c2418'], field: ['#8a7040', '#725a34', '#5a4628', '#3e301c'],
+  tilled: ['#5a3e28', '#4a3220', '#3a2618', '#281a10'], wet: ['#3e2a1a', '#321e14', '#261610', '#1a100a'],
+  brick: ['#8a4034', '#723028', '#5a241e', '#3e1814'], metal: ['#7a8288', '#626a70', '#4a5258', '#343a40'],
+  roofs: [['#8a3028', '#6a221c'], ['#2e4460', '#223448'], ['#3e3e44', '#2c2c32'], ['#6a4e2c', '#523c22'], ['#2a5a42', '#1e4432'], ['#6a6660', '#504c48']],
 };
-const DARK = 'rgba(14,11,16,0.35)';
+const DARK = 'rgba(8,6,10,0.5)';
 // ================================================================ crisp pixel text: 5x7 bitmap font (same font as Zombie Farm)
 const FONT = {
   A: [0x7C, 0x12, 0x11, 0x12, 0x7C], B: [0x7F, 0x49, 0x49, 0x49, 0x36], C: [0x3E, 0x41, 0x41, 0x41, 0x22], D: [0x7F, 0x41, 0x41, 0x22, 0x1C],
@@ -138,8 +138,8 @@ function genWorld(seed) {
   const far = (px, py, list, d) => list.every((s) => Math.hypot(s.x - px, s.y - py) > d + (s.r || 0));
   // the big city straddles the river
   for (let a = 0; a < 60; a++) { const i = ((0.35 + R() * 0.3) * main.length) | 0; const px = main[i][0] + (R() - 0.5) * 80, py = main[i][1];
-    if (elev0(px, py) > 0.38 || a < 59 && (px < 450 || px > WS - 450 || py < 450 || py > WS - 450)) continue; W.sets.push({ kind: 'city', x: px | 0, y: py | 0, r: 230, name: 'NEW HAVEN' }); break; }
-  if (!W.sets.length) W.sets.push({ kind: 'city', x: WS / 2, y: WS / 2, r: 230, name: 'NEW HAVEN' });
+    if (elev0(px, py) > 0.38 || a < 59 && (px < 450 || px > WS - 450 || py < 450 || py > WS - 450)) continue; W.sets.push({ kind: 'city', x: px | 0, y: py | 0, r: 280, name: 'NEW HAVEN' }); break; }
+  if (!W.sets.length) W.sets.push({ kind: 'city', x: WS / 2, y: WS / 2, r: 280, name: 'NEW HAVEN' });
   const city = W.sets[0];
   // lakes
   for (let a = 0; a < 400 && W.lakes.length < 6; a++) { const px = 150 + R() * (WS - 300), py = 150 + R() * (WS - 300), rx = 22 + R() * 50, ry = 18 + R() * 40;
@@ -150,12 +150,12 @@ function genWorld(seed) {
   const wet = (px, py, m) => riverD(px, py) < m || lakeV(px, py) < 1 + m / 30;
   // towns
   let ni = 0; const names = TOWN_NAMES.slice(); for (let i = names.length - 1; i > 0; i--) { const j = (R() * (i + 1)) | 0; [names[i], names[j]] = [names[j], names[i]]; }
-  for (let a = 0; a < 3000 && ni < 8; a++) { const px = 220 + R() * (WS - 440), py = 220 + R() * (WS - 440), r = 52 + R() * 30;
+  for (let a = 0; a < 3000 && ni < 8; a++) { const px = 220 + R() * (WS - 440), py = 220 + R() * (WS - 440), r = 70 + R() * 36;
     if (elev0(px, py) > 0.5 || wet(px, py, 40) || !far(px, py, W.sets, r + 330)) continue; W.sets.push({ kind: 'town', x: px | 0, y: py | 0, r: r | 0, name: names[ni++] }); }
   // factories: two on the city's edge, one out in the country by the river
   for (let a = 0, n = 0; a < 2000 && n < 3; a++) { const ang = R() * 6.283, d = n < 2 ? city.r + 70 + R() * 60 : 400 + R() * 900;
     const px = (n < 2 ? city.x : main[(main.length * (0.2 + R() * 0.6)) | 0][0] + 60) + Math.cos(ang) * (n < 2 ? d : 40), py = (n < 2 ? city.y : main[(main.length * R()) | 0][1]) + Math.sin(ang) * (n < 2 ? d : 40);
-    if (px < 120 || py < 120 || px > WS - 120 || py > WS - 120 || elev0(px, py) > 0.5 || wet(px, py, 45) || !far(px, py, W.sets, 70)) continue; W.sets.push({ kind: 'factory', x: px | 0, y: py | 0, r: 40, name: n < 2 ? 'MILLWORKS' : 'RIVER PLANT' }); n++; }
+    if (px < 120 || py < 120 || px > WS - 120 || py > WS - 120 || elev0(px, py) > 0.5 || wet(px, py, 45) || !far(px, py, W.sets, 70)) continue; W.sets.push({ kind: 'factory', x: px | 0, y: py | 0, r: 52, name: n < 2 ? 'MILLWORKS' : 'RIVER PLANT' }); n++; }
   // mines in the mountains
   for (let a = 0; a < 4000 && W.mines.length < 4; a++) { const px = 100 + R() * (WS - 200), py = 100 + R() * (WS - 200), e = elev0(px, py);
     if (e < 0.52 || e > 0.6 || wet(px, py, 30) || !far(px, py, W.sets, 120)) continue; const s = { kind: 'mine', x: px | 0, y: py | 0, r: 18, name: 'OLD MINE' }; W.sets.push(s); W.mines.push(s); }
@@ -172,12 +172,12 @@ function genWorld(seed) {
   // farms, gas stations along the highways; hunter cabins in the forests
   for (let a = 0, n = 0; a < 3000 && n < 14; a++) { const s = W.roads[(R() * W.roads.length) | 0], t = 0.15 + R() * 0.7, L = Math.hypot(s.bx - s.ax, s.by - s.ay); if (L < 60) continue;
     const side = R() < 0.5 ? -1 : 1, ox = -(s.by - s.ay) / L * side, oy = (s.bx - s.ax) / L * side, rx = s.ax + (s.bx - s.ax) * t, ry = s.ay + (s.by - s.ay) * t, px = rx + ox * 26, py = ry + oy * 26;
-    if (elev0(px, py) > 0.48 || wet(px, py, 30) || !far(px, py, W.sets, 60) || roadD(px, py) < 18) continue; W.sets.push({ kind: 'farm', x: px | 0, y: py | 0, r: 22, name: 'FARM' }); W.dirt.push({ ax: px, ay: py, bx: rx, by: ry, w: 1.2 }); n++; }
+    if (elev0(px, py) > 0.48 || wet(px, py, 30) || !far(px, py, W.sets, 60) || roadD(px, py) < 18) continue; W.sets.push({ kind: 'farm', x: px | 0, y: py | 0, r: 28, name: 'FARM' }); W.dirt.push({ ax: px, ay: py, bx: rx, by: ry, w: 1.2 }); n++; }
   for (let k = 0; k < W.roads.length; k += 2) { const s = W.roads[k], L = Math.hypot(s.bx - s.ax, s.by - s.ay); if (L < 260) continue; const rx = (s.ax + s.bx) / 2, ry = (s.ay + s.by) / 2;
-    const ox = -(s.by - s.ay) / L, oy = (s.bx - s.ax) / L, px = rx + ox * 11, py = ry + oy * 11; if (wet(px, py, 14) || !far(px, py, W.sets, 30)) continue; W.sets.push({ kind: 'gas', x: px | 0, y: py | 0, r: 10, name: 'GAS STATION' }); }
+    const ox = -(s.by - s.ay) / L, oy = (s.bx - s.ax) / L, px = rx + ox * 11, py = ry + oy * 11; if (wet(px, py, 14) || !far(px, py, W.sets, 30)) continue; W.sets.push({ kind: 'gas', x: px | 0, y: py | 0, r: 14, name: 'GAS STATION' }); }
   W.forest = (px, py) => fbm(px / 150, py / 150, seed + 11, 4);
   for (let a = 0, n = 0; a < 6000 && n < 12; a++) { const px = 100 + R() * (WS - 200), py = 100 + R() * (WS - 200); if (W.forest(px, py) < 0.62 || elev0(px, py) > 0.48 || wet(px, py, 12) || !far(px, py, W.sets, 80)) continue;
-    W.sets.push({ kind: 'cabin', x: px | 0, y: py | 0, r: 9, name: 'CABIN' }); n++; }
+    W.sets.push({ kind: 'cabin', x: px | 0, y: py | 0, r: 12, name: 'CABIN' }); n++; }
   W.sets.forEach((s, i) => { s.id = i; s.bb = [s.x - s.r - 40, s.y - s.r - 40, s.x + s.r + 40, s.y + s.r + 40]; });
   // spawn: on a road just outside a town that has a trader
   const towns = W.sets.filter((s) => s.kind === 'town'); const home = towns[(R() * towns.length) | 0] || city; W.home = home.id;
@@ -186,36 +186,78 @@ function genWorld(seed) {
 }
 // ---- settlement layouts (lazy, deterministic)
 const LAYOUTS = new Map();
-const KIND_LOOT = { house: ['fridge', 'cabinet', 'dresser', 'desk'], store: ['shelf', 'shelf', 'shelf', 'shelf', 'register', 'fridge'], hardware: ['shelf', 'toolbox', 'toolbox', 'crate', 'shelf'],
-  pharmacy: ['medcab', 'medcab', 'medcab', 'shelf', 'register'], clothing: ['rack', 'rack', 'rack', 'rack', 'register'], police: ['locker', 'locker', 'gunsafe', 'desk'],
-  garage: ['toolbox', 'toolbox', 'crate', 'gascan'], trader: [], apartment: ['fridge', 'cabinet', 'dresser', 'desk', 'fridge', 'cabinet', 'dresser'], office: ['desk', 'desk', 'desk', 'cabinet', 'desk', 'desk'],
-  mall: ['rack', 'rack', 'shelf', 'shelf', 'register', 'rack', 'shelf', 'register'], hospital: ['medcab', 'medcab', 'cabinet', 'medcab', 'medcab', 'desk'], gunstore: ['gunsafe', 'gunsafe', 'shelf', 'register'],
-  bank: ['safe', 'safe', 'desk', 'register'], warehouse: ['crate', 'crate', 'crate', 'toolbox', 'locker', 'crate', 'crate'], farmhouse: ['fridge', 'cabinet', 'dresser'], barn: ['crate', 'toolbox', 'seedbox', 'gascan'],
-  gasstore: ['shelf', 'shelf', 'fridge', 'register'], shack: ['crate', 'toolbox', 'locker'], cabin: ['cabinet', 'locker', 'fridge'] };
+const KIND_LOOT = { house: ['fridge', 'cabinet', 'dresser', 'desk', 'cabinet', 'dresser'], store: ['shelf', 'shelf', 'shelf', 'shelf', 'register', 'fridge', 'shelf', 'shelf'], hardware: ['shelf', 'toolbox', 'toolbox', 'crate', 'shelf', 'toolbox', 'crate'],
+  pharmacy: ['medcab', 'medcab', 'medcab', 'shelf', 'register', 'medcab', 'cabinet'], clothing: ['rack', 'rack', 'rack', 'rack', 'register', 'rack', 'dresser'], police: ['locker', 'locker', 'gunsafe', 'desk', 'locker', 'desk'],
+  garage: ['toolbox', 'toolbox', 'crate', 'gascan', 'toolbox', 'crate'], trader: [], apartment: ['fridge', 'cabinet', 'dresser', 'desk', 'fridge', 'cabinet', 'dresser', 'cabinet'], office: ['desk', 'desk', 'desk', 'cabinet', 'desk', 'desk', 'cabinet', 'desk'],
+  mall: ['rack', 'rack', 'shelf', 'shelf', 'register', 'rack', 'shelf', 'register', 'rack', 'shelf'], hospital: ['medcab', 'medcab', 'cabinet', 'medcab', 'medcab', 'desk', 'medcab', 'locker'], gunstore: ['gunsafe', 'gunsafe', 'shelf', 'register', 'gunsafe', 'locker'],
+  bank: ['safe', 'safe', 'desk', 'register', 'safe', 'desk'], warehouse: ['crate', 'crate', 'crate', 'toolbox', 'locker', 'crate', 'crate', 'crate', 'toolbox', 'crate'], farmhouse: ['fridge', 'cabinet', 'dresser', 'desk', 'cabinet'], barn: ['crate', 'toolbox', 'seedbox', 'gascan', 'crate', 'toolbox'],
+  gasstore: ['shelf', 'shelf', 'fridge', 'register', 'shelf', 'toolbox'], shack: ['crate', 'toolbox', 'locker', 'crate'], cabin: ['cabinet', 'locker', 'fridge', 'dresser', 'cabinet'] };
 const KIND_ROOF = { house: 0, store: 1, hardware: 3, pharmacy: 4, clothing: 1, police: 1, garage: 2, trader: 3, apartment: 0, office: 5, mall: 1, hospital: 5, gunstore: 2, bank: 5, warehouse: 2, farmhouse: 0, barn: 0, gasstore: 4, shack: 3, cabin: 3 };
 const KIND_LABEL = { store: 'STORE', hardware: 'HARDWARE', pharmacy: 'PHARMACY', clothing: 'CLOTHES', police: 'POLICE', garage: 'GARAGE', trader: 'TRADER', mall: 'MALL', hospital: 'HOSPITAL', gunstore: 'GUNS', bank: 'BANK', gasstore: 'GAS', warehouse: 'DEPOT' };
+// multi-room interiors: interior wall tiles + door gaps (painted in genChunk)
+function planInterior(b, R) {
+  const iw = Object.create(null), id = Object.create(null);
+  const ix0 = b.x + 1, iy0 = b.y + 1, ix1 = b.x + b.w - 2, iy1 = b.y + b.h - 2;
+  const W = b.w - 2, H = b.h - 2;
+  const wallV = (x, y0, y1, doorAt) => { for (let y = y0; y <= y1; y++) { if (doorAt != null && y === doorAt) id[x + ',' + y] = 1; else iw[x + ',' + y] = 1; } };
+  const wallH = (y, x0, x1, doorAt) => { for (let x = x0; x <= x1; x++) { if (doorAt != null && x === doorAt) id[x + ',' + y] = 1; else iw[x + ',' + y] = 1; } };
+  if (W >= 5 && H >= 4) {
+    const kind = b.kind;
+    const housey = /house|apartment|cabin|farmhouse|office|hospital|police|bank|pharmacy|clothing|gunstore|hardware|store|gasstore|trader/.test(kind);
+    const warey = /warehouse|barn|garage|mall|shack/.test(kind);
+    if (W >= 8 && H >= 6 && housey) {
+      const vx = ix0 + Math.floor(W * (0.38 + R() * 0.22));
+      wallV(vx, iy0, iy1, iy0 + 1 + ((R() * Math.max(1, H - 3)) | 0));
+      if (H >= 7) {
+        const leftW = vx - ix0, rightW = ix1 - vx;
+        if (leftW >= 4) wallH(iy0 + Math.floor(H * (0.42 + R() * 0.18)), ix0, vx - 1, ix0 + 1 + ((R() * Math.max(1, leftW - 3)) | 0));
+        if (rightW >= 4 && W >= 10) wallH(iy0 + Math.floor(H * (0.32 + R() * 0.28)), vx + 1, ix1, vx + 2 + ((R() * Math.max(1, rightW - 4)) | 0));
+      }
+      if (W >= 12 && H >= 9) { const bx = ix1 - 3; wallV(bx, iy0, iy0 + 3, iy0 + 2); wallH(iy0 + 3, bx, ix1, bx + 1); }
+      if (W >= 14 && H >= 11) { const by = iy1 - 3; wallH(by, ix0, ix0 + 4, ix0 + 2); wallV(ix0 + 4, by, iy1, by + 1); }
+    } else if (W >= 10 && H >= 7 && warey) {
+      for (let x = ix0 + 4; x < ix1 - 2; x += 5) wallV(x, iy0 + 1, iy1 - 1, iy0 + 2 + ((R() * Math.max(1, H - 5)) | 0));
+      if (H >= 12) wallH(iy0 + ((H / 2) | 0), ix0 + 1, ix1 - 1, ix0 + 3 + ((R() * 4) | 0));
+    } else if (W >= 6 && H >= 5) {
+      if (W >= H) wallV(ix0 + (W >> 1), iy0, iy1, iy0 + (H >> 1));
+      else wallH(iy0 + (H >> 1), ix0, ix1, ix0 + (W >> 1));
+    }
+  }
+  const [dx, dy] = b.door;
+  const inward = dy === b.y ? [dx, dy + 1] : dy === b.y + b.h - 1 ? [dx, dy - 1] : dx === b.x ? [dx + 1, dy] : [dx - 1, dy];
+  delete iw[dx + ',' + dy]; delete iw[inward[0] + ',' + inward[1]]; delete id[dx + ',' + dy];
+  for (const [ox, oy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { delete iw[(inward[0] + ox) + ',' + (inward[1] + oy)]; }
+  b.iwalls = iw; b.idoors = id;
+}
 function layoutOf(S) {
   let L = LAYOUTS.get(S.id); if (L) return L;
   const R = rng(WD.seed * 31 + S.id * 977 + 5), fills = [], bl = [], objs = [], vehs = [], npcs = [];
   L = { fills, bl, objs, vehs, npcs }; LAYOUTS.set(S.id, L);
   const okSpot = (x, y, w, h, m = 3) => { for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h], [x + w / 2, y + h / 2]]) { if (WD.riverD(px, py) < m || WD.lakeV(px, py) < 1.15 || WD.roadD(px, py) < 3.5) return false; } return true; };
-  const addB = (x, y, w, h, kind, doorSide, wall) => { if (kind !== 'trader' && !okSpot(x, y, w, h)) return null; const b = { x, y, w, h, kind, id: S.id + ':' + bl.length, wall: wall || (kind === 'warehouse' || kind === 'shack' ? T.WALLC : (kind === 'house' || kind === 'farmhouse' || kind === 'barn' || kind === 'cabin' ? T.WALLW : T.WALL)) };
+  const addB = (x, y, w, h, kind, doorSide, wall) => {
+    w = Math.max(5, w | 0); h = Math.max(5, h | 0);
+    if (kind !== 'trader' && !okSpot(x, y, w, h)) return null;
+    const b = { x, y, w, h, kind, id: S.id + ':' + bl.length, wall: wall || (kind === 'warehouse' || kind === 'shack' ? T.WALLC : (kind === 'house' || kind === 'farmhouse' || kind === 'barn' || kind === 'cabin' ? T.WALLW : T.WALL)) };
     b.floor = kind === 'warehouse' || kind === 'garage' || kind === 'barn' || kind === 'shack' ? T.CONC : (kind === 'house' || kind === 'farmhouse' || kind === 'cabin' || kind === 'apartment' ? T.WOOD : T.TILE);
     const dx = doorSide === 0 || doorSide === 2 ? x + ((w / 2) | 0) : doorSide === 3 ? x : x + w - 1, dy = doorSide === 0 ? y : doorSide === 2 ? y + h - 1 : y + ((h / 2) | 0);
-    b.door = [dx, dy]; b.roof = KIND_ROOF[kind] || 0; b.part = w >= 14 && h >= 10 ? [x + ((w / 2) | 0), y + ((h / 2) | 0)] : null; bl.push(b);
-    // containers along the inner walls
+    b.door = [dx, dy]; b.roof = KIND_ROOF[kind] || 0; bl.push(b);
+    planInterior(b, R);
     const types = KIND_LOOT[kind] || ['cabinet']; const spots = [];
-    for (let i = x + 1; i < x + w - 1; i++) { spots.push([i, y + 1]); spots.push([i, y + h - 2]); } for (let j = y + 2; j < y + h - 2; j++) { spots.push([x + 1, j]); spots.push([x + w - 2, j]); }
-    const free = spots.filter(([sx, sy]) => Math.abs(sx - dx) + Math.abs(sy - dy) > 2 && (!b.part || (sx !== b.part[0] && sy !== b.part[1])));
-    const n = Math.min(free.length, types.length + (w * h > 150 ? ((w * h) / 70) | 0 : 0));
+    for (let i = x + 1; i < x + w - 1; i++) { spots.push([i, y + 1]); spots.push([i, y + h - 2]); }
+    for (let j = y + 2; j < y + h - 2; j++) { spots.push([x + 1, j]); spots.push([x + w - 2, j]); }
+    if (w * h > 120) for (let j = y + 3; j < y + h - 3; j += 3) for (let i = x + 3; i < x + w - 3; i += 4) spots.push([i, j]);
+    const blocked = (sx, sy) => b.iwalls[sx + ',' + sy] || b.idoors[sx + ',' + sy] || (Math.abs(sx - dx) + Math.abs(sy - dy) <= 2);
+    const free = spots.filter(([sx, sy]) => !blocked(sx, sy));
+    const n = Math.min(free.length, Math.max(types.length, 2 + ((w * h) / 45) | 0));
     for (let k = 0; k < n; k++) { const q = free.splice((R() * free.length) | 0, 1)[0]; if (!q) break; const ct = types[k % types.length]; objs.push({ x: q[0], y: q[1], k: ct, id: b.id + ':' + k, bk: kind, lock: ct === 'gunsafe' || ct === 'safe' }); }
     if (kind === 'trader') { objs.push({ x: x + ((w / 2) | 0), y: y + 2, k: 'trader', id: b.id + ':t', bk: kind }); }
-    else if (kind === 'house' || kind === 'apartment' || kind === 'farmhouse' || kind === 'cabin') { const p = kind === 'cabin' ? 0.3 : kind === 'farmhouse' ? 0.22 : 0.06;
+    else if (kind === 'house' || kind === 'apartment' || kind === 'farmhouse' || kind === 'cabin') { const p = kind === 'cabin' ? 0.35 : kind === 'farmhouse' ? 0.28 : 0.1;
       if (R() < p) npcs.push({ x: x + 2 + R() * (w - 4), y: y + 2 + R() * (h - 4), id: 'n' + b.id }); }
-    return b; };
+    return b;
+  };
   const car = (x, y, a, p = 0.3) => { const r = R(); vehs.push({ x, y, ang: a, type: r < 0.08 ? 'moto' : r < 0.2 ? 'bike' : 'car', ok: R() < p, fuel: R() < 0.55 ? 0 : Math.round(1 + R() * 7), id: 'v' + S.id + ':' + vehs.length, col: (R() * 5) | 0 }); };
   if (S.kind === 'town' || S.kind === 'city') {
-    const city = S.kind === 'city', P = city ? 30 : 22, RW = city ? 6 : 4, cells = new Set(), x0 = Math.floor((S.x - S.r) / P) * P, y0 = Math.floor((S.y - S.r) / P) * P;
+    const city = S.kind === 'city', P = city ? 42 : 34, RW = city ? 6 : 4, cells = new Set(), x0 = Math.floor((S.x - S.r) / P) * P, y0 = Math.floor((S.y - S.r) / P) * P;
     for (let gx = x0; gx <= S.x + S.r; gx += P) for (let gy = y0; gy <= S.y + S.r; gy += P) { const d = Math.hypot(gx + P / 2 - S.x, gy + P / 2 - S.y); if (d < S.r * (0.72 + 0.4 * hash2(gx, gy, WD.seed))) cells.add(gx + ',' + gy); }
     let traderAt = null, tb = 1e9; for (const c of cells) { const [gx, gy] = c.split(',').map(Number); const d = Math.hypot(gx + P / 2 - S.x, gy + P / 2 - S.y); if (d < tb && okSpot(gx + RW, gy + RW, P - RW, P - RW, 2)) { tb = d; traderAt = c; } }
     if (!traderAt) for (const c of cells) { const [gx, gy] = c.split(',').map(Number); const d = Math.hypot(gx + P / 2 - S.x, gy + P / 2 - S.y); if (d < tb) { tb = d; traderAt = c; } }
@@ -224,41 +266,47 @@ function layoutOf(S) {
       if (!cells.has(gx + P + ',' + gy)) fills.push({ x: gx + P, y: gy, w: RW, h: P + RW, t: T.ROAD });
       if (!cells.has(gx + ',' + (gy + P))) fills.push({ x: gx, y: gy + P, w: P + RW, h: RW, t: T.ROAD });
       const bx = gx + RW, by = gy + RW, B = P - RW; if (city) fills.push({ x: bx, y: by, w: B, h: B, t: T.SIDE, glass: 0.05 });
-      if (c === traderAt) { addB(bx + 2, by + 2, city ? 14 : 9, city ? 10 : 8, 'trader', 2); if (!city) { addB(bx + 11, by + 10, 7, 7, 'store', 2); } continue; }
+      if (c === traderAt) { addB(bx + 2, by + 2, city ? 18 : 12, city ? 14 : 11, 'trader', 2); if (!city) { addB(bx + 16, by + 2, 12, 11, 'store', 2); } continue; }
       const h = hash2(gx, gy, WD.seed + 3);
       if (city) { const dc = Math.hypot(gx - S.x, gy - S.y) / S.r;
         if (h < 0.1) { fills.push({ x: bx + 1, y: by + 1, w: B - 2, h: B - 2, t: T.GRASS, trees: 0.12 }); continue; }
         if (h < 0.2) { fills.push({ x: bx + 1, y: by + 1, w: B - 2, h: B - 2, t: T.CONC }); for (let k = 0; k < 6; k++) car(bx + 3 + (k % 3) * 7, by + 6 + ((k / 3) | 0) * 10, 0, 0.18); continue; }
         if (h < 0.55) { const big = ['mall', 'hospital', 'office', 'apartment', 'warehouse', 'apartment', 'office'][(R() * 7) | 0]; addB(bx + 2, by + 2, B - 4, B - 4, dc < 0.35 && R() < 0.4 ? 'office' : big, 2); }
-        else if (h < 0.78) { addB(bx + 2, by + 1, B - 4, 9, ['apartment', 'gunstore', 'bank', 'police', 'store', 'apartment', 'pharmacy', 'clothing'][(R() * 8) | 0], 0); addB(bx + 2, by + B - 10, B - 4, 9, ['apartment', 'store', 'office', 'hardware', 'apartment'][(R() * 5) | 0], 2); }
-        else { for (let k = 0; k < 4; k++) addB(bx + 1 + (k % 2) * 12, by + 1 + ((k / 2) | 0) * 12, 10, 10, ['apartment', 'store', 'pharmacy', 'apartment', 'clothing', 'gunstore', 'house'][(R() * 7) | 0], k < 2 ? 0 : 2); }
+        else if (h < 0.78) { addB(bx + 2, by + 1, B - 4, 14, ['apartment', 'gunstore', 'bank', 'police', 'store', 'apartment', 'pharmacy', 'clothing'][(R() * 8) | 0], 0); addB(bx + 2, by + B - 15, B - 4, 14, ['apartment', 'store', 'office', 'hardware', 'apartment'][(R() * 5) | 0], 2); }
+        else { for (let k = 0; k < 4; k++) addB(bx + 1 + (k % 2) * 17, by + 1 + ((k / 2) | 0) * 17, 15, 15, ['apartment', 'store', 'pharmacy', 'apartment', 'clothing', 'gunstore', 'house'][(R() * 7) | 0], k < 2 ? 0 : 2); }
         if (R() < 0.5) car(gx + 2 + R() * (P - 4), gy + 1.5, 0, 0.25); if (R() < 0.4) car(gx + 1.5, gy + 2 + R() * (P - 4), 1.57, 0.25);
       } else {
-        for (let k = 0; k < 4; k++) { if (R() < 0.18) { if (R() < 0.5) fills.push({ x: bx + (k % 2) * 9 + 3, y: by + ((k / 2) | 0) * 9 + 3, w: 1, h: 1, t: T.TREE }); continue; }
-          const w = 6 + ((R() * 3) | 0), hh = 5 + ((R() * 3) | 0), lx = bx + (k % 2) * 9 + ((9 - w) >> 1), top = k < 2, ly = top ? by + 1 : by + 18 - hh - 1;
-          const r = R(), kind = r < 0.1 ? 'store' : r < 0.16 ? 'hardware' : r < 0.21 ? 'pharmacy' : r < 0.26 ? 'clothing' : r < 0.29 ? 'police' : r < 0.35 ? 'garage' : 'house';
-          if (addB(lx, ly, w, hh, kind, top ? 0 : 2) && R() < 0.3) { R() < 0.5 ? car(lx + w + 0.5, top ? by + 0.8 : by + 17.2, 0, 0.35) : vehs.push({ x: lx - 0.6 + (k % 2) * (w + 1.2), y: ly + hh / 2, ang: 0, type: R() < 0.6 ? 'bike' : 'moto', ok: true, fuel: R() < 0.6 ? 0 : 1 + ((R() * 3) | 0), id: 'v' + S.id + ':' + vehs.length, col: (R() * 5) | 0 }); }
+        const slots = [[0, 0], [1, 0], [0, 1], [1, 1]];
+        for (const [si, sj] of slots) {
+          if (R() < 0.14) { if (R() < 0.5) fills.push({ x: bx + si * 14 + 4, y: by + sj * 14 + 4, w: 1, h: 1, t: T.TREE }); continue; }
+          const w = 11 + ((R() * 4) | 0), hh = 10 + ((R() * 3) | 0);
+          const lx = bx + si * 15 + ((15 - w) >> 1), ly = by + sj * 15 + ((15 - hh) >> 1);
+          const r = R(), kind = r < 0.1 ? 'store' : r < 0.16 ? 'hardware' : r < 0.21 ? 'pharmacy' : r < 0.26 ? 'clothing' : r < 0.29 ? 'police' : r < 0.36 ? 'garage' : 'house';
+          const side = sj === 0 ? 0 : 2;
+          if (addB(lx, ly, w, hh, kind, side) && R() < 0.35) {
+            R() < 0.5 ? car(lx + w + 0.5, ly + hh / 2, 0, 0.35) : vehs.push({ x: lx - 0.6, y: ly + hh / 2, ang: 0, type: R() < 0.6 ? 'bike' : 'moto', ok: true, fuel: R() < 0.6 ? 0 : 1 + ((R() * 3) | 0), id: 'v' + S.id + ':' + vehs.length, col: (R() * 5) | 0 });
+          }
         }
       }
     }
   } else if (S.kind === 'factory') {
-    const x = S.x - 32, y = S.y - 22; fills.push({ x, y, w: 64, h: 44, t: T.CONC }, { x, y, w: 64, h: 1, t: T.FENCE }, { x, y: y + 43, w: 64, h: 1, t: T.FENCE }, { x, y, w: 1, h: 44, t: T.FENCE }, { x: x + 63, y, w: 1, h: 44, t: T.FENCE }, { x: x + 28, y: y + 43, w: 8, h: 1, t: T.CONC }, { x: x + 28, y, w: 8, h: 1, t: T.CONC });
-    addB(x + 4, y + 4, 22, 15, 'warehouse', 2); addB(x + 36, y + 4, 22, 15, 'warehouse', 2); addB(x + 8, y + 25, 16, 13, 'warehouse', 0); addB(x + 42, y + 28, 10, 8, 'garage', 3);
-    for (let k = 0; k < 8; k++) objs.push({ x: x + 27 + (k % 2) * 8, y: y + 6 + ((k / 2) | 0) * 8, k: 'crate', id: S.id + ':yard' + k, bk: 'warehouse' });
-    vehs.push({ x: x + 33, y: y + 22, ang: 0, type: 'moto', ok: R() < 0.7, fuel: 1 + ((R() * 3) | 0), id: 'v' + S.id + ':m', col: 2 }); car(x + 54, y + 40, 0, 0.5);
+    const x = S.x - 40, y = S.y - 28; fills.push({ x, y, w: 80, h: 56, t: T.CONC }, { x, y, w: 80, h: 1, t: T.FENCE }, { x, y: y + 55, w: 80, h: 1, t: T.FENCE }, { x, y, w: 1, h: 56, t: T.FENCE }, { x: x + 79, y, w: 1, h: 56, t: T.FENCE }, { x: x + 36, y: y + 55, w: 8, h: 1, t: T.CONC }, { x: x + 36, y, w: 8, h: 1, t: T.CONC });
+    addB(x + 4, y + 4, 28, 20, 'warehouse', 2); addB(x + 40, y + 4, 28, 20, 'warehouse', 2); addB(x + 8, y + 30, 22, 18, 'warehouse', 0); addB(x + 50, y + 34, 16, 12, 'garage', 3); addB(x + 34, y + 28, 12, 10, 'office', 2);
+    for (let k = 0; k < 12; k++) objs.push({ x: x + 34 + (k % 3) * 5, y: y + 8 + ((k / 3) | 0) * 5, k: 'crate', id: S.id + ':yard' + k, bk: 'warehouse' });
+    vehs.push({ x: x + 40, y: y + 28, ang: 0, type: 'moto', ok: R() < 0.7, fuel: 1 + ((R() * 3) | 0), id: 'v' + S.id + ':m', col: 2 }); car(x + 66, y + 50, 0, 0.5);
   } else if (S.kind === 'farm') {
-    fills.push({ x: S.x - 16, y: S.y - 12, w: 32, h: 24, t: T.GRASS }, { x: S.x - 15, y: S.y + 1, w: 30, h: 10, t: T.FIELD });
-    addB(S.x - 14, S.y - 10, 8, 7, 'farmhouse', 2); addB(S.x + 2, S.y - 11, 11, 8, 'barn', 2);
+    fills.push({ x: S.x - 20, y: S.y - 16, w: 40, h: 32, t: T.GRASS }, { x: S.x - 18, y: S.y + 2, w: 36, h: 12, t: T.FIELD });
+    addB(S.x - 18, S.y - 14, 14, 12, 'farmhouse', 2); addB(S.x + 2, S.y - 14, 16, 12, 'barn', 2);
     if (R() < 0.7) car(S.x - 4, S.y - 1, 0, 0.45);
   } else if (S.kind === 'gas') {
-    fills.push({ x: S.x - 8, y: S.y - 6, w: 16, h: 12, t: T.CONC }); addB(S.x - 7, S.y - 6, 8, 5, 'gasstore', 2);
-    objs.push({ x: S.x + 3, y: S.y + 1, k: 'pump', id: S.id + ':p0', fuel: 3 + ((R() * 14) | 0) }, { x: S.x + 5, y: S.y + 1, k: 'pump', id: S.id + ':p1', fuel: R() < 0.5 ? 0 : 2 + ((R() * 8) | 0) });
-    car(S.x - 3, S.y + 3, 0, 0.4);
+    fills.push({ x: S.x - 12, y: S.y - 9, w: 24, h: 18, t: T.CONC }); addB(S.x - 11, S.y - 8, 12, 9, 'gasstore', 2);
+    objs.push({ x: S.x + 4, y: S.y + 2, k: 'pump', id: S.id + ':p0', fuel: 3 + ((R() * 14) | 0) }, { x: S.x + 7, y: S.y + 2, k: 'pump', id: S.id + ':p1', fuel: R() < 0.5 ? 0 : 2 + ((R() * 8) | 0) });
+    car(S.x - 4, S.y + 5, 0, 0.4);
   } else if (S.kind === 'mine') {
-    fills.push({ x: S.x - 12, y: S.y - 9, w: 24, h: 18, t: T.GRAVEL }); addB(S.x - 10, S.y - 2, 6, 5, 'shack', 1);
+    fills.push({ x: S.x - 14, y: S.y - 11, w: 28, h: 22, t: T.GRAVEL }); addB(S.x - 12, S.y - 2, 10, 8, 'shack', 1);
     objs.push({ x: S.x + 3, y: S.y - 8, k: 'mine', id: S.id + ':mine' }, { x: S.x + 5, y: S.y - 6, k: 'orecart', id: S.id + ':cart', bk: 'mine' }, { x: S.x + 1, y: S.y - 6, k: 'orecart', id: S.id + ':cart2', bk: 'mine' }, { x: S.x + 6, y: S.y + 3, k: 'crate', id: S.id + ':c', bk: 'shack' });
   } else if (S.kind === 'cabin') {
-    fills.push({ x: S.x - 6, y: S.y - 5, w: 12, h: 10, t: T.GRASS }); addB(S.x - 3, S.y - 3, 6, 5, 'cabin', 2, T.WALLW);
+    fills.push({ x: S.x - 8, y: S.y - 7, w: 16, h: 14, t: T.GRASS }); addB(S.x - 5, S.y - 5, 10, 9, 'cabin', 2, T.WALLW);
   }
   return L;
 }
@@ -300,8 +348,11 @@ function genChunk(cx, cy) {
     for (const b of L.bl) { if (b.x > x0 + CH || b.y > y0 + CH || b.x + b.w < x0 || b.y + b.h < y0) continue; bl.push(b);
       for (let y = Math.max(b.y, y0); y < Math.min(b.y + b.h, y0 + CH); y++) for (let x = Math.max(b.x, x0); x < Math.min(b.x + b.w, x0 + CH); x++) {
         const edge = x === b.x || y === b.y || x === b.x + b.w - 1 || y === b.y + b.h - 1; let v = edge ? b.wall : b.floor;
-        if (b.part && !edge && (x === b.part[0] || y === b.part[1]) && Math.abs(x - b.part[0]) > 1 && Math.abs(y - b.part[1]) > 1 && Math.abs(x - b.part[0]) !== 4 && Math.abs(y - b.part[1]) !== 3) v = b.wall;
-        if (x === b.door[0] && y === b.door[1]) v = T.DOOR; if (!edge && v === b.floor && b.floor !== T.CONC && hash2(x, y, s + 77) < (WD.sets[+b.id.split(':')[0]].kind === 'city' ? 0.03 : 0.012)) v = T.GLASS;
+        const key = x + ',' + y;
+        if (!edge && b.iwalls && b.iwalls[key]) v = b.wall;
+        if (!edge && b.idoors && b.idoors[key]) v = T.DOOR;
+        if (x === b.door[0] && y === b.door[1]) v = T.DOOR;
+        if (!edge && v === b.floor && b.floor !== T.CONC && hash2(x, y, s + 77) < (WD.sets[+b.id.split(':')[0]].kind === 'city' ? 0.04 : 0.018)) v = T.GLASS;
         const i = x - x0, j = y - y0; t[j * CH + i] = v; } }
     for (const o of L.objs) if (o.x >= x0 && o.y >= y0 && o.x < x0 + CH && o.y < y0 + CH) objs.push(o);
   }
@@ -353,7 +404,7 @@ D('shotgun', 'SHOTGUN', 3.2, 120, 1, 'gun', { ic: 'shotgun', dmg: 1.6, pel: 5, r
 D('rifle', 'HUNTING RIFLE', 4.0, 150, 1, 'gun', { ic: 'rifle', dmg: 7, rate: 1.1, noise: 45, range: 14, ammo: 'r556', spread: 0.015, pierce: 3, two: true });
 D('a9', '9MM ROUNDS', 0.012, 0.8, 60, 'ammo', { ic: 'ammo', col: '#e0c060' }); D('shell', 'SHELLS', 0.04, 1.6, 30, 'ammo', { ic: 'ammo', col: '#d84a3a' }); D('r556', 'RIFLE ROUNDS', 0.025, 1.6, 40, 'ammo', { ic: 'ammo', col: '#a0a060' });
 // clothes
-D('sneakers', 'SNEAKERS', 0.6, 10, 1, 'wear', { slot: 'feet', ic: 'shoe', col: '#e8e8f0', quiet: 0.8 }); D('boots', 'WORK BOOTS', 1.2, 24, 1, 'wear', { slot: 'feet', ic: 'shoe', col: '#7a5030', quiet: 1.0 });
+D('sneakers', 'SNEAKERS', 0.6, 10, 1, 'wear', { slot: 'feet', ic: 'shoe', col: '#c8c8d0', quiet: 0.55 }); D('boots', 'WORK BOOTS', 1.2, 24, 1, 'wear', { slot: 'feet', ic: 'shoe', col: '#5a3a22', quiet: 1.15 });
 D('hoodie', 'HOODIE', 0.7, 8, 1, 'wear', { slot: 'body', ic: 'shirt', col: '#5a6ac8', warm: 1 }); D('jacket', 'LEATHER JACKET', 1.5, 26, 1, 'wear', { slot: 'body', ic: 'shirt', col: '#5a3a2a', warm: 2 });
 D('pack_s', 'SCHOOL BACKPACK', 0.5, 18, 1, 'wear', { slot: 'back', ic: 'pack', col: '#d84a6a', slots: 6, kg: 6 }); D('pack_h', 'HIKING PACK', 1.2, 50, 1, 'wear', { slot: 'back', ic: 'pack', col: '#3a8a5a', slots: 10, kg: 12 });
 D('pack_m', 'MILITARY PACK', 1.8, 110, 1, 'wear', { slot: 'back', ic: 'pack', col: '#6a7040', slots: 14, kg: 18 });
@@ -501,16 +552,16 @@ function personFrames(L) {
   SPR.set(key, S); return S;
 }
 const SKINS = [['#f0c8a0', '#d8a880'], ['#d8a070', '#b88050'], ['#a87048', '#885030'], ['#7a4a2a', '#5a341c'], ['#f8d8b8', '#e0b898']];
-const ZSKINS = [['#a8c088', '#88a068'], ['#b0b890', '#909870'], ['#98b0a0', '#788c80'], ['#c0b898', '#9c9478']];
+const ZSKINS = [['#6a7850', '#4a5838'], ['#708060', '#505840'], ['#5a6a60', '#3e4c48'], ['#7a6e58', '#5a5040'], ['#5a4838', '#3a3028'], ['#4a5a48', '#2e3a30']];
 function playerLook() {
   const I = PL.inv, sh = I.wear.body, ft = I.wear.feet, bk = I.wear.back;
   return { skin: SKINS[0][0], skinD: SKINS[0][1], hair: '#5a3a22', hairS: 0, pants: '#3a5a8c', pantsD: '#2c466e', shirt: sh ? IT[sh.id].col : null, shirtD: sh ? shade(IT[sh.id].col, -30) : null, sleeve: true,
     shoes: ft ? IT[ft.id].col : null, shoesD: ft ? shade(IT[ft.id].col, -40) : null, pack: bk ? IT[bk.id].col : null };
 }
 function shade(hexc, d) { const n = parseInt(hexc.slice(1), 16); const f = (v) => clamp(v + d, 0, 255); return '#' + [f(n >> 16 & 255), f(n >> 8 & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, '0')).join(''); }
-function zombieLook(seed) { const r = rng(seed), s = ZSKINS[(r() * ZSKINS.length) | 0], sh = ['#6a5a4a', '#5a6a7a', '#7a4a4a', '#4a5a3a', '#8a8a7a', '#5a4a6a'][(r() * 6) | 0], pa = ['#3a3a4a', '#4a3a2a', '#2a3a4a', '#5a5040'][(r() * 4) | 0];
-  return { skin: s[0], skinD: s[1], hair: ['#3a2a1a', '#5a5a5a', '#2a2a2a', '#7a5a3a'][(r() * 4) | 0], hairS: (r() * 4) | 0, pants: pa, pantsD: shade(pa, -20), shirt: sh, shirtD: shade(sh, -25), zombie: true, torn: r() < 0.6, blood: r() < 0.7,
-    shoes: r() < 0.7 ? '#2a2a2a' : null, shoesD: '#1a1a1a' }; }
+function zombieLook(seed) { const r = rng(seed), s = ZSKINS[(r() * ZSKINS.length) | 0], sh = ['#3a2a22', '#2a3a42', '#4a2218', '#2a3220', '#4a4a42', '#2a2230', '#1a1a18'][(r() * 7) | 0], pa = ['#1e1e24', '#2a1e14', '#141c24', '#2a2820', '#181410'][(r() * 5) | 0];
+  return { skin: s[0], skinD: s[1], hair: ['#1a1208', '#2a2a2a', '#0a0a0a', '#3a2a18', '#1a0a0a'][(r() * 5) | 0], hairS: (r() * 4) | 0, pants: pa, pantsD: shade(pa, -20), shirt: sh, shirtD: shade(sh, -25), zombie: true, torn: r() < 0.85, blood: r() < 0.92,
+    shoes: r() < 0.5 ? '#0a0a0a' : null, shoesD: '#050505' }; }
 function survivorLook(seed) { const r = rng(seed), s = SKINS[(r() * SKINS.length) | 0], sh = ['#d8a040', '#c84a5a', '#4a8ac8', '#5ab870', '#e8e0c8', '#8a5ac8'][(r() * 6) | 0], pa = ['#3a5a8c', '#5a4a3a', '#3a3a3a', '#6a6a4a'][(r() * 4) | 0];
   return { skin: s[0], skinD: s[1], hair: ['#3a2a1a', '#d8b870', '#8a3a1a', '#1a1a1a', '#c8c8c8'][(r() * 5) | 0], hairS: (r() * 3) | 0, pants: pa, pantsD: shade(pa, -20), shirt: sh, shirtD: shade(sh, -30), sleeve: r() < 0.5,
     shoes: '#5a3a2a', shoesD: '#3a2a1a', hat: r() < 0.3 ? ['#c8a060', '#5a3a2a', '#c84a3a'][(r() * 3) | 0] : null }; }
@@ -652,7 +703,7 @@ function newRun(seed) {
 }
 const season = () => ((G.day - 1) / 7 | 0) % 4; const SEASONS = ['SPRING', 'SUMMER', 'FALL', 'WINTER'];
 const isNight = () => G.time >= 21 * 60 || G.time < 6 * 60;
-function nightK() { const t = G.time / 60; if (t >= 6.5 && t <= 19.5) return 0; if (t >= 21 || t < 5) return 1; if (t > 19.5) return (t - 19.5) / 1.5; return 1 - (t - 5) / 1.5; }
+function nightK() { const t = G.time / 60; if (t >= 7 && t <= 17.5) return 0; if (t >= 20 || t < 5.5) return 1; if (t > 17.5) return (t - 17.5) / 2.5; return 1 - (t - 5.5) / 1.5; }
 function msg(s, col = CREAM) { G.msgs.push({ s, col, t: 3.2 }); if (G.msgs.length > 4) G.msgs.shift(); }
 // ---- collision
 function buildAt(x, y) { return BUILD.get(tkey(Math.floor(x), Math.floor(y))); }
@@ -723,8 +774,15 @@ function fieldStep(F, x, y) { const i = Math.floor(x) - F.x0, j = Math.floor(y) 
 let CHASEF = null, chaseFT = 0;
 // ---- zombie AI: wander, hear, see, chase, lunge (0.35 s wind-up), one bite kills
 function playerVisibleTo(z, d) {
-  const night = nightK(); let sight = lerp(7.5, 4.2, night); if (PL.sneak) sight *= 0.55; const t = tileAt(PL.x, PL.y);
-  if ((t === T.BUSH || t === T.TALL) && PL.sneak) sight = Math.min(sight, 1.6); if (PL.veh) sight *= 1.4; if (G.base && night > 0.5 && nearFire(PL.x, PL.y)) sight = Math.max(sight, 7);
+  const night = nightK(); let sight = lerp(7.2, 3.6, night);
+  // slow walkers are much harder to spot; sneak nearly invisible at range; sprint/vehicles still obvious
+  if (PL.sneak) sight *= 0.38; else if (!PL.sprint && !PL.veh) sight *= 0.52;
+  if (PL.sprint) sight *= 1.15;
+  const t = tileAt(PL.x, PL.y);
+  if ((t === T.BUSH || t === T.TALL) && (PL.sneak || !PL.sprint)) sight = Math.min(sight, PL.sneak ? 1.4 : 2.4);
+  if (PL.veh) sight *= 1.45; if (G.base && night > 0.5 && nearFire(PL.x, PL.y)) sight = Math.max(sight, 7);
+  // indoors: tighter vision cones (gloom)
+  if (buildingAt(PL.x, PL.y)) sight *= 0.72;
   return d < sight && los(z.x, z.y, PL.x, PL.y);
 }
 function nearFire(x, y) { for (const b of BUILD.values()) if (b.k === 'campfire' && Math.hypot(b.x + 0.5 - x, b.y + 0.5 - y) < 5) return true; return false; }
@@ -740,7 +798,7 @@ function updateZombies(dt) {
     if (G.wave) { waveZombie(z, dt); continue; }
     if (PL.dead) { z.st = 'wander'; }
     let spd = z.kind === 'runner' ? 4.3 : z.kind === 'fat' ? 1.7 : 2.6; if (nightK() > 0.5) spd *= 1.12;
-    if (z.st !== 'chase' && z.st !== 'lunge' && !PL.dead && d < 9 && playerVisibleTo(z, d)) { if (z.st !== 'alert' || Math.random() < 0.5) { z.st = 'chase'; z.lost = 0; sfx('groan', z.x, z.y); } }
+    if (z.st !== 'chase' && z.st !== 'lunge' && !PL.dead && d < 7 && playerVisibleTo(z, d)) { if (z.st !== 'alert' || Math.random() < 0.5) { z.st = 'chase'; z.lost = 0; sfx('groan', z.x, z.y); } }
     if (z.st === 'wander') { z.t -= dt; if (z.t <= 0) { z.t = 2 + Math.random() * 5; const a = Math.random() * 6.283; z.tx = z.x + Math.cos(a) * 4; z.ty = z.y + Math.sin(a) * 4; }
       stepTo(z, z.tx, z.ty, 0.55, dt); if (Math.random() < dt * 0.04) sfx('groan', z.x, z.y); }
     else if (z.st === 'alert') { z.t -= dt; if (stepTo(z, z.tx, z.ty, spd * 0.6, dt) < 0.6 || z.t <= 0) { z.st = 'wander'; z.t = 2; } }
@@ -1001,7 +1059,7 @@ function runWaveHeadless() {
   if (G.wave) endWave(); ZOMS = keep.filter((z) => z.hk !== -1);
 }
 // ================================================================ rendering: world, roofs, standees, light, HUD, minimap, map
-const CAM = { x: 0, y: 0, shake: 0 }; let OPT = { dusk: false, sfx: true, music: true };
+const CAM = { x: 0, y: 0, shake: 0 }; let OPT = { dusk: true, sfx: true, music: true };
 try { Object.assign(OPT, JSON.parse(localStorage.getItem('sovereign.opt') || '{}')); } catch (e) { }
 const saveOpt = () => { try { localStorage.setItem('sovereign.opt', JSON.stringify(OPT)); } catch (e) { } };
 let TREE_IMG = null, PINE_IMG = null, STUMP = null;
@@ -1105,13 +1163,20 @@ function drawGhost() { const [tx, ty] = facingTile(), [sx, sy] = W2S(tx, ty), ok
   hx.strokeStyle = ok ? '#8af06a' : '#ff5a4a'; hx.strokeRect(sx + 0.5, sy + 0.5, 15, 15); }
 // ---- night, dusk grade, rain
 function drawLight() {
-  const k = nightK(), L = lightC.x; let a = k * 0.84 + (G.rain ? 0.12 : 0); if (G.sleeping && !G.wave) a = Math.max(a, 0.5);
-  if (OPT.dusk) { hx.fillStyle = 'rgba(110,60,140,0.16)'; hx.fillRect(0, 0, N, N); hx.fillStyle = 'rgba(255,150,80,0.10)'; hx.fillRect(0, 0, N, N); }
+  const k = nightK(), L = lightC.x; const indoors = !!buildingAt(PL.x, PL.y);
+  // gloomier outdoor dusk/night; interiors stay dark even at noon
+  let a = k * 0.9 + (G.rain ? 0.14 : 0) + (OPT.dusk && k < 0.4 ? 0.08 : 0);
+  if (indoors) a = Math.max(a, 0.55 + k * 0.25);
+  if (G.sleeping && !G.wave) a = Math.max(a, 0.55);
+  if (OPT.dusk) { hx.fillStyle = 'rgba(70,40,90,0.18)'; hx.fillRect(0, 0, N, N); hx.fillStyle = 'rgba(180,90,40,0.08)'; hx.fillRect(0, 0, N, N); }
+  // mild always-on grade so daytime is never cartoon-bright
+  hx.fillStyle = 'rgba(18,12,16,0.08)'; hx.fillRect(0, 0, N, N);
   if (a < 0.02) return;
-  L.globalCompositeOperation = 'source-over'; L.clearRect(0, 0, N, N); L.fillStyle = `rgba(8,10,28,${a.toFixed(3)})`; L.fillRect(0, 0, N, N);
+  L.globalCompositeOperation = 'source-over'; L.clearRect(0, 0, N, N); L.fillStyle = `rgba(6,5,10,${a.toFixed(3)})`; L.fillRect(0, 0, N, N);
   L.globalCompositeOperation = 'destination-out';
-  const hole = (wx, wy, r, s = 1) => { const [sx, sy] = W2S(wx, wy), R = r * TS; const g = L.createRadialGradient(sx, sy, R * 0.15, sx, sy, R); g.addColorStop(0, `rgba(0,0,0,${s})`); g.addColorStop(1, 'rgba(0,0,0,0)'); L.fillStyle = g; L.fillRect(sx - R, sy - R, R * 2, R * 2); };
-  hole(PL.x, PL.y - 0.5, PL.veh ? 3 : 3.6, 0.85);
+  const hole = (wx, wy, r, s = 1) => { const [sx, sy] = W2S(wx, wy), R = r * TS; const g = L.createRadialGradient(sx, sy, R * 0.12, sx, sy, R); g.addColorStop(0, `rgba(0,0,0,${s})`); g.addColorStop(1, 'rgba(0,0,0,0)'); L.fillStyle = g; L.fillRect(sx - R, sy - R, R * 2, R * 2); };
+  // player light: tight indoors (flashlight pool), wider outdoors
+  hole(PL.x, PL.y - 0.5, PL.veh ? 3 : (indoors ? 2.4 : 3.2), indoors ? 0.95 : 0.8);
   for (const b of BUILD.values()) if (b.k === 'campfire') hole(b.x + 0.5, b.y + 0.5, 5.5 + Math.sin(G.clock * 9) * 0.2, 1);
   if (PL.veh) { const v = VEHS.get(PL.veh); if (v && v.type !== 'bike') hole(v.x + Math.cos(v.ang) * 4, v.y + Math.sin(v.ang) * 4, 4, 0.9); }
   if (PL.flash > 0) hole(PL.x, PL.y, 6, 1);
@@ -1121,8 +1186,8 @@ function drawLight() {
 function drawRain() { if (!G.rain) return; hx.fillStyle = 'rgba(200,220,255,0.35)'; const t = G.clock; for (let i = 0; i < 70; i++) { const x = ((i * 53 + t * 140) % (N + 40)) - 20, y = ((i * 97 + t * 420) % (N + 20)) - 10; hx.fillRect(x | 0, y | 0, 1, 4); } }
 // ---- minimap (real tiles, 1 px = 2 tiles) + world map (macro features, built progressively)
 const MM = { c: null, x: null, t: 0, n: 0 };
-const MCOL = {}; (() => { const m = { [T.GRASS]: '#5aa83c', [T.TALL]: '#4a9434', [T.FLOWER]: '#5aa83c', [T.BUSH]: '#3a8e3c', [T.DIRT]: '#b0824e', [T.SAND]: '#e2c886', [T.WATER]: '#3384c0', [T.SEA]: '#245886', [T.SHAL]: '#5aa6d2',
-  [T.ROAD]: '#4a484e', [T.LINE]: '#4a484e', [T.SIDE]: '#9c9586', [T.GLASS]: '#9c9586', [T.WOOD]: '#a37240', [T.TILE]: '#bab3a4', [T.WALL]: '#8e3a2e', [T.WALLW]: '#7a5430', [T.WALLC]: '#626a74', [T.DOOR]: '#d6a468',
+const MCOL = {}; (() => { const m = { [T.GRASS]: '#3a6a2c', [T.TALL]: '#2e5a24', [T.FLOWER]: '#3a6a2c', [T.BUSH]: '#2a5e2c', [T.DIRT]: '#7a5a36', [T.SAND]: '#a89460', [T.WATER]: '#245870', [T.SEA]: '#1a3a58', [T.SHAL]: '#3a7088',
+  [T.ROAD]: '#2e2c30', [T.LINE]: '#2e2c30', [T.SIDE]: '#6a6458', [T.GLASS]: '#6a6458', [T.WOOD]: '#6a4a2a', [T.TILE]: '#7a7468', [T.WALL]: '#5a281e', [T.WALLW]: '#4a3218', [T.WALLC]: '#3a4248', [T.DOOR]: '#8a6840',
   [T.TREE]: '#2c7230', [T.PINE]: '#20583a', [T.ROCK]: '#6a6058', [T.GRAVEL]: '#948878', [T.BRIDGE]: '#bf8b52', [T.FIELD]: '#b08e48', [T.CONC]: '#8e8c86', [T.FENCE]: '#7a5430', [T.MINE]: '#1a1418', [T.TILLED]: '#603e26' }; Object.assign(MCOL, m); })();
 function drawMinimap(x, y, s) {
   if (!MM.c || MM.n !== s) { [MM.c, MM.x] = mk(s, s); MM.n = s; MM.t = 0; }
@@ -1403,7 +1468,7 @@ function updatePlayer(dt, ix, iy) {
   if (PL.sprint) { PL.sta -= dt * 17; if (PL.sta <= 0) { PL.exh = true; msg('OUT OF BREATH'); } } else PL.sta = Math.min(100, PL.sta + dt * (PL.hun < 15 || G.awake > 20 ? 6 : 13)); if (PL.exh && PL.sta > 30) PL.exh = false;
   if (mv) { const x0 = PL.x, y0 = PL.y; moveC(PL, ix * spd * dt, iy * spd * dt, 0.27, 'p'); const dd = Math.hypot(PL.x - x0, PL.y - y0); PL.anim += dt; PL.step += dd;
     if (loadK() < 1) PL.strXP += dd * 0.01;
-    const stride = PL.sprint ? 0.8 : 0.6; if (PL.step > stride) { PL.step = 0; const s = SURF[tileAt(PL.x, PL.y)] || 'grass'; const q = ft ? IT[ft.id].quiet || 1 : 0.9, base = PL.sprint ? 10 : PL.sneak ? 1.5 : 4, r = base * q * (SURF_NOISE[s] || 1);
+    const stride = PL.sprint ? 0.8 : PL.sneak ? 0.75 : 0.65; if (PL.step > stride) { PL.step = 0; const s = SURF[tileAt(PL.x, PL.y)] || 'grass'; const q = ft ? IT[ft.id].quiet || 1 : 0.85, base = PL.sprint ? 11 : PL.sneak ? 0.35 : 0.9, r = base * q * (SURF_NOISE[s] || 1);
       noise(PL.x, PL.y, r, 'step'); PL.noise = Math.max(PL.noise, r); sfx('step_' + s, PL.x, PL.y); if (SND['step_' + s]) { /* volume tracks sneak */ }
       if (s === 'glass' && (!ft || (ft.id === 'sneakers' && Math.random() < 0.5))) { hurtP(ft ? 2 : 4, 'BLED OUT ON GLASS'); PL.hurtT = 0.5; blood(PL.x, PL.y - 0.1, 2); if (!G.glassMsg) { G.glassMsg = 1; msg('OUCH! BROKEN GLASS. FIND SHOES', '#ff8a6a'); } } } }
   PL.fs = lerp(PL.fs, PL.face, Math.min(1, dt * 10));
@@ -1570,7 +1635,7 @@ function drawReport() { const R = G.report; frame('DAY ' + R.day + ' DAWN', 'A: 
   L(SEASONS[season()] + ' DAY ' + (((G.day - 1) % 7) + 1) + '/7' + (G.rain ? '. IT IS RAINING (CROPS WATERED)' : ''), '#3a5a8a');
   L('CAMP: ' + campTier() + ', ' + campSize() + ' SOULS. SCORE ' + score(), '#8a6a2a'); }
 // ---- help
-const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP', 'NOISE DRAWS THEM. ONE BITE KILLS.', 'SELL LOOT TO TRADERS ($).', 'FOUND A CAMP WITH A BEDROLL,', 'WALL IT, TRAP IT, SLEEP IN IT.', 'THE HORDE COMES EVERY 22:00.', 'FEED SURVIVORS TO RECRUIT THEM.'];
+const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK, ENTER', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP', 'WALK QUIET. SNEAK QUIETER. SPRINT LOUD.', 'EVERY BUILDING OPENS. LOOT THE ROOMS.', 'NOISE DRAWS THEM. ONE BITE KILLS.', 'SELL LOOT TO TRADERS ($).', 'FOUND A CAMP WITH A BEDROLL,', 'WALL IT, TRAP IT, SLEEP IN IT.', 'THE HORDE COMES EVERY 22:00.', 'FEED SURVIVORS TO RECRUIT THEM.'];
 function drawHelp() { frame('HOW TO SURVIVE', 'B: BACK'); let y = 22; for (const l of HELP) { text(fitText(l, N - 18), 10, y, INK, 'left', false); y += 10; } hitR(0, 0, N, N, () => { G.ui = G.helpFrom || 'menu'; }); }
 // ---- map
 function openMap() { G.ui = 'map'; G.mapZoom = 1; G.mapCX = PL.x; G.mapCY = PL.y; sfx('ui'); }
@@ -1698,17 +1763,17 @@ function startGame(cont, sure) {
   else { if (TT.save && !sure) { TT.confirm = true; return; } const seed = TT.save ? (Math.random() * 1e9) | 0 : G.seed; if (seed !== G.seed) MAPI.row = 0; newRun(seed); try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
     G.totalT = 0; G.drops = []; }
   MODE = 'play'; G.demo = false; G.ui = null; G.sel = 0; G.tab = 0; CAM.x = PL.x; CAM.y = PL.y; lbRunStart();
-  if (!cont) { msg('SCAVENGE. SELL TO TRADERS. BUY A BEDROLL.', '#ffd76a'); msg('ONE BITE AND YOU ARE DEAD.', '#ff8a6a'); } else msg('DAY ' + G.day + '. WELCOME BACK.', '#ffd76a');
+  if (!cont) { msg('WALK QUIET. EVERY DOOR OPENS.', '#c8a050'); msg('ONE BITE AND YOU ARE DEAD.', '#c85040'); } else msg('DAY ' + G.day + '. WELCOME BACK.', '#ffd76a');
   saveGame(); }
 function drawTitle() { TT.t += 1 / 60;
-  const big = N >= 220 ? 3 : 2; panel(10, 16, N - 20, 30 + 6 * big, 'rgba(14,11,16,0.72)', 0); text('SOVEREIGN', N / 2, 22, '#ffd76a', 'center', true, big); text('BUILD A KINGDOM FROM NOTHING', N / 2, 26 + 8 * big, CREAM, 'center');
+  const big = N >= 220 ? 3 : 2; panel(10, 16, N - 20, 30 + 6 * big, 'rgba(14,11,16,0.72)', 0); text('SOVEREIGN', N / 2, 22, '#c8a050', 'center', true, big); text('ONE BITE. BUILD ANYWAY.', N / 2, 26 + 8 * big, '#b8a888', 'center');
   if (TT.sub === 'help') { panel(8, 62, N - 16, N - 72, CREAM, 2); let y = 66; for (const l of HELP) { text(fitText(l, N - 24), 12, y, INK, 'left', false); y += 10; } hitR(0, 0, N, N, () => titlePress('b')); return; }
   if (TT.sub === 'best') { panel(8, 62, N - 16, N - 72, CREAM, 2); const S = TT.board.server, rows = S ? S.top || [] : TT.board.local.map((e, i) => ({ rank: i + 1, name: e.name, value: e.score })); text(S ? 'BEST RUNS' : 'BEST RUNS (THIS DEVICE)', N / 2, 66, '#3a5a8a', 'center', false); let y = 78;
     if (!rows.length) text('NO RUNS YET. SURVIVE!', N / 2, y, '#6a5a4a', 'center', false);
     for (const e of rows.slice(0, Math.floor((N - 100) / 10))) { text(e.rank + '. ' + String(e.name).replace(/&amp;/g, '&').slice(0, 12), 14, y, e.mine ? '#a83a2a' : INK, 'left', false); text(String(e.value), N - 14, y, '#5a4a3a', 'right', false); y += 10; }
     text('SCORE = DAYS x100 + CAMP', N / 2, N - 22, '#6a5a4a', 'center', false); hitR(0, 0, N, N, () => titlePress('b')); return; }
   const it = titleItems(), y0 = Math.round(N * 0.5); panel(N / 2 - 70, y0 - 6, 140, it.length * 14 + 10, CREAM, 2);
-  it.forEach((o, i) => { const y = y0 + i * 14; if (i === TT.sel) rect(N / 2 - 66, y - 2, 132, 13, '#ffd76a'); text(o.t, N / 2, y, INK, 'center', false); hitR(N / 2 - 70, y - 3, 140, 14, () => { TT.sel = i; titlePress('a'); }); });
+  it.forEach((o, i) => { const y = y0 + i * 14; if (i === TT.sel) rect(N / 2 - 66, y - 2, 132, 13, '#6a4828'); text(o.t, N / 2, y, INK, 'center', false); hitR(N / 2 - 70, y - 3, 140, 14, () => { TT.sel = i; titlePress('a'); }); });
   if (TT.confirm) { panel(14, N / 2 - 20, N - 28, 40, '#ffd76a', 2); text('START OVER? YOUR SAVE IS LOST.', N / 2, N / 2 - 14, INK, 'center', false); text('A: YES    B: NO', N / 2, N / 2 + 2, INK, 'center', false); hitR(14, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('a')); hitR(N / 2, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('b')); }
   text(touchDev ? 'A: SELECT' : 'ARROWS + SPACE', N / 2, N - 12, CREAM, 'center'); }
 // ---- main loop
