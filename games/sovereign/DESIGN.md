@@ -1,25 +1,54 @@
-# Sovereign — design (v1)
+# Sovereign — design (v2)
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
-and pixel/Paper-Mario standee look as Zombie Farm (theme: `smoke`).
+and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=2`.
 
 ## Pillars
 
 - **One bite = death.** No XP from kills. Permadeath; best-runs board by score.
+- **Stealth first.** Walk is quiet; sneak is nearly silent; sprint / vehicles /
+  gunshots still scream. Walk past zombies at a modest distance without agro.
+- **Every building opens.** No locked shells — door tiles are walkable; A
+  searches containers inside.
+- **Large interiors.** Houses have rooms (kitchen, bedrooms, bath, basement /
+  attic where footprints fit). Stores, factories, warehouses, and city blocks
+  are multi-room with hallways and loot. Interiors chunk-load with the world.
 - **Scarce economy.** Scavenge → sell to traders → buy tools / a bedroll.
 - **Found a camp anywhere** (not in the city). Wall it, trap it, sleep in it.
 - **Night wave at 22:00.** Watch live or skip to morning; damage persists.
-- **Grow toward utopia.** Recruits (need a free bunk + food) take jobs:
-  farmer / guard / scavenger / builder.
+- **Grow toward utopia.** Recruits take jobs: farmer / guard / scavenger / builder.
+
+## Look (v2)
+
+- Muted, desaturated palette; deeper ink outlines; dusk grade on by default.
+- Gloomier sky (earlier dusk / night). Interiors stay dark — flashlight-style
+  ambient pool around the player; campfires cut the dark.
+- Grimy walls / floors, blood accents on zombies, starker silhouettes.
+- Title: **SOVEREIGN** / *ONE BITE. BUILD ANYWAY.* HUD noise meter still shows
+  sneak / sprint / noise.
 
 ## World
 
-- Tile size 16 px, world 3072×3072 tiles (~17 min walk barefoot), chunks 32×32,
-  streamed. Seeded biomes: grass, forest, sand, water / rivers / lakes, roads.
-- Sets: home town (spawn), more towns, a city, factories, mines, farms, gas
-  stations, cabins. Each town has a trader.
-- Minimap on the HUD; SELECT opens a fogged zoomable map. Discovered place
-  names stick.
+- Tile size 16 px, world 3072×3072 tiles, chunks 32×32, streamed.
+- Sets: home town (spawn), more towns, a larger city (r≈280), factories,
+  mines, farms, gas stations, cabins. Each town has a trader.
+- Town / city grids enlarged (P 34 / 42). Houses ~11–14×10–12 with `planInterior`
+  walls + door gaps; warehouses get aisle walls; big footprints get basement /
+  attic stubs where they fit.
+- Minimap on the HUD; SELECT opens a fogged zoomable map.
+
+## Stealth (v2)
+
+| Mode   | Footstep radius (× shoe quiet × surface) | Vision vs zombie |
+|--------|------------------------------------------|------------------|
+| Walk   | ~0.9 (sneakers quieter, boots louder)    | ~0.52× sight     |
+| Sneak  | ~0.35                                    | ~0.38× sight     |
+| Sprint | ~11                                      | slightly *more*  |
+| Vehicle / gun / crash | loud as before                  | obvious          |
+
+Chase gate tightened (`d < 7`). Bushes / tall grass + sneak almost vanish.
+Hearing still uses the noise circle — quiet footsteps rarely alert.
 
 ## Loop
 
@@ -37,35 +66,9 @@ and pixel/Paper-Mario standee look as Zombie Farm (theme: `smoke`).
 
 Health / stamina / hunger / thirst. Weight capacity grows slowly with strength.
 Start barefoot with pockets + 2 hands; backpacks and shoes are loot / shop.
+VERSION=2 invalidates v1 saves.
 
-## Audio
+## Phone-first
 
-Synthesized SFX + simple music (tense during a live wave). Mute via the
-handheld shell power switch.
-
-## Tech
-
-- `index.html` + concatenated `game.js` (sources in `/workspace/sov/p1..p11.js`
-  during development). Shared `auth.js` + `handheld.js`.
-- `localStorage` save / CONTINUE. Server leaderboard when accounts API is up;
-  otherwise a this-device board.
-- Registry: `server/games.json` id `sovereign`, metric `score`, outcome `died`.
-
-## Controls
-
-| Input | Action |
-|---|---|
-| D-pad / WASD / arrows | Move (steer in a vehicle) |
-| A / Space | Use, search, attack, confirm |
-| B / X | Hold = sprint; tap = sneak; cancel |
-| START / Enter | Pack / Build / Camp menu |
-| SELECT / M | Map |
-
-## v1 gaps (known)
-
-- Map pan / discovered names could be clearer.
-- Farming / cooking are thin (few crops & recipes).
-- Turret / sprinkler / metal walls exist but are late-game gated.
-- No multiplayer; recruits are simple AI.
-- Vehicles beyond bike are rare and gas-starved by design.
-- Watch-mode wakes you when zombies breach ~5.5 tiles of the bed — intended.
+Built for phones (iPhone 14 → Pixel 7 → desktop). Touch D-pad + A/B; same
+canvas shell as the other handheld games.
