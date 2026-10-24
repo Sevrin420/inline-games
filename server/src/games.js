@@ -18,7 +18,7 @@ export function loadGames(file) {
     const bestOutcome = g.bestOutcome === undefined ? null : g.bestOutcome;
     if (bestOutcome !== null && (typeof bestOutcome !== 'string' || !/^[a-z_-]{1,32}$/.test(bestOutcome))) throw new Error(`Game ${g.id}: bad bestOutcome`);
     map.set(g.id, { id: g.id, title: String(g.title || g.id), access: g.access, scoreTrusted: g.scoreTrusted === true, scoreOrder, bestOutcome,
-      leaderboard: leaderboardConfig(g) });
+      leaderboard: leaderboardConfig(g), ...(g.runs ? { runs: runsConfig(g) } : {}) });
   }
   return map;
 }
@@ -66,4 +66,17 @@ function leaderboardConfig(g) {
   const extra = { maxMs, maxScorePerSec, top, bestPerPlayer: lb.bestPerPlayer === true || undefined, nameMin, nameMax, postsPerPlayer, blankName };
   for (const k of Object.keys(extra)) if (lb[k] === undefined) delete extra[k]; // only what the registry sets (defaults live in leaderboard.js)
   return { metric, order, outcome, minMs, postWindowHours, ...extra };
+}
+
+// Optional per-game "current run" storage (v6 Sovereign: the server remembers the
+// run in progress, one per player). Absent = no run storage for that game.
+//   runs: true | { maxBytes }   maxBytes caps the stored JSON (default 256 KiB, 4 KiB..1 MiB)
+function runsConfig(g) {
+  const r = g.runs;
+  if (r === undefined || r === null || r === false) return null;
+  const o = r === true ? {} : r;
+  if (typeof o !== 'object') throw new Error(`Game ${g.id}: runs must be true or an object`);
+  const maxBytes = o.maxBytes === undefined ? 262144 : o.maxBytes;
+  if (!Number.isInteger(maxBytes) || maxBytes < 4096 || maxBytes > 1048576) throw new Error(`Game ${g.id}: runs.maxBytes must be an integer in 4096..1048576`);
+  return { maxBytes };
 }

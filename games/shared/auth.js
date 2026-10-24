@@ -24,6 +24,9 @@
  *   leaderboard(gameId, playId) -> { status, json } board (+ candidate for playId), see /plays/leaderboard
  *   postLeaderboard(gameId, playId, name) -> { status, json }
  *   share(gameId, playId, name) -> { status, json } v22 share link for a finished run
+ *   runGet(gameId, rid)          -> { status, json:{ run, rid, updated_at, ended } } v6 run in progress
+ *   runPut(gameId, rid, run, keepalive) -> { status, json } store it (410 = that run is over)
+ *   runEnd(gameId, rid, all)     -> { status, json } end it for good (all: whatever is stored)
  *   mountBadge({ gameId, formatScore, corner })  small sign-in chip + panel
  */
 (function () {
@@ -53,7 +56,7 @@
   };
   function emit() { listeners.forEach(function (fn) { try { fn(A.user); } catch (e) { /* ignore */ } }); }
 
-  function api(method, path, body) {
+  function api(method, path, body, opts) {
     var h = { 'Accept': 'application/json' };
     if (body !== undefined) h['Content-Type'] = 'application/json';
     if (embedded) {
@@ -67,6 +70,7 @@
       method: method, headers: h, credentials: 'same-origin',
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: ctl ? ctl.signal : undefined,
+      keepalive: !!(opts && opts.keepalive),
     }).then(function (res) {
       if (timer) clearTimeout(timer);
       var ct = res.headers.get('content-type') || '';
@@ -142,6 +146,22 @@
   // v22: a share link (TIME CARD) for a finished run: { id, url, image, ... } from the server's own records
   A.share = function (gameId, playId, name) {
     return api('POST', '/plays/share/' + encodeURIComponent(gameId), { play_id: playId, name: name });
+  };
+  // v6: the run in progress (server remembers it; no save/load UI in the game)
+  function runPath(gameId, qs) { return '/plays/run/' + encodeURIComponent(gameId) + (qs ? '?' + qs : ''); }
+  A.runGet = function (gameId, rid) { return api('GET', runPath(gameId, rid ? 'rid=' + encodeURIComponent(rid) : '')); };
+  A.runPut = function (gameId, rid, run, keepalive) {
+    var body = { rid: rid, run: run };
+    // keepalive bodies are capped (64 KiB) by browsers; bigger ones go as a normal request
+    var ka = !!keepalive; if (ka) { try { ka = JSON.stringify(body).length < 60000; } catch (e) { ka = false; } }
+    return api('PUT', runPath(gameId), body, { keepalive: ka }).then(function (r) {
+      if (embedded && r.json && r.json.anonId) store.set(ANON_KEY, r.json.anonId);
+      return r;
+    });
+  };
+  A.runEnd = function (gameId, rid, all) {
+    var qs = []; if (rid) qs.push('rid=' + encodeURIComponent(rid)); if (all) qs.push('all=1');
+    return api('DELETE', runPath(gameId, qs.join('&')), undefined, { keepalive: true });
   };
   A.postLeaderboard = function (gameId, playId, name) {
     return api('POST', '/plays/leaderboard/' + encodeURIComponent(gameId), { play_id: playId, name: name });

@@ -217,6 +217,7 @@ that doc).
 Endpoints: `/auth/{config,signup,login,logout,me,token,claim}`,
 `/auth/siwe/{nonce,login,link,reset}`,
 `/plays/{start,:id/end,mine,games,access/:gameId}`.
+v6: `GET/PUT/DELETE /plays/run/:gameId` keeps one run in progress per player for games with a `runs` block in `server/games.json` (Sovereign); see `server/src/runs.js`.
 
 ### Run it locally
 
