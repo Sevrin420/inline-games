@@ -2,7 +2,7 @@
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=5`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=6`.
 
 ## Pillars
 
@@ -90,8 +90,17 @@ canvas shell as the other handheld games.
 
 ## v5 (save / door invuln / stockpile / crafting)
 - **VERSION=5** — wipes incompatible v4 saves (`hasSave` checks `s.v === VERSION`).
-- **Easy save:** HUD **SAVE** button (phone tap) + SYS **SAVE GAME**; brief **SAVED** flash/toast. Autosave (~20s) + pagehide still run. **Power off→on still wipes save** (v4 cold-boot restart).
+- ~~Easy save (HUD SAVE / SYS SAVE GAME)~~ — removed in v6 (see below).
 - **Door invuln:** Entering or exiting a building grants **3s** bite invulnerability (`PL.invuln`); cyan standee tint while active.
 - **Stockpile:** After searching a world container (crate/locker/cabinet/etc.), it becomes a persistent **STOCKPILE** (deposit/withdraw, 24 stacks). Camp chests same UI. Persists via `G.looted` / build `items` in save.
 - **Crafting:** Recipe book (~42 recipes) at **workbench / anvil / forge / campfire** (also PACK → CRAFTING). Needs **materials + tool** (e.g. hammer) **and** the right **station** when required; UI shows missing ingredients/tools. Build stations from BUILD menu.
 - Keeps v4: walkable outdoor spawn; power cycle = fresh run.
+
+## v6 (server remembers the run; no save UI)
+- **VERSION=6.** No SAVE button, no SAVE GAME, no SAVED toast. SYS has **QUIT TO TITLE** (run stays remembered; title shows **BACK TO DAY n**; NEW RUN there asks "abandon for good?").
+- **Server remembers the current run** via the accounts API: `GET/PUT/DELETE /plays/run/sovereign` (server/src/runs.js). Key = the signed-in account (follows across devices) or the guest id cookie `mo_anon` (this browser only). The body never names the player, so no one can read/overwrite another player's run. Cap 256 KiB per run (`games.json` `runs.maxBytes`), rate limited.
+- Synced silently: every 15 s, on door enter/exit, sleep, dawn, pagehide/visibility hidden (keepalive). localStorage `sovereign.save1` is only a cache; on boot the server copy wins (unless this device has a newer copy of the same run, i.e. it was offline).
+- Boot auto-resumes straight into the run ("WAKING UP..." while it asks the server, max 6 s).
+- **Death is final:** `die()` → `endStoredRun()` deletes the local copy and the server copy and tombstones the run id (`run_tombstones`), so a late/replayed upload gets 410 and can never revive it. Pending wipes are kept in `sovereign.ended` and retried if offline.
+- **Power off→on** = `endStoredRun(true)`: wipes local + whatever the server holds, fresh title.
+- Each run has a random `G.rid`; fog is stored run-length encoded (`g.fogR`). v5 local saves still load (no rid → one is assigned).

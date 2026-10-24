@@ -65,6 +65,9 @@
       "nameMax": 12,
       "blankName": "SURVIVOR",
       "postsPerPlayer": 20
+    },
+    "runs": {
+      "maxBytes": 262144
     }
   }
 ]

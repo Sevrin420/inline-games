@@ -13,6 +13,7 @@ import { createSiwe, SiweError } from './siwe.js';
 import { createGate } from './nft.js';
 import { createLimiter } from './ratelimit.js';
 import { registerLeaderboard } from './leaderboard.js';
+import { registerRuns } from './runs.js';
 
 export const SESSION_COOKIE = 'mo_session';
 export const ANON_COOKIE = 'mo_anon';
@@ -53,6 +54,13 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     claimAnon: db.prepare('UPDATE anon_players SET claimed_by_account_id = ? WHERE anon_id = ? AND (claimed_by_account_id IS NULL OR claimed_by_account_id = ?)'),
     reattribute: db.prepare("UPDATE play_events SET account_id = ?, player_key = ? WHERE player_key = ?"),
     reattributeBoard: db.prepare("UPDATE leaderboard_entries SET account_id = ?, player_key = ? WHERE player_key = ?"),
+    // v6 runs: a guest's run in progress moves to the account unless the account
+    // already has a newer one for that game; ended-run tombstones move too.
+    runsOfKey: db.prepare('SELECT game_id, updated_at FROM game_runs WHERE player_key = ?'),
+    runOf: db.prepare('SELECT updated_at FROM game_runs WHERE game_id = ? AND player_key = ?'),
+    dropRun: db.prepare('DELETE FROM game_runs WHERE game_id = ? AND player_key = ?'),
+    moveRun: db.prepare('UPDATE game_runs SET player_key = ? WHERE game_id = ? AND player_key = ?'),
+    moveTombs: db.prepare('UPDATE OR IGNORE run_tombstones SET player_key = ? WHERE player_key = ?'),
     insertPlay: db.prepare('INSERT INTO play_events (game_id, player_key, account_id, started_at, access_level) VALUES (?, ?, ?, ?, ?)'),
     play: db.prepare('SELECT * FROM play_events WHERE id = ?'),
     endPlay: db.prepare('UPDATE play_events SET ended_at = ?, outcome = ?, score = ?, meta = ? WHERE id = ? AND ended_at IS NULL'),
@@ -106,6 +114,13 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
       q.claimAnon.run(accountId, anonId, accountId);
       q.reattribute.run(accountId, `account:${accountId}`, `anon:${anonId}`);
       q.reattributeBoard.run(accountId, `account:${accountId}`, `anon:${anonId}`);
+      const to = `account:${accountId}`, from = `anon:${anonId}`;
+      for (const r of q.runsOfKey.all(from)) {
+        const mine = q.runOf.get(r.game_id, to);
+        if (mine && mine.updated_at >= r.updated_at) q.dropRun.run(r.game_id, from);
+        else { if (mine) q.dropRun.run(r.game_id, to); q.moveRun.run(to, r.game_id, from); }
+      }
+      q.moveTombs.run(to, from);
       return true;
     });
     // Either way this anon id is spent for this browser: a later guest play
@@ -336,6 +351,14 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     return { key: `anon:${anonId}`, accountId: null, anonId };
   }
 
+  // A fresh guest id (cookie for top-level pages; token-mode callers get it in the body).
+  function newGuest(reply) {
+    const anonId = crypto.randomUUID();
+    q.insertAnon.run(anonId, iso());
+    reply.setCookie(ANON_COOKIE, anonId, cookieOpts(365 * 86400));
+    return { key: `anon:${anonId}`, accountId: null, anonId };
+  }
+
   app.post('/plays/start', async (req, reply) => {
     if (limited(reply, `plays:ip:${req.ip}`, 120, MINUTE)) return;
     const gameId = req.body?.game_id;
@@ -346,10 +369,8 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
     let player = playerOf(req);
     let newAnon = null;
     if (!player) {
-      newAnon = crypto.randomUUID();
-      q.insertAnon.run(newAnon, iso());
-      reply.setCookie(ANON_COOKIE, newAnon, cookieOpts(365 * 86400));
-      player = { key: `anon:${newAnon}`, accountId: null, anonId: newAnon };
+      player = newGuest(reply);
+      newAnon = player.anonId;
     }
     // The server, not the client, decides whose play it is and when it began.
     const id = Number(q.insertPlay.run(game.id, player.key, player.accountId, iso(), game.access).lastInsertRowid);
@@ -395,12 +416,15 @@ export async function buildApp({ cfg, db, games, gate, now = () => Date.now(), l
 
   // ---- leaderboards (src/leaderboard.js)
   registerLeaderboard(app, { db, games, cfg, now, iso, fail, limited, playerOf });
+  // ---- v6 current-run storage (src/runs.js)
+  const runs = registerRuns(app, { db, games, now, iso, fail, limited, playerOf, newGuest, tokenMode });
 
   // ---- housekeeping: close plays left open too long (no outcome = not completed)
   function sweep() {
     q.closeStale.run(iso(), iso(now() - cfg.stalePlayHours * 3_600_000));
     sessions.purge();
     siwe.purge();
+    runs.purge();
   }
   sweep();
   const timer = setInterval(sweep, 10 * MINUTE);

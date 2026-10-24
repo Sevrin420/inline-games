@@ -102,6 +102,28 @@ CREATE TABLE IF NOT EXISTS run_shares (
   season      INTEGER NOT NULL,
   created_at  TEXT NOT NULL
 );
+
+-- v6 Sovereign: the run a player is in the middle of (one per player per game),
+-- so reopening the game picks it up. run_id is the client's random id for that
+-- run; a run that ended (death, power-cycle wipe) gets a tombstone so a late or
+-- replayed upload of it can never bring it back.
+CREATE TABLE IF NOT EXISTS game_runs (
+  game_id     TEXT NOT NULL,
+  player_key  TEXT NOT NULL,
+  run_id      TEXT NOT NULL,
+  data        TEXT NOT NULL,
+  bytes       INTEGER NOT NULL,
+  updated_at  TEXT NOT NULL,
+  PRIMARY KEY (game_id, player_key)
+);
+CREATE TABLE IF NOT EXISTS run_tombstones (
+  game_id     TEXT NOT NULL,
+  player_key  TEXT NOT NULL,
+  run_id      TEXT NOT NULL,
+  ended_at    TEXT NOT NULL,
+  PRIMARY KEY (game_id, player_key, run_id)
+);
+CREATE INDEX IF NOT EXISTS run_tombstones_age ON run_tombstones(ended_at);
 `;
 
 export function openDb(dbPath) {

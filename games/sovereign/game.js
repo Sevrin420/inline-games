@@ -6,7 +6,7 @@
    See DESIGN.md. */
 'use strict';
 // ================================================================ basics
-const VERSION = 5;
+const VERSION = 6;
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1672,14 +1672,6 @@ function drawHUD() {
   let my = small ? 50 : 58; for (const m of G.msgs) { const s = fitText(m.s, N - 8); hx.globalAlpha = Math.min(1, m.t * 2); text(s, N / 2, my, m.col, 'center'); hx.globalAlpha = 1; my += 10; }
   if (G.wave && G.wave.live) { const left = G.wave.total - G.wave.killed; panel(N / 2 - 36, 3, 72, 12, '#ff5a4a', 1); text('WAVE ' + left + ' LEFT', N / 2, 4, INK, 'center', false); }
   if (G.ui === 'build') { const d = BDEF[G.bsel]; const t = d.n + '  A: PLACE  B: DONE'; const tw = textW(t); panel(N / 2 - tw / 2 - 3, N - 20, tw + 6, 13, '#8af06a', 1); text(t, N / 2, N - 18, INK, 'center', false); }
-  // phone-friendly SAVE (top-left under stats)
-  if (!G.ui) {
-    const sx0 = 2, sy0 = 56, sw = small ? 34 : 40, sh = 14;
-    const flash = (G.saveFlash || 0) > 0;
-    panel(sx0, sy0, sw, sh, flash ? '#8af06a' : '#ffd76a', 1);
-    text(flash ? 'SAVED' : 'SAVE', sx0 + sw / 2, sy0 + 2, INK, 'center', false);
-    hitR(sx0, sy0, sw, sh, () => manualSave());
-  }
 }
 // ================================================================ audio: everything synthesized with WebAudio (no samples)
 const SFX_ON = { v: true }; let AC = null, MASTER = null, SFXG = null, MUSG = null, AMBG = null, NBUF = null, MUTED = false, POWER = true;
@@ -1890,7 +1882,7 @@ const SURF_NOISE = { grass: 1, dirt: 1, wood: 1.1, hard: 1, tile: 1.05, gravel: 
 function updatePlayer(dt, ix, iy) {
   PL.cd -= dt; PL.swingT -= dt; PL.hurtT = Math.max(0, PL.hurtT - dt * 2); PL.flash -= dt; PL.invuln = Math.max(0, (PL.invuln || 0) - dt); if (G.chop) G.chop.sh = Math.max(0, G.chop.sh - dt * 8);
   // door enter/exit: 3s bite invulnerability
-  { const b = buildingAt(PL.x, PL.y), bid = b ? b.id : null; if (PL._bid !== bid) { if (PL._bid != null || bid != null) { PL.invuln = 3; sfx('door'); } PL._bid = bid; } }
+  { const b = buildingAt(PL.x, PL.y), bid = b ? b.id : null; if (PL._bid !== bid) { if (PL._bid != null || bid != null) { PL.invuln = 3; sfx('door'); G.syncSoon = 0.6; } PL._bid = bid; } }
   PL.noise = Math.max(PL.noise - dt * 30, PL.noiseMax || 0); PL.noiseMax = 0;
   if (PL.str < 3) PL.str = 1 + Math.min(2, PL.strXP / 160);
   if (PL.veh) { const v = VEHS.get(PL.veh); if (v) { driveUpdate(v, dt, ix, iy); PL.moving = v.spd > 0.3; if (ix) PL.face = ix > 0 ? 1 : -1; PL.fs = lerp(PL.fs, PL.face, Math.min(1, dt * 10)); if (v.spd > 0.5) PL.dir = [Math.cos(v.ang), Math.sin(v.ang)]; } PL.sta = Math.min(100, PL.sta + dt * (v && v.type === 'bike' ? 0 : 8)); return; }
@@ -1915,7 +1907,7 @@ function useItem(s, from) {
 function takeOne(s, from) { s.n--; if (s.n <= 0) from.a[from.i] = null; }
 function die(why) {
   if (PL.dead) return; PL.dead = true; G.alive = false; G.why = why; G.deadT = 0; G.sleeping = false; G.ui = null; G.chan = null; sfx('death'); CAM.shake = 0.5;
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) { } lbRunEnd();
+  endStoredRun(false); lbRunEnd();
 }
 // ================================================================ menus + UI (every screen works with the d-pad + A/B, and with taps)
 let UIHIT = [];
@@ -1972,13 +1964,13 @@ function campRows() { const out = []; const t = campTier(); out.push({ t: (G.bas
   const n = 2 + G.day + Math.floor(G.day * G.day / 12); out.push({ t: 'TONIGHT: ' + n + ' ZOMBIES AT 22:00', dis: true, col: '#a83a2a' });
   let cf = 0; for (const b of chests()) for (const s of b.items) if (IT[s.id].c === 'food') cf += s.n; out.push({ t: 'FOOD IN CHESTS: ' + cf + ' (RECRUITS EAT 1/DAY)', dis: true }); return out; }
 const JOBS = ['farmer', 'guard', 'scavenger', 'builder'], JOB_D = { farmer: 'HARVESTS + WATERS CROPS', guard: 'FIGHTS AT NIGHT', scavenger: 'LOOTS BY DAY. RISKY', builder: 'REPAIRS WALLS' };
-function sysRows() { return [{ t: 'DUSK PALETTE', r: OPT.dusk ? 'ON' : 'OFF' }, { t: 'SOUND', r: OPT.sfx ? 'ON' : 'OFF' }, { t: 'MUSIC', r: OPT.music ? 'ON' : 'OFF' }, { t: 'CONTROLS' }, { t: 'MAP (SELECT)' }, { t: 'SAVE GAME', r: 'KEEP RUN', rc: '#3a8a3a', col: '#3a8a3a' }, { t: 'SAVE + QUIT TO TITLE', col: '#a83a2a' }]; }
+function sysRows() { return [{ t: 'DUSK PALETTE', r: OPT.dusk ? 'ON' : 'OFF' }, { t: 'SOUND', r: OPT.sfx ? 'ON' : 'OFF' }, { t: 'MUSIC', r: OPT.music ? 'ON' : 'OFF' }, { t: 'CONTROLS' }, { t: 'MAP (SELECT)' }, { t: 'QUIT TO TITLE', col: '#a83a2a' }]; }
 function menuRows() { return [packRows, buildRows, campRows, sysRows][G.tab](); }
 function menuPick(i) { const rows = menuRows(), r = rows[i]; if (!r) return;
   if (G.tab === 0) { if (r.craft) { openCraft(null); return; } if (r.dis) { sfx('deny'); return; } itemActions(r.ref); }
   else if (G.tab === 1) { if (!r.k) return; if (r.k === 'remove') { const [tx, ty] = facingTile(), b = BUILD.get(tkey(tx, ty)); if (!b) { msg('FACE A BUILT THING FIRST'); sfx('deny'); } else { removeBuild(b); sfx('break'); } G.ui = null; return; } if (r.dis) { sfx('deny'); msg('MISSING MATERIALS'); return; } G.ui = 'build'; G.bsel = r.k; sfx('ui'); }
   else if (G.tab === 2) { if (!r.r0) return; const j = JOBS.indexOf(r.r0.job); r.r0.job = JOBS[(j + 1) % 4]; sfx('ui'); msg(r.r0.name + ': ' + JOB_D[r.r0.job]); }
-  else { if (i === 0) { OPT.dusk = !OPT.dusk; } else if (i === 1) { OPT.sfx = !OPT.sfx; audioLevels(); } else if (i === 2) { OPT.music = !OPT.music; audioLevels(); } else if (i === 3) { G.ui = 'help'; } else if (i === 4) { openMap(); } else if (i === 5) { manualSave(); } else if (i === 6) { saveGame(); toTitle(); } saveOpt(); sfx('ui'); } }
+  else { if (i === 0) { OPT.dusk = !OPT.dusk; } else if (i === 1) { OPT.sfx = !OPT.sfx; audioLevels(); } else if (i === 2) { OPT.music = !OPT.music; audioLevels(); } else if (i === 3) { G.ui = 'help'; } else if (i === 4) { openMap(); } else if (i === 5) { saveGame('quit'); toTitle(); } saveOpt(); sfx('ui'); } }
 function drawMenu() {
   frame('', ''); const tw = (N - 8) / 4; for (let i = 0; i < 4; i++) { const x = 4 + i * tw; rect(x, 4, tw - 1, 12, i === G.tab ? '#ffd76a' : CARD); text(TABS[i], x + tw / 2, 5, i === G.tab ? INK : CREAM, 'center', i !== G.tab); hitR(x, 4, tw, 12, () => { G.tab = i; G.sel = 0; sfx('ui'); }); }
   const rows = menuRows(); G.sel = clamp(G.sel, 0, rows.length - 1);
@@ -2058,7 +2050,7 @@ function talkPick(i) { const n = G.talk; if (i === 0) { if (!talkInfo(n).ok) { s
 function trySleep() { const t = G.time; if (!(t >= 18 * 60 || t < 6 * 60)) { msg('TOO EARLY. SLEEP AFTER 18:00', '#ffb040'); sfx('deny'); return; }
   G.ui = 'list'; G.sel = 0; G.list = { title: 'SLEEP', desc: (G.wave ? 'THEY ARE HERE. ' : 'THE HORDE COMES AT 22:00. ') + (2 + G.day + Math.floor(G.day * G.day / 12)) + ' ZOMBIES. ' + (BUILD.size ? 'YOUR DEFENCES HOLD OR THEY DONT.' : 'YOU HAVE NO DEFENCES!'), items: [
     { t: 'SLEEP + WATCH THE NIGHT', fn: () => goSleep(true) }, { t: 'SLEEP + SKIP TO MORNING', fn: () => goSleep(false) }, { t: 'NOT YET', fn: () => { G.ui = null; } }], back: () => { G.ui = null; } }; }
-function goSleep(watch) { G.ui = null; G.sleeping = true; G.sleepWatch = watch; PL.x = G.base.x + 0.5; PL.y = G.base.y + 0.7; G.chan = null; sfx('sleep'); saveGame();
+function goSleep(watch) { G.ui = null; G.sleeping = true; G.sleepWatch = watch; PL.x = G.base.x + 0.5; PL.y = G.base.y + 0.7; G.chan = null; sfx('sleep'); saveGame('sleep');
   if (!watch) skipNight(); }
 function skipNight() { let guard = 0; while (G.sleeping && !PL.dead && guard++ < 400) { updateTime(5, 2); if (G.wave && G.wave.live && !G.wave.headless && G.sleeping) runWaveHeadless(); if (G.report) break; } }
 function wakeUp() { if (!G.sleeping) return; G.sleeping = false; G.sleepWatch = false; G.ui = null; if (G.wave) { G.wave.headless = false; G.wave.live = true; } SFX_ON.v = true; sfx('horde'); CAM.shake = 0.4; msg('YOU WAKE TO GROANING! DEFEND THE CAMP!', '#ff5a4a'); }
@@ -2069,7 +2061,7 @@ function drawReport() { const R = G.report; frame('DAY ' + R.day + ' DAWN', 'A: 
   L(SEASONS[season()] + ' DAY ' + (((G.day - 1) % 7) + 1) + '/7' + (G.rain ? '. IT IS RAINING (CROPS WATERED)' : ''), '#3a5a8a');
   L('CAMP: ' + campTier() + ', ' + campSize() + ' SOULS. SCORE ' + score(), '#8a6a2a'); }
 // ---- help
-const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK, ENTER', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP. HUD SAVE KEEPS RUN.', 'POWER OFF→ON WIPES SAVE (FRESH).', 'DOORS: 3s SAFE ENTER/EXIT.', 'STOCKPILE IN CRATES / CHESTS / LOCKERS.', 'CRAFT AT WORKBENCH / ANVIL / FORGE.', 'RECIPES NEED MATERIALS + TOOLS.', 'WALK QUIET. ONE BITE KILLS.', 'SELL LOOT. FOUND CAMP WITH BEDROLL.', 'HORDE AT 22:00. FEED TO RECRUIT.'];
+const HELP = ['D-PAD / WASD: MOVE (OR STEER)', 'A / SPACE: USE, SEARCH, ATTACK, ENTER', 'B / SHIFT: HOLD TO SPRINT, TAP: SNEAK', 'START / ENTER: PACK, BUILD, CAMP', 'SELECT / M: MAP.', 'YOUR RUN FOLLOWS YOU: CLOSE + COME BACK.', 'DEATH IS FINAL. POWER OFF→ON = FRESH RUN.', 'DOORS: 3s SAFE ENTER/EXIT.', 'STOCKPILE IN CRATES / CHESTS / LOCKERS.', 'CRAFT AT WORKBENCH / ANVIL / FORGE.', 'RECIPES NEED MATERIALS + TOOLS.', 'WALK QUIET. ONE BITE KILLS.', 'SELL LOOT. FOUND CAMP WITH BEDROLL.', 'HORDE AT 22:00. FEED TO RECRUIT.'];
 function drawHelp() { frame('HOW TO SURVIVE', 'B: BACK'); let y = 22; for (const l of HELP) { text(fitText(l, N - 18), 10, y, INK, 'left', false); y += 10; } hitR(0, 0, N, N, () => { G.ui = G.helpFrom || 'menu'; }); }
 // ---- map
 function openMap() { G.ui = 'map'; G.mapZoom = 1; G.mapCX = PL.x; G.mapCY = PL.y; sfx('ui'); }
@@ -2246,25 +2238,57 @@ function press(b) {
   if (ui === 'craft') { if (b === 'left' || b === 'right') { const C = G.craft || (G.craft = { cat: 0 }); C.cat = (C.cat + (b === 'left' ? CRAFT_CATS.length - 1 : 1)) % CRAFT_CATS.length; G.sel = 0; sfx('ui'); } else if (b === 'a') craftPick(G.sel); else if (b === 'b' || b === 'start') { G.ui = null; sfx('back'); } return; }
   if (ui === 'talk') { if (b === 'a') talkPick(G.sel); else if (b === 'b') { G.ui = null; G.talkSay = null; } return; }
 }
-function manualSave() {
-  if (MODE !== 'play' || !G || PL.dead) { sfx('deny'); return false; }
-  if (G.wave && !G.sleeping) { msg('CANT SAVE MID-WAVE', '#ff8a6a'); sfx('deny'); return false; }
-  if (saveGame()) { G.saveFlash = 1.6; msg('SAVED', '#8af06a'); sfx('uiok'); return true; }
-  msg('SAVE FAILED', '#ff8a6a'); sfx('deny'); return false;
-}
-// ---- save / continue (localStorage)
-const G_KEEP = ['seed', 'v', 'day', 'time', 'money', 'base', 'crops', 'recruits', 'looted', 'zk', 'npc', 'gone', 'rain', 'kills', 'stock', 'pumps', 'seenNames', 'started', 'awake', 'drops', 'totalT', 'tab'];
+// ---- v6: the run in progress is remembered silently (server first, this device as a cache). No save/load UI:
+// it syncs on a timer, on door enter/exit, at sleep/dawn, and when the page is hidden. Death or power off→on ends it for good.
+const ENDED_KEY = 'sovereign.ended';
+const G_KEEP = ['seed', 'v', 'day', 'time', 'money', 'base', 'crops', 'recruits', 'looted', 'zk', 'npc', 'gone', 'rain', 'kills', 'stock', 'pumps', 'seenNames', 'started', 'awake', 'drops', 'totalT', 'tab', 'rid'];
 const P_KEEP = ['x', 'y', 'dir', 'face', 'hp', 'sta', 'hun', 'thi', 'str', 'strXP', 'inv', 'veh', 'sneak'];
-function hasSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && s.v === VERSION ? s : null; } catch (e) { return null; } }
-function saveGame() {
-  if (MODE !== 'play' || !G || G.demo || PL.dead || (G.wave && !G.sleeping)) return false;
-  const g = {}; for (const k of G_KEEP) g[k] = G[k]; let f = ''; for (let i = 0; i < G.fog.length; i++) f += G.fog[i] ? '1' : '0'; g.fog = f;
+const SYNC = { busy: false, last: 0, pending: false, dead: new Set(), okAt: 0, flushP: null, n: 0 };
+function newRid() { const a = new Uint8Array(16); try { crypto.getRandomValues(a); } catch (e) { for (let i = 0; i < 16; i++) a[i] = (Math.random() * 256) | 0; } return 'r' + Array.from(a, (b) => (b % 36).toString(36)).join(''); }
+function endedList() { try { const l = JSON.parse(localStorage.getItem(ENDED_KEY)); return Array.isArray(l) ? l.filter((e) => e && typeof e === 'object') : []; } catch (e) { return []; } }
+function setEnded(l) { try { localStorage.setItem(ENDED_KEY, JSON.stringify(l.slice(-24))); } catch (e) { } }
+function isEnded(rid) { return !!rid && (SYNC.dead.has(rid) || endedList().some((e) => e.r === rid)); }
+function validRun(s) { return !!(s && typeof s === 'object' && s.v >= 5 && s.v <= VERSION && typeof s.seed === 'number' && s.g && typeof s.g === 'object' && s.p && Array.isArray(s.mod) && Array.isArray(s.build)); }
+function hasSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return validRun(s) && !isEnded(s.g.rid) ? s : null; } catch (e) { return null; } }
+function runSnapshot() {
+  const g = {}; for (const k of G_KEEP) g[k] = G[k];
+  const r = []; let cur = 0, n = 0; for (let i = 0; i < G.fog.length; i++) { const v = G.fog[i] ? 1 : 0; if (v === cur) n++; else { r.push(n); cur = v; n = 1; } } r.push(n); g.fogR = r; // run-length fog (0s first)
   const p = {}; for (const k of P_KEEP) p[k] = PL[k];
   const vehs = []; for (const v of VEHS.values()) if (v.touched || v.trunk) { G.gone[v.id] = 1; vehs.push(v); }
-  const data = { v: VERSION, seed: G.seed, g, p, mod: [...MOD.entries()], build: [...BUILD.values()], vehs, at: Date.now() };
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); G.saveDirty = false; return true; } catch (e) { return false; } }
+  return { v: VERSION, seed: G.seed, g, p, mod: [...MOD.entries()], build: [...BUILD.values()], vehs, at: Date.now() }; }
+/** Remember the run (silent): this device now, the server right after (throttled). */
+function saveGame(why) {
+  if (MODE !== 'play' || !G || G.demo || PL.dead || !G.rid || isEnded(G.rid)) return false;
+  const data = runSnapshot(); let ok = false;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); ok = true; } catch (e) { }
+  G.saveDirty = false; pushRun(data, why === 'hide'); return ok; }
+function pushRun(data, hide) {
+  const A = MA(); if (!A || !A.runPut) { SYNC.pending = true; SYNC.last = Date.now(); return; }
+  const rid = data.g.rid; if (isEnded(rid)) return;
+  const t = Date.now(); if (!hide && (SYNC.busy || t - SYNC.last < 4000)) { SYNC.pending = true; return; }
+  SYNC.last = t; SYNC.pending = false; if (!hide) SYNC.busy = true;
+  const gate = Promise.all([RUN && RUN.startP, SYNC.flushP]); // a guest's first id comes from startPlay; wipes go out first
+  gate.then(() => (isEnded(rid) ? null : A.runPut(LB_GAME, rid, data, hide))).then((r) => { if (!hide) SYNC.busy = false;
+    if (r && r.status === 200) { SYNC.okAt = Date.now(); SYNC.n++; }
+    else if (r && r.status === 410 && G.rid === rid && MODE === 'play' && !PL.dead) runEndedElsewhere(rid); }).catch(() => { if (!hide) SYNC.busy = false; }); }
+/** End the stored run for good (death, abandon, power-cycle): drop this device's copy and tell the server (retried until it lands). */
+function endStoredRun(all) {
+  const s = (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } })();
+  const rids = [...new Set([G && !G.demo ? G.rid : null, s && s.g ? s.g.rid : null].filter(Boolean))];
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+  const l = endedList(); for (const r of rids) { SYNC.dead.add(r); l.push({ r, all: all ? 1 : 0, t: Date.now() }); }
+  if (all && !rids.length) l.push({ r: null, all: 1, t: Date.now() }); setEnded(l); return flushEnded(); }
+function flushEnded() {
+  const A = window.MembersAuth; if (!A || !A.ready) return Promise.resolve();
+  const p = A.ready.then(() => { if (!A.available || !A.runEnd) return; const todo = endedList().filter((e) => !e.done);
+    return Promise.all(todo.map((e) => A.runEnd(LB_GAME, e.r, e.all).then((r) => { if (r && r.status === 200) { const l = endedList(); for (const x of l) if (x.r === e.r && x.t === e.t) x.done = 1; setEnded(l); } }))); }).catch(() => { });
+  SYNC.flushP = p; return p; }
+function runEndedElsewhere(rid) { SYNC.dead.add(rid); try { localStorage.removeItem(SAVE_KEY); } catch (e) { } toTitle(); TT.note = 'THAT RUN ENDED ON ANOTHER DEVICE.'; }
 function loadGame(s) {
-  newRun(s.seed); Object.assign(G, s.g); G.fog = new Uint8Array(NC * NC); for (let i = 0; i < s.g.fog.length; i++) G.fog[i] = s.g.fog[i] === '1' ? 1 : 0;
+  newRun(s.seed); Object.assign(G, s.g); G.fog = new Uint8Array(NC * NC);
+  if (Array.isArray(s.g.fogR)) { let i = 0, v = 0; for (const n of s.g.fogR) { const e = Math.min(G.fog.length, i + (n | 0)); if (v) G.fog.fill(1, i, e); i = e; v ^= 1; } delete G.fogR; }
+  else if (typeof s.g.fog === 'string') for (let i = 0; i < s.g.fog.length; i++) G.fog[i] = s.g.fog[i] === '1' ? 1 : 0;
+  if (!G.rid) G.rid = newRid();
   G.msgs = []; G.wave = null; G.alive = true; G.drops = G.drops || []; G.totalT = G.totalT || 0; Object.assign(PL, s.p);
   for (const [k, t] of s.mod) MOD.set(k, t); for (const b of s.build) BUILD.set(tkey(b.x, b.y), b); for (const v of s.vehs) VEHS.set(v.id, v);
   if (PL.veh && !VEHS.has(PL.veh)) PL.veh = null; resizePack(PL.inv);
@@ -2272,12 +2296,12 @@ function loadGame(s) {
   for (const r of G.recruits) { const b = BUILD.get(r.bunk); if (b) { r.x = b.x + 0.5; r.y = b.y + 1.2; } }
   if (G.base && (G.time >= 22 * 60 || G.time < 5 * 60)) startWave(inBase(PL.x, PL.y, BASE_R + 6));
 }
-addEventListener('pagehide', () => saveGame()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+addEventListener('pagehide', () => saveGame('hide')); document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame('hide'); });
 // ---- one leaderboard record per run session (server when signed in, else this device)
 const MA = () => (window.MembersAuth && window.MembersAuth.available ? window.MembersAuth : null);
 let RUN = null;
 function lbRunStart() { const r = { g: G, play: null, board: null, posted: false, posting: false, local: false, done: false }; RUN = r; const A = window.MembersAuth;
-  if (A && A.ready) A.ready.then(() => (A.available ? A.startPlay(LB_GAME) : null)).then((id) => { r.play = id || null; }).catch(() => { }); }
+  if (A && A.ready) r.startP = A.ready.then(() => (A.available ? A.startPlay(LB_GAME) : null)).then((id) => { r.play = id || null; }).catch(() => { }); }
 function localBoard() { let l = []; try { l = JSON.parse(localStorage.getItem(LOCAL_LB_KEY)) || []; } catch (e) { } return Array.isArray(l) ? l : []; }
 function lbRunEnd() {
   const r = RUN; if (!r || r.g !== G || r.done) return; r.done = true; r.score = score(); r.days = G.day; r.camp = campSize(); r.kills = G.kills;
@@ -2321,12 +2345,13 @@ function drawDead() { const t = G.deadT; hx.fillStyle = 'rgba(40,0,0,' + Math.mi
     if (B.me && !rows.some((e) => e.mine)) text('YOU: #' + B.me.rank + '  ' + B.me.value, N / 2, y + 2, '#8a6a2a', 'center', false); }
   text('A: NEW RUN', N / 2, N - 22, INK, 'center', false); hitR(8, N - 26, N - 16, 16, () => deadPress('a')); }
 // ---- title screen (the next world pans behind it)
-const TT = { sel: 0, sub: null, t: 0, board: null, save: null };
-function toTitle() { MODE = 'title'; TT.save = hasSave(); const seed = TT.save ? TT.save.seed : (Math.random() * 1e9) | 0; if (!WD || G.seed !== seed || !G.demo) { newRun(seed); MAPI.row = 0; } G.demo = true; G.drops = []; TT.sel = 0; TT.sub = null; NE.on = false; CAM.x = PL.x; CAM.y = PL.y; }
+const TT = { sel: 0, sub: null, t: 0, board: null, save: null, note: null };
+const BOOT = { on: true };
+function toTitle() { MODE = 'title'; TT.save = hasSave(); TT.note = null; TT.confirm = false; const seed = TT.save ? TT.save.seed : (Math.random() * 1e9) | 0; if (!WD || G.seed !== seed || !G.demo) { newRun(seed); MAPI.row = 0; } G.demo = true; G.drops = []; TT.sel = 0; TT.sub = null; NE.on = false; CAM.x = PL.x; CAM.y = PL.y; }
 /** Shell power off→on: wipe mid-run save and cold-boot to title (fresh world), like Last Tower bootOn. */
 function onHandheldPower(on) {
   if (!on) return;
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+  BOOT.on = false; endStoredRun(true); // this device + the server copy
   NE.on = false;
   if (G) { G.ui = null; G.wave = null; G.report = null; G.sleeping = false; G.chan = null; G.loot = null; }
   newRun((Math.random() * 1e9) | 0); MAPI.row = 0;
@@ -2334,14 +2359,15 @@ function onHandheldPower(on) {
   TT.save = null; TT.sel = 0; TT.sub = null; TT.confirm = false; TT.board = null;
   CAM.x = PL.x; CAM.y = PL.y;
 }
-function titleItems() { return (TT.save ? [{ t: 'CONTINUE (DAY ' + TT.save.g.day + ')', fn: () => startGame(true) }] : []).concat([{ t: 'NEW RUN', fn: () => startGame(false) }, { t: 'BEST RUNS', fn: openBest }, { t: 'HOW TO SURVIVE', fn: () => { TT.sub = 'help'; } }]); }
+function titleItems() { if (BOOT.on) return []; return (TT.save ? [{ t: 'BACK TO DAY ' + TT.save.g.day, fn: () => startGame(true) }] : []).concat([{ t: 'NEW RUN', fn: () => startGame(false) }, { t: 'BEST RUNS', fn: openBest }, { t: 'HOW TO SURVIVE', fn: () => { TT.sub = 'help'; } }]); }
 function openBest() { TT.sub = 'best'; TT.board = { local: localBoard() }; const A = window.MembersAuth; if (A && A.ready) A.ready.then(() => (A.available ? A.leaderboard(LB_GAME) : null)).then((b) => { if (b && b.status === 200 && b.json) TT.board.server = b.json; }).catch(() => { }); }
-function titlePress(b) { if (TT.sub) { if (b === 'a' || b === 'b' || b === 'start') { TT.sub = null; sfx('back'); } return; } if (TT.confirm) { if (b === 'a') { TT.confirm = false; startGame(false, true); } else if (b === 'b') TT.confirm = false; return; }
+function titlePress(b) { if (BOOT.on) return; if (TT.sub) { if (b === 'a' || b === 'b' || b === 'start') { TT.sub = null; sfx('back'); } return; } if (TT.confirm) { if (b === 'a') { TT.confirm = false; startGame(false, true); } else if (b === 'b') TT.confirm = false; return; }
   const it = titleItems(); if (b === 'up') { TT.sel = (TT.sel + it.length - 1) % it.length; sfx('ui'); } else if (b === 'down') { TT.sel = (TT.sel + 1) % it.length; sfx('ui'); } else if (b === 'a' || b === 'start') { sfx('uiok'); it[TT.sel].fn(); } }
 function startGame(cont, sure) {
-  if (cont) { const s = hasSave(); if (s) { loadGame(s); MAPI.row = 0; } else return; }
-  else { if (TT.save && !sure) { TT.confirm = true; return; } const seed = TT.save ? (Math.random() * 1e9) | 0 : G.seed; if (seed !== G.seed) MAPI.row = 0; newRun(seed); try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
-    G.totalT = 0; G.drops = []; }
+  if (cont) { const s = typeof cont === 'object' ? cont : hasSave(); if (s) { loadGame(s); MAPI.row = 0; } else return; }
+  else { if (TT.save && !sure) { TT.confirm = true; return; } const seed = TT.save ? (Math.random() * 1e9) | 0 : G.seed; if (TT.save) endStoredRun(false); if (seed !== G.seed) MAPI.row = 0; newRun(seed);
+    G.totalT = 0; G.drops = []; G.rid = newRid(); }
+  TT.save = null; TT.confirm = false;
   MODE = 'play'; G.demo = false; G.ui = null; G.sel = 0; G.tab = 0; CAM.x = PL.x; CAM.y = PL.y; lbRunStart();
   if (!cont) { msg('WALK QUIET. EVERY DOOR OPENS.', '#c8a050'); msg('ONE BITE AND YOU ARE DEAD.', '#c85040'); } else msg('DAY ' + G.day + '. WELCOME BACK.', '#ffd76a');
   saveGame(); }
@@ -2354,7 +2380,9 @@ function drawTitle() { TT.t += 1 / 60;
     text('SCORE = DAYS x100 + CAMP', N / 2, N - 22, '#6a5a4a', 'center', false); hitR(0, 0, N, N, () => titlePress('b')); return; }
   const it = titleItems(), y0 = Math.round(N * 0.5); panel(N / 2 - 70, y0 - 6, 140, it.length * 14 + 10, CREAM, 2);
   it.forEach((o, i) => { const y = y0 + i * 14; if (i === TT.sel) rect(N / 2 - 66, y - 2, 132, 13, '#6a4828'); text(o.t, N / 2, y, INK, 'center', false); hitR(N / 2 - 70, y - 3, 140, 14, () => { TT.sel = i; titlePress('a'); }); });
-  if (TT.confirm) { panel(14, N / 2 - 20, N - 28, 40, '#ffd76a', 2); text('START OVER? YOUR SAVE IS LOST.', N / 2, N / 2 - 14, INK, 'center', false); text('A: YES    B: NO', N / 2, N / 2 + 2, INK, 'center', false); hitR(14, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('a')); hitR(N / 2, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('b')); }
+  if (TT.confirm) { panel(14, N / 2 - 20, N - 28, 40, '#ffd76a', 2); text(fitText('ABANDON THIS RUN FOR GOOD?', N - 32), N / 2, N / 2 - 14, INK, 'center', false); text('A: YES    B: NO', N / 2, N / 2 + 2, INK, 'center', false); hitR(14, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('a')); hitR(N / 2, N / 2 - 20, (N - 28) / 2, 40, () => titlePress('b')); }
+  if (BOOT.on) text('WAKING UP' + '.'.repeat((G.clock * 3 | 0) % 4), N / 2, y0, CREAM, 'center');
+  if (TT.note) text(fitText(TT.note, N - 16), N / 2, y0 - 18, '#ff8a6a', 'center');
   text(touchDev ? 'A: SELECT' : 'ARROWS + SPACE', N / 2, N - 12, CREAM, 'center'); }
 // ---- main loop
 let lastT = performance.now(), saveT = 20, promptT = 0, fogT = 0;
@@ -2378,8 +2406,9 @@ function step(dt) {
   const tx = G.sleeping && G.base ? G.base.x + 0.5 : PL.x, ty = G.sleeping && G.base ? G.base.y + 0.5 : PL.y; if (Math.hypot(CAM.x - tx, CAM.y - ty) > 12) { CAM.x = tx; CAM.y = ty; } else { const k = Math.min(1, dt * 10); CAM.x = lerp(CAM.x, tx, k); CAM.y = lerp(CAM.y, ty, k); }
   fogT -= dt; if (fogT <= 0) { fogT = 0.5; markFog(); }
   engineUpdate(); ambUpdate(dt); musicUpdate(dt);
-  saveT -= dt; if (saveT <= 0) { saveT = 20; saveGame(); }
-  if (G.saveFlash) G.saveFlash = Math.max(0, G.saveFlash - dt);
+  saveT -= dt; if (saveT <= 0) { saveT = 15; saveGame('tick'); }
+  if (G.syncSoon > 0) { G.syncSoon -= dt; if (G.syncSoon <= 0) { G.syncSoon = 0; saveGame('door'); } }
+  if (SYNC.pending && !SYNC.busy && Date.now() - SYNC.last > 4200) saveGame('retry');
 }
 function render() {
   UIHIT = []; hx.setTransform(1, 0, 0, 1, 0, 0); hx.globalAlpha = 1;
@@ -2394,5 +2423,18 @@ function render() {
 }
 function loop(now) { const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now; if (POWER) { try { step(dt); render(); } catch (e) { console.error(e); window.__sovErr = String(e && e.stack || e); } } requestAnimationFrame(loop); }
 // ---- boot
-addEventListener('resize', resize); resize(); buildAtlas(); buildTrees(); toTitle(); requestAnimationFrame(loop);
-window.__sov = { get G() { return G; }, get PL() { return PL; }, get MODE() { return MODE; }, press, saveGame, manualSave, startGame, KEYS, WD: () => WD, BUILD, VEHS, NPCS, get ZOMS() { return ZOMS; }, IT, addItem, foundBase: (x, y) => foundBase(x, y), die, openCraft, CRAFT_R, craftReady };
+// v6 boot: resume the run this player is in (server copy wins; this device's copy covers offline), else the title.
+function bootResume() {
+  const A = window.MembersAuth, local = hasSave(), wait = (ms) => new Promise((r) => setTimeout(() => r('timeout'), ms));
+  const ask = (A && A.ready ? A.ready : Promise.resolve()).then(() => { if (!A || !A.available || !A.runGet) return null; return flushEnded().then(() => A.runGet(LB_GAME, local && local.g.rid)); });
+  Promise.race([ask, wait(6000)]).then((r) => pickRun(local, r), () => pickRun(local, null)); }
+function pickRun(local, r) {
+  if (!BOOT.on) return; BOOT.on = false; local = local && hasSave() ? local : null; let run = local;
+  if (r && r.status === 200 && r.json) {
+    const s = r.json.run, sv = validRun(s) && !isEnded(s.g.rid) ? s : null;
+    if (sv) run = local && local.g.rid && local.g.rid === sv.g.rid && (local.at || 0) > (sv.at || 0) ? local : sv;
+    else if (r.json.ended) { if (local) { SYNC.dead.add(local.g.rid); try { localStorage.removeItem(SAVE_KEY); } catch (e) { } } run = null; } }
+  BOOT.src = run ? (run === local ? 'local' : 'server') : 'none';
+  if (MODE !== 'title') return; if (run) startGame(run); else toTitle(); }
+addEventListener('resize', resize); resize(); buildAtlas(); buildTrees(); toTitle(); requestAnimationFrame(loop); bootResume();
+window.__sov = { get G() { return G; }, get PL() { return PL; }, get MODE() { return MODE; }, press, saveGame, startGame, endStoredRun, hasSave, SYNC, BOOT, runSnapshot, onHandheldPower, get TT() { return TT; }, KEYS, WD: () => WD, BUILD, VEHS, NPCS, get ZOMS() { return ZOMS; }, IT, addItem, foundBase: (x, y) => foundBase(x, y), die, openCraft, CRAFT_R, craftReady };
