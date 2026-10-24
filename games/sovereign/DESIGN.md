@@ -2,7 +2,7 @@
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=7`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=8`.
 
 ## Pillars
 
@@ -114,3 +114,12 @@ canvas shell as the other handheld games.
 - **UI:** blue-gradient bordered windows (`winBox`), hand cursor on selected rows, restyled HUD bars and framed minimap, dusk/night gradient light.
 - Target 60fps on phones; verified ~60fps at 390x844 and 412x915.
 - Fix: PACK tab hint no longer throws when the selected row has no item ref.
+
+## v8 (3 bites, real saves, power switch pauses)
+- **VERSION=8** (`game.js?v=8`). v7 art and all gameplay kept (stealth, interiors, crafting, stockpiles, 3s door invuln, walkable spawn).
+- **3 bites.** `PL.bites` (saved in the run). Each bite: red screen flash, camera shake, ~0.7-tile knockback away from the zombie, zombie stunned 0.8s, **1.5s invulnerability** (no chaining), message with bites left, and an immediate save (so reloading can't undo a bite). The 3rd bite = death. Being caught while sleeping on WATCH is now a bite (you're woken), not an instant kill.
+- **HUD:** 3 hearts in a blue window under the stat bars (last heart pulses).
+- **Healing:** bites never regenerate. **BANDAGE** and **MEDKIT** (existing loot/shop/crafting: 2 cloth → 2 bandages; 3 cloth at workbench → 4; medkit = 3 bandage + pills + cloth at workbench) tend 1 bite each, capped at 3 (item desc shows `+1 BITE`). Painkillers do not.
+- **Save:** blue **SAVE** button on the HUD (under the clock) and **SAVE / SAVE & QUIT** in SYS, with a "SAVED" window. Same server store as the v6 silent autosave (timer, doors, sleep, page hide), keyed `account:<id>` / `anon:<uuid>`. Manual saves, bites and healing push to the server immediately.
+- **Permadeath:** 3rd bite ends the run and deletes the save locally and on the server (410 tombstone). Death screen says SAVE ERASED.
+- **Power switch (changed):** OFF saves and pauses; ON resumes the same run. It no longer wipes. Start over with **NEW GAME** (title, or SYS menu) — confirm warns it erases the save.
