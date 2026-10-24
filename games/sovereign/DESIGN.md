@@ -2,7 +2,7 @@
 
 Survival / foraging + tower defense on a huge seeded world. Same handheld shell
 and pixel/cardboard-cutout DNA as Zombie Farm, pushed darker and edgier
-(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=6`.
+(theme: `smoke`). Live: `membersonly.cc/sovereign/?v=7`.
 
 ## Pillars
 
@@ -104,3 +104,13 @@ canvas shell as the other handheld games.
 - **Death is final:** `die()` → `endStoredRun()` deletes the local copy and the server copy and tombstones the run id (`run_tombstones`), so a late/replayed upload gets 410 and can never revive it. Pending wipes are kept in `sovereign.ended` and retried if offline.
 - **Power off→on** = `endStoredRun(true)`: wipes local + whatever the server holds, fresh title.
 - Each run has a random `G.rid`; fog is stored run-length encoded (`g.fogR`). v5 local saves still load (no rid → one is assigned).
+
+## v7 (graphics overhaul — 16-bit JRPG look)
+- **VERSION=7** (`game.js?v=7`). All gameplay unchanged from v6 (one bite = death, server-remembered run, wipe on death/power-cycle).
+- **All art is original**, procedurally generated / hand-authored in `game.js` at boot (no ripped sprites, tiles, fonts or music from any commercial game). Font is the game's own hand-made pixel font.
+- **World:** 16x16 textured tiles with ramps, Bayer dithering and 1px outlines; grass fringe onto paths, animated water with shore foam, wall shadow bands. Trees: 3 dithered-canopy broadleaf variants (28x34) + 2 pines (22x36), picked by tile hash.
+- **Buildings:** `roofImg(b)` (cached, cap 90) draws shingled front/back slopes, ridge, chimney (with smoke), and a facade per material (stone / plaster+timber / metal / log) with door, lantern, shuttered windows (lit at night via `ROOFS_VIS` light holes), flower boxes, barrels/crates and a kind sign. Interiors get plank floors and a rug.
+- **Sprites:** chibi standees with 4-direction, 3-frame walks (`dir4` derives facing from movement, `WALK4=[1,0,2,0]`); zombies gray-green, bloody, torn clothes. Props (barrel, chest, crate, shelf, cabinet, bed, workbench, campfire, wood wall, corpse) redrawn.
+- **UI:** blue-gradient bordered windows (`winBox`), hand cursor on selected rows, restyled HUD bars and framed minimap, dusk/night gradient light.
+- Target 60fps on phones; verified ~60fps at 390x844 and 412x915.
+- Fix: PACK tab hint no longer throws when the selected row has no item ref.
