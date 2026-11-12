@@ -20,6 +20,7 @@ games/                  everything here is served statically from /opt/games
     hens/               THE ONLY bird art folder (swappable): 6 hens.farm Hens + 8 Chikn PNGs, manifest.js, SOURCES.md
   thimblewood/          Thimblewood (HD-2D): pixel-art sprites in a 3D autumn diorama (three.js r160 vendored), tilt-shift, bloom, god rays; all art drawn in code
   sovereign/            Sovereign: survival + tower defense, huge seeded world, handheld shell (smoke)
+  soren-cars/           Soren Cars: toddler PWA (pick a car, 4-piece puzzle, paint it, drive around town). Offline after first visit, original cartoon art, family characters.
     index.html          page, X card meta; loads game.js, ../shared/auth.js, handheld.js
     game.js             the whole game (concat of p1..p11 sources)
     DESIGN.md           pillars, loop, controls, v1 gaps
@@ -62,6 +63,7 @@ The docs came from Aeterna, so where they say `web/<game>/`, read
 | Thimblewood | `/thimblewood/` | HD-2D exploration (pixel sprites in a WebGL diorama): 5 connected areas, 4 NPCs, 12 acorns to return to Bramble, 3 secret golden leaves. Arrows/WASD + Space/Enter/Z, X/Esc closes; touch stick + A button | seconds to find all 12 acorns (lower is better), on finish only |
 | Zombie Farm | `/zombie-farm/` | fast run-and-gun flock survival (board id `last-tower`) | survival time / score on death |
 | Sovereign | `/sovereign/` | survival / foraging + tower defense on a huge seeded map: scavenge, trade, found a camp, farm, recruit, defend nightly waves. One bite = death. Handheld shell (smoke). | days survived × 100 + camp size (higher is better), on death |
+| Soren Cars | `/soren-cars/` | toddler car game: pick 1 of 4 cars, assemble a 4-piece puzzle, choose a color, then drive a top-down town (pick up family and items, park, honk, car wash, gas). Installable PWA, works fully offline. No accounts. | — |
 
 Coop Sweep's birds come from two collections in one pool: 6 Hens (hens.farm,
 Robinhood Chain) and 8 Chikn PFPs (chikn.farm, Avalanche). Each board hides 10

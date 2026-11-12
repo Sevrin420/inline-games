@@ -29,6 +29,7 @@ membersonly.cc {
 		# Directory URLs without the slash -> with it, so relative URLs resolve.
 		redir /lunch-rush /lunch-rush/ 308
 		redir /account /account/ 308
+		redir /soren-cars /soren-cars/ 308
 
 		# HTML/JS/CSS revalidate on every load so a redeploy reaches players at
 		# once; images cache for a day. (Scoped to static files: API responses
